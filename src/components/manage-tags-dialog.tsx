@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { PlusIcon, TagIcon, XIcon } from "lucide-react";
+import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -57,12 +57,13 @@ export function ManageTagsDialog({
               <Badge key={tag.id} variant="outline" className="gap-1 pr-1 text-xs">
                 {tag.color && (
                   <span
-                    className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
+                    className="inline-block h-2 w-2 shrink-0 rounded-full"
                     style={{ backgroundColor: tag.color }}
                   />
                 )}
                 {tag.name}
                 <button
+                  type="button"
                   onClick={() => onRemove(tag.id)}
                   disabled={isPending}
                   className="ml-0.5 rounded-sm opacity-70 hover:opacity-100 disabled:opacity-30"
@@ -85,13 +86,14 @@ export function ManageTagsDialog({
           <div className="max-h-48 overflow-y-auto">
             {filtered.map((tag) => (
               <button
+                type="button"
                 key={tag.id}
                 onClick={() => onAdd(tag.name)}
                 disabled={isPending}
                 className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent disabled:opacity-50">
                 {tag.color ? (
                   <span
-                    className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
+                    className="inline-block h-2 w-2 shrink-0 rounded-full"
                     style={{ backgroundColor: tag.color }}
                   />
                 ) : (
@@ -102,6 +104,7 @@ export function ManageTagsDialog({
             ))}
             {canCreate && (
               <button
+                type="button"
                 onClick={() => onAdd(query.trim())}
                 disabled={isPending}
                 className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground disabled:opacity-50">

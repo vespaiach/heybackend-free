@@ -1,7 +1,20 @@
 "use client";
 
-import * as React from "react";
+import {
+  ArrowDownIcon,
+  ArrowUpDownIcon,
+  ArrowUpIcon,
+  Code2,
+  Copy,
+  LayoutListIcon,
+  MoreHorizontalIcon,
+  Plus,
+  PowerOff,
+  SquarePen,
+} from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import * as React from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,23 +24,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  ArrowUpDownIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  MoreHorizontalIcon,
-  Plus,
-  SquarePen,
-  PowerOff,
-  Copy,
-  Code2,
-  LayoutListIcon,
-} from "lucide-react";
-import { toast } from "sonner";
-import { deactivateWebsite } from "./actions";
+import { WebsiteFieldsSheet } from "@/components/website-fields-sheet";
 import { WebsiteFormModal } from "@/components/website-form-modal";
 import { WebsiteIntegrationModal } from "@/components/website-integration-modal";
-import { WebsiteFieldsSheet } from "@/components/website-fields-sheet";
+import { deactivateWebsite } from "./actions";
 
 type Website = {
   id: string;
@@ -167,6 +167,7 @@ export function WebsitesTable({ websites }: { websites: Website[] }) {
             <TableRow>
               <TableHead>
                 <button
+                  type="button"
                   className="flex items-center font-medium hover:text-foreground"
                   onClick={() => toggleSort("name")}>
                   Name
@@ -178,6 +179,7 @@ export function WebsitesTable({ websites }: { websites: Website[] }) {
               <TableHead>API Key</TableHead>
               <TableHead>
                 <button
+                  type="button"
                   className="flex items-center font-medium hover:text-foreground"
                   onClick={() => toggleSort("createdAt")}>
                   Created At

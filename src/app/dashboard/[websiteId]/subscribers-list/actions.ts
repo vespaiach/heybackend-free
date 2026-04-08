@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { tenantService, subscriberService } from "@/lib/domain";
+import { subscriberService, tenantService } from "@/lib/domain";
 import type { Subscriber, SubscriberMetadata } from "@/lib/domain/types";
 import { logger } from "@/lib/logger";
 

@@ -1,6 +1,6 @@
-import type React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import type React from "react";
 import { PaginationBar } from "../pagination-bar";
 
 function makeProps(overrides: Partial<React.ComponentProps<typeof PaginationBar>> = {}) {

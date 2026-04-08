@@ -1,8 +1,8 @@
-import type React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ThemeProvider } from "@/components/theme-provider";
 import { useTheme } from "next-themes";
+import type React from "react";
+import { ThemeProvider } from "@/components/theme-provider";
 
 // Mock next-themes so we test OUR logic, not the library's
 vi.mock("next-themes", () => ({

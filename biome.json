@@ -23,6 +23,9 @@
       "suspicious": {
         "noUnknownAtRules": "off",
         "noArrayIndexKey": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "warn"
       }
     },
     "domains": {

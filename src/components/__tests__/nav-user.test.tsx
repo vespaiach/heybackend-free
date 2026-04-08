@@ -1,9 +1,9 @@
-import type React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { signOut } from "next-auth/react";
+import type React from "react";
 import { NavUser } from "@/components/nav-user";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { signOut } from "next-auth/react";
 
 vi.mock("next-auth/react", () => ({
   signOut: vi.fn(),

@@ -1,9 +1,8 @@
-import React from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { WebsitesTable } from "../websites-table";
-import { deactivateWebsite } from "../actions";
 import { toast } from "sonner";
+import { deactivateWebsite } from "../actions";
+import { WebsitesTable } from "../websites-table";
 
 // vi.hoisted lets us reference these in the vi.mock factory below
 const { mockRefresh, mockReplace } = vi.hoisted(() => ({

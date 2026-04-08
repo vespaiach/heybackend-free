@@ -1,8 +1,8 @@
-import type React from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SubscribersTable } from "../subscribers-table";
+import type React from "react";
 import { formatDate } from "@/lib/utils";
+import { SubscribersTable } from "../subscribers-table";
 
 const { mockPush, mockRefresh } = vi.hoisted(() => ({
   mockPush: vi.fn(),
@@ -73,6 +73,7 @@ const subscribers = [
     email: "alice@example.com",
     firstName: "Alice",
     lastName: "Smith",
+    websiteId: WEBSITE_ID,
     createdAt: new Date("2024-03-01"),
     unsubscribedAt: null,
     tags: [],
@@ -83,12 +84,13 @@ const subscribers = [
     email: "bob@example.com",
     firstName: null,
     lastName: null,
+    websiteId: WEBSITE_ID,
     createdAt: new Date("2024-03-02"),
     unsubscribedAt: new Date("2024-04-01"),
     tags: [],
     ...enrichmentDefaults,
   },
-];
+] satisfies import("@/lib/domain/types").Subscriber[];
 
 function makeProps(overrides: Partial<React.ComponentProps<typeof SubscribersTable>> = {}) {
   return {

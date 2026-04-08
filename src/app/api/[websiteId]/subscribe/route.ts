@@ -51,10 +51,10 @@ function validateBody(body: unknown): BodyResult {
   }
 
   const lastName = typeof raw.last_name === "string" ? raw.last_name : undefined;
-  if (!lastName || lastName.trim().length === 0) {
-    return { ok: false, error: "last_name is required" };
+  if (lastName !== undefined && lastName.trim().length === 0) {
+    return { ok: false, error: "last_name cannot be empty" };
   }
-  if (lastName.length > 256) {
+  if (lastName !== undefined && lastName.length > 256) {
     return { ok: false, error: "last_name must be at most 256 characters" };
   }
 

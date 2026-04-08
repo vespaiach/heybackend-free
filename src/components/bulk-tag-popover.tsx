@@ -1,7 +1,7 @@
 "use client";
 
-import * as React from "react";
 import { PlusIcon, TagIcon } from "lucide-react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,12 +50,13 @@ export function BulkTagPopover({ availableTags, isPending, onAdd, onDone }: Bulk
         <div className="max-h-40 overflow-y-auto">
           {filtered.map((tag) => (
             <button
+              type="button"
               key={tag.id}
               onClick={() => handleAdd(tag.name)}
               className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-accent">
               {tag.color ? (
                 <span
-                  className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
+                  className="inline-block h-2 w-2 shrink-0 rounded-full"
                   style={{ backgroundColor: tag.color }}
                 />
               ) : (
@@ -66,6 +67,7 @@ export function BulkTagPopover({ availableTags, isPending, onAdd, onDone }: Bulk
           ))}
           {canCreate && (
             <button
+              type="button"
               onClick={() => handleAdd(query.trim())}
               className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm text-muted-foreground hover:bg-accent hover:text-foreground">
               <PlusIcon className="h-3 w-3" />

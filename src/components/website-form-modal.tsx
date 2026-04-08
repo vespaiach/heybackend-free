@@ -1,14 +1,16 @@
 "use client";
 
-import * as React from "react";
-import { useRouter } from "next/navigation";
+import { Field, Form, type SubmitHandler, useForm } from "@formisch/react";
 import { RefreshCwIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { WebsiteSchema, type WebsiteOutput } from "@/lib/schemas";
+import { addWebsite, updateWebsite } from "@/app/dashboard/websites/actions";
 import { Button } from "@/components/ui/button";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addWebsite, updateWebsite } from "@/app/dashboard/websites/actions";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 type Website = {
   id: string;
@@ -29,38 +31,39 @@ interface WebsiteFormModalProps {
 export function WebsiteFormModal({ open, onOpenChange, website, isRequired }: WebsiteFormModalProps) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
-  const [pending, setPending] = React.useState(false);
-  const [isDirty, setIsDirty] = React.useState(false);
   const [regenerateKey, setRegenerateKey] = React.useState(false);
   const isEdit = !!website;
+
+  const form = useForm({
+    schema: WebsiteSchema,
+    initialInput: {
+      name: website?.name ?? "",
+      url: website?.url ?? "",
+    },
+    validate: "submit",
+    revalidate: "input",
+  });
 
   React.useEffect(() => {
     if (open) {
       setError(null);
-      setIsDirty(false);
       setRegenerateKey(false);
     }
   }, [open]);
 
-  function markDirty() {
-    setIsDirty(true);
-  }
-
   function handleRegenerateKey() {
     setRegenerateKey(true);
-    setIsDirty(true);
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
+  const handleSubmit: SubmitHandler<typeof WebsiteSchema> = async (output: WebsiteOutput) => {
     setError(null);
-    setPending(true);
 
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData();
+    formData.set("name", output.name);
+    formData.set("url", output.url);
     if (regenerateKey) formData.set("regenerateKey", "1");
-    const result = isEdit ? await updateWebsite(website.id, formData) : await addWebsite(formData);
 
-    setPending(false);
+    const result = isEdit ? await updateWebsite(website.id, formData) : await addWebsite(formData);
 
     if (result.error) {
       setError(result.error);
@@ -69,7 +72,7 @@ export function WebsiteFormModal({ open, onOpenChange, website, isRequired }: We
 
     onOpenChange(false);
     router.refresh();
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -82,32 +85,32 @@ export function WebsiteFormModal({ open, onOpenChange, website, isRequired }: We
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit Website" : "Add Website"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
+        <Form of={form} onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="My Website"
-                defaultValue={website?.name ?? ""}
-                required
-                autoFocus
-                onChange={markDirty}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="url">URL</Label>
-              <Input
-                id="url"
-                name="url"
-                type="url"
-                placeholder="https://example.com"
-                defaultValue={website?.url ?? ""}
-                required
-                onChange={markDirty}
-              />
-            </div>
+            <Field of={form} path={["name"]}>
+              {(field) => (
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input id="name" {...field.props} value={field.input} placeholder="My Website" autoFocus />
+                  {field.errors && <p className="text-sm text-destructive">{field.errors[0]}</p>}
+                </div>
+              )}
+            </Field>
+            <Field of={form} path={["url"]}>
+              {(field) => (
+                <div className="grid gap-2">
+                  <Label htmlFor="url">URL</Label>
+                  <Input
+                    id="url"
+                    {...field.props}
+                    value={field.input}
+                    type="url"
+                    placeholder="https://example.com"
+                  />
+                  {field.errors && <p className="text-sm text-destructive">{field.errors[0]}</p>}
+                </div>
+              )}
+            </Field>
             {isEdit && (
               <div className="grid gap-2">
                 <Label>API Key</Label>
@@ -137,12 +140,14 @@ export function WebsiteFormModal({ open, onOpenChange, website, isRequired }: We
                 Cancel
               </Button>
             )}
-            <SubmitButton pending={pending} className="relative">
-              {isDirty && <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />}
-              {pending ? "Saving..." : isEdit ? "Save Changes" : "Add Website"}
+            <SubmitButton pending={form.isSubmitting} className="relative">
+              {(form.isDirty || regenerateKey) && (
+                <span className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+              )}
+              {form.isSubmitting ? "Saving..." : isEdit ? "Save Changes" : "Add Website"}
             </SubmitButton>
           </DialogFooter>
-        </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );

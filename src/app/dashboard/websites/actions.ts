@@ -5,13 +5,6 @@ import { tenantService, websiteService } from "@/lib/domain"
 import type { WebsiteField, WebsiteFieldType } from "@/lib/domain/types"
 import { logger } from "@/lib/logger"
 
-function getBffApi(): { url: string; secret: string } | null {
-  const url = process.env.CLOUDFLARE_INTERNAL_API_URL
-  const secret = process.env.CLOUDFLARE_INTERNAL_API_SECRET
-  if (!url || !secret) return null
-  return { url, secret }
-}
-
 function parseUrl(raw: string): string {
   const trimmed = raw.trim()
   let parsed: URL
@@ -43,30 +36,13 @@ export async function addWebsite(formData: FormData): Promise<{ error?: string }
     return { error: e instanceof Error ? e.message : "Invalid URL" }
   }
 
-  const bffApi = getBffApi()
-  if (!bffApi) {
-    logger.error("addWebsite", "CLOUDFLARE_INTERNAL_API_URL or CLOUDFLARE_INTERNAL_API_SECRET is not configured")
-    return { error: "API not configured" }
-  }
-
   try {
     const tenantId = await tenantService.getTenantIdByUserId(session.user.id)
-    const res = await fetch(`${bffApi.url}/websites`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${bffApi.secret}`,
-        "x-tenant-id": tenantId,
-      },
-      body: JSON.stringify({ name: name.trim(), url: parsedUrl }),
-    })
-    if (!res.ok) {
-      const data = (await res.json()) as { error?: string }
-      return { error: data.error ?? "Failed to add website" }
-    }
+    await websiteService.createWebsite({ name: name.trim(), url: parsedUrl, tenantId })
     return {}
   } catch (e) {
     logger.error("addWebsite", e)
+    if (e instanceof Error && e.message.startsWith("Website limit reached")) return { error: e.message }
     return { error: "Failed to add website" }
   }
 }

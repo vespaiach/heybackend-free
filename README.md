@@ -1,36 +1,31 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hey Backend (HB)
 
-## Getting Started
+**Hey Backend (HB)** is a specialized middleware server designed to bridge the gap between static websites and backend services. It provides a secure, centralized way to handle client-side requests, process data, and integrate with third-party providers.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Purpose & Core Features
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+This project serves as the unified backend for multiple static frontends, handling:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* **Newsletter Subscriptions:** Securely capture and store email signups.
+* **Contact Forms:** Process user inquiries and route them to your database or email providers.
+* **User Dashboard:** A built-in management interface to:
+    * Monitor real-time data and submission logs.
+    * Track API usage and request metrics.
+    * Review comprehensive request histories.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 📖 How to Use
 
-To learn more about Next.js, take a look at the following resources:
+Follow these steps to integrate your static website with the BFF server:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 1. Create an Account
+Sign up for a new account through the dashboard. Once logged in, you will have access to your personal management console.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 2. Register Your Websites
+You can connect multiple static sites to a single BFF account:
+* Navigate to the **Websites** section.
+* Click **Add New Website**.
+* Enter your static website's URL (e.g., `https://my-portfolio.com`).

@@ -26,6 +26,9 @@
       },
       "security": {
         "noDangerouslySetInnerHtml": "warn"
+      },
+      "style": {
+        "noNonNullAssertion": "warn"
       }
     },
     "domains": {

@@ -1,7 +1,7 @@
 "use client";
 
-import type * as React from "react";
 import { CheckIcon, Columns2Icon, DownloadIcon, SlidersHorizontalIcon } from "lucide-react";
+import type * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

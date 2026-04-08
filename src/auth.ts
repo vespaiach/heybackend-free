@@ -5,7 +5,7 @@ import Nodemailer, { type NodemailerConfig } from "next-auth/providers/nodemaile
 import { createTransport } from "nodemailer";
 import { prisma } from "@/lib/prisma";
 
-async function sendVerificationRequest({
+export async function sendVerificationRequest({
   identifier: email,
   url,
 }: {

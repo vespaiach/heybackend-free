@@ -15,7 +15,7 @@ export default function Logo({
       className={className}
       width={width}
       height={height}>
-      <title>HeyBackend</title>
+      <title>Hey Backend</title>
       <path
         stroke="currentColor"
         strokeWidth="2"

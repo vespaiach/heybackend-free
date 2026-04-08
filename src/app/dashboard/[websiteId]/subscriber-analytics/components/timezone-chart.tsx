@@ -1,12 +1,12 @@
-"use client"
+"use client";
 
-import { Bar, BarChart, XAxis, YAxis } from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
 
 const chartConfig = {
   count: { label: "Subscribers", color: "var(--chart-3)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function TimezoneChart({ data }: { data: { timezone: string; count: number }[] }) {
   return (
@@ -33,5 +33,5 @@ export function TimezoneChart({ data }: { data: { timezone: string; count: numbe
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

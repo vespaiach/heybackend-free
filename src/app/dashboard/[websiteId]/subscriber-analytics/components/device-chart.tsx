@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { Pie, PieChart } from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Pie, PieChart } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
@@ -9,20 +9,20 @@ import {
   ChartLegend,
   ChartLegendContent,
   type ChartConfig,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 
 const chartConfig = {
   desktop: { label: "Desktop", color: "var(--chart-1)" },
   mobile: { label: "Mobile", color: "var(--chart-2)" },
   tablet: { label: "Tablet", color: "var(--chart-3)" },
   unknown: { label: "Unknown", color: "var(--chart-4)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 interface DeviceBreakdown {
-  mobile: number
-  tablet: number
-  desktop: number
-  unknown: number
+  mobile: number;
+  tablet: number;
+  desktop: number;
+  unknown: number;
 }
 
 export function DeviceChart({ data }: { data: DeviceBreakdown }) {
@@ -31,7 +31,7 @@ export function DeviceChart({ data }: { data: DeviceBreakdown }) {
     { device: "mobile", count: data.mobile, fill: "var(--color-mobile)" },
     { device: "tablet", count: data.tablet, fill: "var(--color-tablet)" },
     { device: "unknown", count: data.unknown, fill: "var(--color-unknown)" },
-  ].filter((d) => d.count > 0)
+  ].filter((d) => d.count > 0);
 
   return (
     <Card>
@@ -48,5 +48,5 @@ export function DeviceChart({ data }: { data: DeviceBreakdown }) {
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

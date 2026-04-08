@@ -1,38 +1,38 @@
-import { Suspense } from "react"
-import { redirect } from "next/navigation"
-import { auth } from "@/auth"
-import { tenantService, subscriberService } from "@/lib/domain"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import type { AnalyticsRange } from "@/lib/domain/types"
-import { RangeSelector } from "./components/range-selector"
-import { StatCard } from "./components/stat-card"
-import { GrowthChart } from "./components/growth-chart"
-import { StatusDonut } from "./components/status-donut"
-import { TopCountriesChart } from "./components/top-countries-chart"
-import { DeviceChart } from "./components/device-chart"
-import { TimezoneChart } from "./components/timezone-chart"
+import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { tenantService, subscriberService } from "@/lib/domain";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import type { AnalyticsRange } from "@/lib/domain/types";
+import { RangeSelector } from "./components/range-selector";
+import { StatCard } from "./components/stat-card";
+import { GrowthChart } from "./components/growth-chart";
+import { StatusDonut } from "./components/status-donut";
+import { TopCountriesChart } from "./components/top-countries-chart";
+import { DeviceChart } from "./components/device-chart";
+import { TimezoneChart } from "./components/timezone-chart";
 
-const VALID_RANGES = ["7d", "30d", "90d", "all"] as const
+const VALID_RANGES = ["7d", "30d", "90d", "all"] as const;
 
 export default async function SubscriberAnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const session = await auth()
-  if (!session?.user?.id) redirect("/login")
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
 
-  const params = await searchParams
-  const wid = typeof params["wid"] === "string" ? params["wid"] : undefined
-  const rangeRaw = typeof params["range"] === "string" ? params["range"] : "30d"
-  const range = (VALID_RANGES as readonly string[]).includes(rangeRaw) ? (rangeRaw as AnalyticsRange) : "30d"
+  const params = await searchParams;
+  const wid = typeof params["wid"] === "string" ? params["wid"] : undefined;
+  const rangeRaw = typeof params["range"] === "string" ? params["range"] : "30d";
+  const range = (VALID_RANGES as readonly string[]).includes(rangeRaw) ? (rangeRaw as AnalyticsRange) : "30d";
 
-  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id)
-  if (!tenant) redirect("/onboarding")
+  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
+  if (!tenant) redirect("/onboarding");
 
-  const resolvedId = tenant.websites.find((w) => w.id === wid)?.id
+  const resolvedId = tenant.websites.find((w) => w.id === wid)?.id;
 
   if (!resolvedId) {
     return (
@@ -52,12 +52,12 @@ export default async function SubscriberAnalyticsPage({
           <p className="text-muted-foreground">Select a website to view analytics.</p>
         </main>
       </>
-    )
+    );
   }
 
-  const analytics = await subscriberService.getAnalytics(resolvedId, range)
+  const analytics = await subscriberService.getAnalytics(resolvedId, range);
 
-  const rangeLabel = range === "all" ? "all time" : `last ${range}`
+  const rangeLabel = range === "all" ? "all time" : `last ${range}`;
 
   return (
     <>
@@ -132,7 +132,7 @@ export default async function SubscriberAnalyticsPage({
         </div>
       </main>
     </>
-  )
+  );
 }
 
 function EmptyCard({ title, message }: { title: string; message: string }) {
@@ -141,5 +141,5 @@ function EmptyCard({ title, message }: { title: string; message: string }) {
       <p className="mb-2 text-sm font-medium">{title}</p>
       <p className="text-sm text-muted-foreground">{message}</p>
     </div>
-  )
+  );
 }

@@ -1,12 +1,12 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { TrendingDown, TrendingUp, Minus } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface StatCardProps {
-  title: string
-  value: string | number
-  description?: string
-  trend?: number | null // percentage, positive = up, negative = down, null = no data
+  title: string;
+  value: string | number;
+  description?: string;
+  trend?: number | null; // percentage, positive = up, negative = down, null = no data
 }
 
 export function StatCard({ title, value, description, trend }: StatCardProps) {
@@ -21,7 +21,7 @@ export function StatCard({ title, value, description, trend }: StatCardProps) {
           <div
             className={cn(
               "mt-1 flex items-center gap-1 text-sm",
-              trend === null ? "text-muted-foreground" : trend >= 0 ? "text-green-600" : "text-red-500"
+              trend === null ? "text-muted-foreground" : trend >= 0 ? "text-green-600" : "text-red-500",
             )}>
             {trend === null ? (
               <Minus className="h-4 w-4" />
@@ -38,5 +38,5 @@ export function StatCard({ title, value, description, trend }: StatCardProps) {
         {description && <p className="mt-1 text-sm text-muted-foreground">{description}</p>}
       </CardContent>
     </Card>
-  )
+  );
 }

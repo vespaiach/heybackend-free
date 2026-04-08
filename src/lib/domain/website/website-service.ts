@@ -114,7 +114,10 @@ export class PrismaWebsiteService implements WebsiteService {
   }
 
   async createWebsiteField(tenantId: string, input: CreateWebsiteFieldInput): Promise<WebsiteField | null> {
-    const site = await prisma.website.findFirst({ where: { id: input.websiteId, tenantId }, select: { id: true } });
+    const site = await prisma.website.findFirst({
+      where: { id: input.websiteId, tenantId },
+      select: { id: true },
+    });
     if (!site) return null;
 
     const field = await prisma.websiteField.create({
@@ -130,7 +133,11 @@ export class PrismaWebsiteService implements WebsiteService {
     return toWebsiteField(field);
   }
 
-  async updateWebsiteField(fieldId: string, tenantId: string, input: UpdateWebsiteFieldInput): Promise<WebsiteField | null> {
+  async updateWebsiteField(
+    fieldId: string,
+    tenantId: string,
+    input: UpdateWebsiteFieldInput,
+  ): Promise<WebsiteField | null> {
     const existing = await prisma.websiteField.findFirst({
       where: { id: fieldId, website: { tenantId } },
       select: { id: true },

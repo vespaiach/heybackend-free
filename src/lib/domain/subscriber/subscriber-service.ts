@@ -94,6 +94,7 @@ function toSubscriber(row: SubscriberWithTags): Subscriber {
     os: row.os,
     deviceType: row.deviceType,
     browser: row.browser,
+    metadata: row.metadata as SubscriberMetadata | null,
     tags: row.tags.map((st) => ({
       id: st.tag.id,
       name: st.tag.name,

@@ -7,6 +7,9 @@ export default auth((req) => {
     loginUrl.searchParams.set("callbackUrl", req.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }
+  return NextResponse.next({
+    headers: { "x-pathname": req.nextUrl.pathname },
+  });
 });
 
 export const config = {

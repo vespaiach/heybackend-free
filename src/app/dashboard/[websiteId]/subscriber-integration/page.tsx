@@ -1,26 +1,26 @@
-import { redirect } from "next/navigation"
-import { auth } from "@/auth"
-import { tenantService } from "@/lib/domain"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { IntegrationGuide } from "./components/integration-guide"
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { tenantService } from "@/lib/domain";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { IntegrationGuide } from "./components/integration-guide";
 
 export default async function IntegrationPage({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const session = await auth()
-  if (!session?.user?.id) redirect("/login")
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login");
 
-  const params = await searchParams
-  const wid = typeof params["wid"] === "string" ? params["wid"] : undefined
+  const params = await searchParams;
+  const wid = typeof params["wid"] === "string" ? params["wid"] : undefined;
 
-  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id)
-  if (!tenant) redirect("/onboarding")
+  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
+  if (!tenant) redirect("/onboarding");
 
-  const resolvedId = tenant.websites.find((w) => w.id === wid)?.id
+  const resolvedId = tenant.websites.find((w) => w.id === wid)?.id;
 
   if (!resolvedId) {
     return (
@@ -40,7 +40,7 @@ export default async function IntegrationPage({
           <p className="text-muted-foreground">Select a website to view the integration guide.</p>
         </main>
       </>
-    )
+    );
   }
 
   return (
@@ -61,12 +61,14 @@ export default async function IntegrationPage({
         <div className="mb-10 space-y-1">
           <h1 className="text-xl font-semibold">Subscriber Implementation Guide</h1>
           <p className="text-sm text-muted-foreground">
-            This guide outlines the required integration flow for the Subscriber API. To ensure security and data consistency, all subscription requests must be handled through the functions exposed in bff.js rather than via direct API calls.
+            This guide outlines the required integration flow for the Subscriber API. To ensure security and
+            data consistency, all subscription requests must be handled through the functions exposed in
+            bff.js rather than via direct API calls.
           </p>
         </div>
 
         <IntegrationGuide websiteId={resolvedId} />
       </main>
     </>
-  )
+  );
 }

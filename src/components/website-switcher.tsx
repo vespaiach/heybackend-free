@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronsUpDownIcon, GlobeIcon, PlusIcon } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,17 +14,13 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/c
 
 type Website = { id: string; name: string; url: string; key: string; isActive: boolean };
 
-export function WebsiteSwitcher({ websites }: { websites: Website[] }) {
+export function WebsiteSwitcher({ websites, websiteId }: { websites: Website[]; websiteId: string }) {
   const { isMobile } = useSidebar();
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const activeWebsite = websites.find((w) => w.id === searchParams.get("wid")) ?? null;
+  const activeWebsite = websites.find((w) => w.id === websiteId) ?? null;
 
   function handleSelect(site: Website) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("wid", site.id);
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`/dashboard/${site.id}/home`);
   }
 
   if (!activeWebsite) {
@@ -77,6 +73,7 @@ export function WebsiteSwitcher({ websites }: { websites: Website[] }) {
                     fill="none"
                     width="24"
                     height="24">
+                    <title>Website</title>
                     <path
                       fill="currentColor"
                       d="M4 8C4.55228 8 5 7.55228 5 7C5 6.44772 4.55228 6 4 6C3.44772 6 3 6.44772 3 7C3 7.55228 3.44772 8 4 8Z"

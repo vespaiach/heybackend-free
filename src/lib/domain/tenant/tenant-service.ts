@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { Tenant, TenantWithWebsites, UpsertTenantInput } from "@/lib/domain/types";
 import { prisma } from "@/lib/prisma";
 import type { TenantService } from "./tenant-service.interface";
@@ -39,25 +40,25 @@ function toTenant(t: {
 }
 
 export class PrismaTenantService implements TenantService {
-  async getTenantWithWebsitesByUserId(userId: string): Promise<TenantWithWebsites | null> {
+  getTenantWithWebsitesByUserId = cache(async (userId: string): Promise<TenantWithWebsites | null> => {
     const tenant = await prisma.tenant.findUnique({
       where: { userId },
       include: { websites: { orderBy: { createdAt: "desc" } } },
     });
     if (!tenant) return null;
     return { ...toTenant(tenant), websites: tenant.websites.map(toWebsite) };
-  }
+  });
 
-  async getTenantByUserId(userId: string): Promise<Tenant | null> {
+  getTenantByUserId = cache(async (userId: string): Promise<Tenant | null> => {
     const tenant = await prisma.tenant.findUnique({ where: { userId } });
     return tenant ? toTenant(tenant) : null;
-  }
+  });
 
-  async getTenantIdByUserId(userId: string): Promise<string> {
+  getTenantIdByUserId = cache(async (userId: string): Promise<string> => {
     const tenant = await prisma.tenant.findUnique({ where: { userId }, select: { id: true } });
     if (!tenant) throw new Error("Tenant not found");
     return tenant.id;
-  }
+  });
 
   async upsertTenant(input: UpsertTenantInput): Promise<Tenant> {
     const tenant = await prisma.tenant.upsert({

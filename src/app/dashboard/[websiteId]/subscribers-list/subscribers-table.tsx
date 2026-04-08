@@ -1,49 +1,49 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useRouter } from "next/navigation"
 import {
+  ArrowDownIcon,
   ArrowUpDownIcon,
   ArrowUpIcon,
-  ArrowDownIcon,
   ChevronDownIcon,
   SearchIcon,
   SearchXIcon,
-  XIcon,
   TagIcon,
-} from "lucide-react"
-import { Label } from "@/components/ui/label"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { PaginationBar, type PageSizeOption } from "@/components/pagination-bar"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { SubmitButton } from "@/components/ui/submit-button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { RelativeDate } from "@/components/relative-date"
-import { ManageTagsDialog } from "@/components/manage-tags-dialog"
-import { BulkTagPopover } from "@/components/bulk-tag-popover"
-import { TablePageHeader } from "@/components/table-page-header"
+  XIcon,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { BulkTagPopover } from "@/components/bulk-tag-popover";
+import { ManageTagsDialog } from "@/components/manage-tags-dialog";
+import { type PageSizeOption, PaginationBar } from "@/components/pagination-bar";
+import { RelativeDate } from "@/components/relative-date";
+import { TablePageHeader } from "@/components/table-page-header";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
+import { SubmitButton } from "@/components/ui/submit-button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import type { SubscriberMetadata, WebsiteField } from "@/lib/domain/types";
+import { downloadCsv } from "@/lib/export-csv";
+import { formatDate } from "@/lib/utils";
+import { type Subscriber, SubscriberDetailPanel, type Tag } from "./_components/subscriber-detail-dialog";
 import {
   addTagToSubscriber,
-  removeTagFromSubscriber,
-  bulkUnsubscribeSubscribers,
-  bulkResubscribeSubscribers,
   bulkAddTag,
-  updateSubscriberMetadata,
+  bulkResubscribeSubscribers,
+  bulkUnsubscribeSubscribers,
   exportSubscribers,
-} from "./actions"
-import { downloadCsv } from "@/lib/export-csv"
-import type { SubscriberMetadata, WebsiteField } from "@/lib/domain/types"
-import { SubscriberDetailPanel, type Subscriber, type Tag } from "./_components/subscriber-detail-dialog"
-import { formatDate } from "@/lib/utils"
+  removeTagFromSubscriber,
+  updateSubscriberMetadata,
+} from "./actions";
 
-type StatusFilter = "all" | "active" | "unsubscribed"
+type StatusFilter = "all" | "active" | "unsubscribed";
 
-type ColumnKey = "firstName" | "lastName" | "email" | "createdAt" | "unsubscribedAt" | "tags"
+type ColumnKey = "firstName" | "lastName" | "email" | "createdAt" | "unsubscribedAt" | "tags";
 
 const COLUMNS: readonly { key: ColumnKey; label: string; defaultVisible: boolean }[] = [
   { key: "firstName", label: "First Name", defaultVisible: true },
@@ -52,40 +52,40 @@ const COLUMNS: readonly { key: ColumnKey; label: string; defaultVisible: boolean
   { key: "createdAt", label: "Subscribed At", defaultVisible: true },
   { key: "unsubscribedAt", label: "Unsubscribed At", defaultVisible: false },
   { key: "tags", label: "Tags", defaultVisible: true },
-] as const
+] as const;
 
 interface SubscribersTableProps {
-  selectedWebsiteId: string
-  subscribers: Subscriber[]
-  total: number
-  page: number
-  pageSize: number
-  search: { q: string; status: StatusFilter }
-  sortField: SortField
-  sortDir: SortDir
-  availableTags: Tag[]
-  selectedTagIds: string[]
-  websiteFields: WebsiteField[]
+  selectedWebsiteId: string;
+  subscribers: Subscriber[];
+  total: number;
+  page: number;
+  pageSize: number;
+  search: { q: string; status: StatusFilter };
+  sortField: SortField;
+  sortDir: SortDir;
+  availableTags: Tag[];
+  selectedTagIds: string[];
+  websiteFields: WebsiteField[];
 }
 
-type SortField = "firstName" | "lastName" | "createdAt"
-type SortDir = "asc" | "desc"
+type SortField = "firstName" | "lastName" | "createdAt";
+type SortDir = "asc" | "desc";
 
 function SortIcon({
   field,
   sortField,
   sortDir,
 }: {
-  field: SortField
-  sortField: SortField
-  sortDir: SortDir
+  field: SortField;
+  sortField: SortField;
+  sortDir: SortDir;
 }) {
-  if (field !== sortField) return <ArrowUpDownIcon className="ml-1 inline-block h-3 w-3 opacity-50" />
+  if (field !== sortField) return <ArrowUpDownIcon className="ml-1 inline-block h-3 w-3 opacity-50" />;
   return sortDir === "asc" ? (
     <ArrowUpIcon className="ml-1 inline-block h-3 w-3" />
   ) : (
     <ArrowDownIcon className="ml-1 inline-block h-3 w-3" />
-  )
+  );
 }
 
 function SubscriberMetadataDialog({
@@ -94,26 +94,26 @@ function SubscriberMetadataDialog({
   open,
   onOpenChange,
 }: {
-  subscriber: Subscriber
-  websiteFields: WebsiteField[]
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  subscriber: Subscriber;
+  websiteFields: WebsiteField[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const router = useRouter()
-  const [values, setValues] = React.useState<SubscriberMetadata>(() => subscriber.metadata ?? {})
-  const [isPending, startTransition] = React.useTransition()
+  const router = useRouter();
+  const [values, setValues] = React.useState<SubscriberMetadata>(() => subscriber.metadata ?? {});
+  const [isPending, startTransition] = React.useTransition();
 
   React.useEffect(() => {
-    if (open) setValues(subscriber.metadata ?? {})
-  }, [open, subscriber.metadata])
+    if (open) setValues(subscriber.metadata ?? {});
+  }, [open, subscriber.metadata]);
 
   function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+    e.preventDefault();
     startTransition(async () => {
-      await updateSubscriberMetadata(subscriber.id, values)
-      onOpenChange(false)
-      router.refresh()
-    })
+      await updateSubscriberMetadata(subscriber.id, values);
+      onOpenChange(false);
+      router.refresh();
+    });
   }
 
   return (
@@ -125,7 +125,7 @@ function SubscriberMetadataDialog({
         <p className="text-sm text-muted-foreground">{subscriber.email}</p>
         <form onSubmit={handleSubmit} className="space-y-3">
           {websiteFields.map((field) => {
-            const val = values[field.slug]
+            const val = values[field.slug];
             return (
               <div key={field.id} className="space-y-1">
                 <Label htmlFor={`meta-${field.slug}`} className="text-sm">
@@ -145,19 +145,19 @@ function SubscriberMetadataDialog({
                     type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
                     value={val !== null && val !== undefined ? String(val) : ""}
                     onChange={(e) => {
-                      const raw = e.target.value
+                      const raw = e.target.value;
                       setValues((prev) => ({
                         ...prev,
                         [field.slug]:
                           field.type === "number" ? (raw === "" ? null : Number(raw)) : raw || null,
-                      }))
+                      }));
                     }}
                     disabled={isPending}
                     required={field.required}
                   />
                 )}
               </div>
-            )
+            );
           })}
           <div className="flex justify-end gap-2 pt-1">
             <Button
@@ -175,7 +175,7 @@ function SubscriberMetadataDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 export function SubscribersTable({
@@ -191,139 +191,143 @@ export function SubscribersTable({
   selectedTagIds,
   websiteFields,
 }: SubscribersTableProps) {
-  const router = useRouter()
-  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set())
-  const [detailSubscriberId, setDetailSubscriberId] = React.useState<string | null>(null)
-  const [manageTagsForId, setManageTagsForId] = React.useState<string | null>(null)
-  const [editMetadataForId, setEditMetadataForId] = React.useState<string | null>(null)
-  const [isBulkPending, startBulkTransition] = React.useTransition()
-  const [isPagePending, startPageTransition] = React.useTransition()
-  const [isManageTagsPending, startManageTagsTransition] = React.useTransition()
-  const [isExportPending, startExportTransition] = React.useTransition()
+  const router = useRouter();
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [detailSubscriberId, setDetailSubscriberId] = React.useState<string | null>(null);
+  const [manageTagsForId, setManageTagsForId] = React.useState<string | null>(null);
+  const [editMetadataForId, setEditMetadataForId] = React.useState<string | null>(null);
+  const [isBulkPending, startBulkTransition] = React.useTransition();
+  const [isPagePending, startPageTransition] = React.useTransition();
+  const [isManageTagsPending, startManageTagsTransition] = React.useTransition();
+  const [isExportPending, startExportTransition] = React.useTransition();
   const [visibleColumns, setVisibleColumns] = React.useState<Set<ColumnKey>>(
-    () => new Set(COLUMNS.filter((c) => c.defaultVisible).map((c) => c.key))
-  )
-  const [isFilterOpen, setIsFilterOpen] = React.useState(false)
+    () => new Set(COLUMNS.filter((c) => c.defaultVisible).map((c) => c.key)),
+  );
+  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
   const [draftFilters, setDraftFilters] = React.useState<{
-    query: string
-    status: StatusFilter
-    tagIds: string[]
-  }>({ query: search.q, status: search.status, tagIds: selectedTagIds })
+    query: string;
+    status: StatusFilter;
+    tagIds: string[];
+  }>({ query: search.q, status: search.status, tagIds: selectedTagIds });
 
-  const hasActiveFilters = search.q !== "" || search.status !== "all" || selectedTagIds.length > 0
+  const hasActiveFilters = search.q !== "" || search.status !== "all" || selectedTagIds.length > 0;
 
   function handleFilterOpenChange(open: boolean) {
     if (open) {
-      setDraftFilters({ query: search.q, status: search.status, tagIds: selectedTagIds })
+      setDraftFilters({ query: search.q, status: search.status, tagIds: selectedTagIds });
     }
-    setIsFilterOpen(open)
+    setIsFilterOpen(open);
   }
 
   function buildParams(overrides: Record<string, string>) {
-    const params = new URLSearchParams()
-    if (selectedWebsiteId) params.set("wid", selectedWebsiteId)
-    params.set("page", String(page))
-    params.set("pageSize", String(pageSize))
-    if (search.q) params.set("q", search.q)
-    if (search.status !== "all") params.set("status", search.status)
-    if (selectedTagIds.length > 0) params.set("tags", selectedTagIds.join(","))
-    params.set("sortField", sortField)
-    params.set("sortDir", sortDir)
+    const params = new URLSearchParams();
+    if (selectedWebsiteId) params.set("wid", selectedWebsiteId);
+    params.set("page", String(page));
+    params.set("pageSize", String(pageSize));
+    if (search.q) params.set("q", search.q);
+    if (search.status !== "all") params.set("status", search.status);
+    if (selectedTagIds.length > 0) params.set("tags", selectedTagIds.join(","));
+    params.set("sortField", sortField);
+    params.set("sortDir", sortDir);
     for (const [k, v] of Object.entries(overrides)) {
-      if (v) params.set(k, v)
-      else params.delete(k)
+      if (v) params.set(k, v);
+      else params.delete(k);
     }
-    return params.toString()
+    return params.toString();
   }
 
   function toggleSort(field: SortField) {
-    const newDir = field === sortField && sortDir === "asc" ? "desc" : field === sortField ? "asc" : "asc"
-    router.push(`/dashboard/subscribers?${buildParams({ sortField: field, sortDir: newDir, page: "1" })}`)
+    const newDir = field === sortField && sortDir === "asc" ? "desc" : field === sortField ? "asc" : "asc";
+    router.push(`/dashboard/subscribers?${buildParams({ sortField: field, sortDir: newDir, page: "1" })}`);
   }
 
   function applyFilters() {
-    const params = new URLSearchParams()
-    if (selectedWebsiteId) params.set("wid", selectedWebsiteId)
-    params.set("page", "1")
-    params.set("pageSize", String(pageSize))
-    if (draftFilters.query) params.set("q", draftFilters.query)
-    if (draftFilters.status !== "all") params.set("status", draftFilters.status)
-    if (draftFilters.tagIds.length > 0) params.set("tags", draftFilters.tagIds.join(","))
-    params.set("sortField", sortField)
-    params.set("sortDir", sortDir)
-    setIsFilterOpen(false)
-    router.push(`/dashboard/subscribers?${params.toString()}`)
+    const params = new URLSearchParams();
+    if (selectedWebsiteId) params.set("wid", selectedWebsiteId);
+    params.set("page", "1");
+    params.set("pageSize", String(pageSize));
+    if (draftFilters.query) params.set("q", draftFilters.query);
+    if (draftFilters.status !== "all") params.set("status", draftFilters.status);
+    if (draftFilters.tagIds.length > 0) params.set("tags", draftFilters.tagIds.join(","));
+    params.set("sortField", sortField);
+    params.set("sortDir", sortDir);
+    setIsFilterOpen(false);
+    router.push(`/dashboard/subscribers?${params.toString()}`);
   }
 
   function removeFilter(type: "query" | "status" | "tag", tagId?: string) {
-    const params = new URLSearchParams()
-    if (selectedWebsiteId) params.set("wid", selectedWebsiteId)
-    params.set("page", "1")
-    params.set("pageSize", String(pageSize))
-    const newQuery = type === "query" ? "" : search.q
-    const newStatus: StatusFilter = type === "status" ? "all" : search.status
-    const newTagIds = type === "tag" ? selectedTagIds.filter((id) => id !== tagId) : selectedTagIds
-    if (newQuery) params.set("q", newQuery)
-    if (newStatus !== "all") params.set("status", newStatus)
-    if (newTagIds.length > 0) params.set("tags", newTagIds.join(","))
-    params.set("sortField", sortField)
-    params.set("sortDir", sortDir)
-    router.push(`/dashboard/subscribers?${params.toString()}`)
+    const params = new URLSearchParams();
+    if (selectedWebsiteId) params.set("wid", selectedWebsiteId);
+    params.set("page", "1");
+    params.set("pageSize", String(pageSize));
+    const newQuery = type === "query" ? "" : search.q;
+    const newStatus: StatusFilter = type === "status" ? "all" : search.status;
+    const newTagIds = type === "tag" ? selectedTagIds.filter((id) => id !== tagId) : selectedTagIds;
+    if (newQuery) params.set("q", newQuery);
+    if (newStatus !== "all") params.set("status", newStatus);
+    if (newTagIds.length > 0) params.set("tags", newTagIds.join(","));
+    params.set("sortField", sortField);
+    params.set("sortDir", sortDir);
+    router.push(`/dashboard/subscribers?${params.toString()}`);
   }
 
   function resetAllFilters() {
-    const params = new URLSearchParams()
-    if (selectedWebsiteId) params.set("wid", selectedWebsiteId)
-    params.set("page", "1")
-    params.set("pageSize", String(pageSize))
-    params.set("sortField", sortField)
-    params.set("sortDir", sortDir)
-    setIsFilterOpen(false)
-    router.push(`/dashboard/subscribers?${params.toString()}`)
+    const params = new URLSearchParams();
+    if (selectedWebsiteId) params.set("wid", selectedWebsiteId);
+    params.set("page", "1");
+    params.set("pageSize", String(pageSize));
+    params.set("sortField", sortField);
+    params.set("sortDir", sortDir);
+    setIsFilterOpen(false);
+    router.push(`/dashboard/subscribers?${params.toString()}`);
   }
 
   function handlePageChange(newPage: number) {
     startPageTransition(() => {
-      router.push(`/dashboard/subscribers?${buildParams({ page: String(newPage) })}`)
-    })
+      router.push(`/dashboard/subscribers?${buildParams({ page: String(newPage) })}`);
+    });
   }
 
   function handlePageSizeChange(newPageSize: PageSizeOption) {
     startPageTransition(() => {
-      router.push(`/dashboard/subscribers?${buildParams({ page: "1", pageSize: String(newPageSize) })}`)
-    })
+      router.push(`/dashboard/subscribers?${buildParams({ page: "1", pageSize: String(newPageSize) })}`);
+    });
   }
 
-  const allOnPageSelected = subscribers.length > 0 && subscribers.every((s) => selectedIds.has(s.id))
-  const someOnPageSelected = subscribers.some((s) => selectedIds.has(s.id))
+  const allOnPageSelected = subscribers.length > 0 && subscribers.every((s) => selectedIds.has(s.id));
+  const someOnPageSelected = subscribers.some((s) => selectedIds.has(s.id));
 
   function toggleSelectAll() {
     if (allOnPageSelected) {
       setSelectedIds((prev) => {
-        const next = new Set(prev)
-        subscribers.forEach((s) => next.delete(s.id))
-        return next
-      })
+        const next = new Set(prev);
+        subscribers.forEach((s) => {
+          next.delete(s.id);
+        });
+        return next;
+      });
     } else {
       setSelectedIds((prev) => {
-        const next = new Set(prev)
-        subscribers.forEach((s) => next.add(s.id))
-        return next
-      })
+        const next = new Set(prev);
+        subscribers.forEach((s) => {
+          next.add(s.id);
+        });
+        return next;
+      });
     }
   }
 
   function toggleRow(id: string) {
     setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   function clearSelection() {
-    setSelectedIds(new Set())
+    setSelectedIds(new Set());
   }
 
   function handleExport() {
@@ -335,8 +339,8 @@ export function SubscribersTable({
         sortField,
         sortDir,
         tags: selectedTagIds.length > 0 ? selectedTagIds : undefined,
-      })
-      if ("error" in result) return
+      });
+      if ("error" in result) return;
       const rows = result.subscribers.map((s) => ({
         id: s.id,
         email: s.email,
@@ -352,37 +356,37 @@ export function SubscribersTable({
         browser: s.browser,
         tags: s.tags.map((t) => t.name).join(";"),
         createdAt: s.createdAt,
-      }))
-      const date = new Date().toISOString().slice(0, 10)
-      downloadCsv(rows, `subscribers-${selectedWebsiteId}-${date}.csv`)
-    })
+      }));
+      const date = new Date().toISOString().slice(0, 10);
+      downloadCsv(rows, `subscribers-${selectedWebsiteId}-${date}.csv`);
+    });
   }
 
   function handleBulkUnsubscribe() {
     startBulkTransition(async () => {
-      await bulkUnsubscribeSubscribers([...selectedIds])
-      clearSelection()
-      router.refresh()
-    })
+      await bulkUnsubscribeSubscribers([...selectedIds]);
+      clearSelection();
+      router.refresh();
+    });
   }
 
   function handleBulkResubscribe() {
     startBulkTransition(async () => {
-      await bulkResubscribeSubscribers([...selectedIds])
-      clearSelection()
-      router.refresh()
-    })
+      await bulkResubscribeSubscribers([...selectedIds]);
+      clearSelection();
+      router.refresh();
+    });
   }
 
-  const selectedCount = selectedIds.size
+  const selectedCount = selectedIds.size;
   const manageTagsSubscriber = manageTagsForId
     ? (subscribers.find((s) => s.id === manageTagsForId) ?? null)
-    : null
+    : null;
   const editMetadataSubscriber = editMetadataForId
     ? (subscribers.find((s) => s.id === editMetadataForId) ?? null)
-    : null
+    : null;
 
-  const COL_COUNT = 2 + visibleColumns.size // checkbox + expand + visible cols
+  const COL_COUNT = 2 + visibleColumns.size; // checkbox + expand + visible cols
 
   return (
     <>
@@ -393,10 +397,10 @@ export function SubscribersTable({
         visibleColumns={visibleColumns}
         onToggleColumn={(key) =>
           setVisibleColumns((prev) => {
-            const next = new Set(prev)
-            if (next.has(key as ColumnKey)) next.delete(key as ColumnKey)
-            else next.add(key as ColumnKey)
-            return next
+            const next = new Set(prev);
+            if (next.has(key as ColumnKey)) next.delete(key as ColumnKey);
+            else next.add(key as ColumnKey);
+            return next;
           })
         }
         hasActiveFilters={hasActiveFilters}
@@ -508,8 +512,8 @@ export function SubscribersTable({
                 </Badge>
               )}
               {selectedTagIds.map((tagId) => {
-                const tag = availableTags.find((t) => t.id === tagId)
-                if (!tag) return null
+                const tag = availableTags.find((t) => t.id === tagId);
+                if (!tag) return null;
                 return (
                   <Badge key={tagId} variant="secondary" className="gap-1 pr-1">
                     <TagIcon className="h-3 w-3" />
@@ -522,7 +526,7 @@ export function SubscribersTable({
                       <XIcon className="h-3 w-3" />
                     </button>
                   </Badge>
-                )
+                );
               })}
               <button
                 type="button"
@@ -561,10 +565,10 @@ export function SubscribersTable({
               isPending={isBulkPending}
               onAdd={(tagName) => {
                 startBulkTransition(async () => {
-                  await bulkAddTag([...selectedIds], tagName)
-                  clearSelection()
-                  router.refresh()
-                })
+                  await bulkAddTag([...selectedIds], tagName);
+                  clearSelection();
+                  router.refresh();
+                });
               }}
               onDone={clearSelection}
             />
@@ -596,6 +600,7 @@ export function SubscribersTable({
                 {visibleColumns.has("firstName") && (
                   <TableHead>
                     <button
+                      type="button"
                       onClick={() => toggleSort("firstName")}
                       className="flex items-center font-medium hover:text-foreground">
                       First Name
@@ -606,6 +611,7 @@ export function SubscribersTable({
                 {visibleColumns.has("lastName") && (
                   <TableHead>
                     <button
+                      type="button"
                       onClick={() => toggleSort("lastName")}
                       className="flex items-center font-medium hover:text-foreground">
                       Last Name
@@ -617,6 +623,7 @@ export function SubscribersTable({
                 {visibleColumns.has("createdAt") && (
                   <TableHead>
                     <button
+                      type="button"
                       onClick={() => toggleSort("createdAt")}
                       className="flex items-center font-medium hover:text-foreground">
                       Subscribed At
@@ -679,7 +686,7 @@ export function SubscribersTable({
                               <Badge key={tag.id} variant="outline" className="gap-1 text-xs">
                                 {tag.color && (
                                   <span
-                                    className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
+                                    className="inline-block h-2 w-2 shrink-0 rounded-full"
                                     style={{ backgroundColor: tag.color }}
                                   />
                                 )}
@@ -719,8 +726,8 @@ export function SubscribersTable({
                             subscriber={subscriber}
                             websiteFields={websiteFields}
                             onEditMetadata={() => {
-                              setDetailSubscriberId(null)
-                              setEditMetadataForId(subscriber.id)
+                              setDetailSubscriberId(null);
+                              setEditMetadataForId(subscriber.id);
                             }}
                           />
                         </TableCell>
@@ -751,19 +758,19 @@ export function SubscribersTable({
           isPending={isManageTagsPending}
           onAdd={(tagName) => {
             startManageTagsTransition(async () => {
-              await addTagToSubscriber(manageTagsSubscriber.id, tagName)
-              router.refresh()
-            })
+              await addTagToSubscriber(manageTagsSubscriber.id, tagName);
+              router.refresh();
+            });
           }}
           onRemove={(tagId) => {
             startManageTagsTransition(async () => {
-              await removeTagFromSubscriber(manageTagsSubscriber.id, tagId)
-              router.refresh()
-            })
+              await removeTagFromSubscriber(manageTagsSubscriber.id, tagId);
+              router.refresh();
+            });
           }}
           open={true}
           onOpenChange={(open) => {
-            if (!open) setManageTagsForId(null)
+            if (!open) setManageTagsForId(null);
           }}
         />
       )}
@@ -774,10 +781,10 @@ export function SubscribersTable({
           websiteFields={websiteFields}
           open={true}
           onOpenChange={(open) => {
-            if (!open) setEditMetadataForId(null)
+            if (!open) setEditMetadataForId(null);
           }}
         />
       )}
     </>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import {
   Stepper,
@@ -9,10 +9,10 @@ import {
   StepperSeparator,
   StepperTitle,
   StepperTrigger,
-} from "@/components/reui/stepper"
-import { Separator } from "@/components/ui/separator"
-import { CheckIcon } from "lucide-react"
-import { CopyButton } from "./copy-button"
+} from "@/components/reui/stepper";
+import { Separator } from "@/components/ui/separator";
+import { CheckIcon } from "lucide-react";
+import { CopyButton } from "./copy-button";
 
 const PROGRAMMATIC_SNIPPET = `try {
   await BFF.subscribe({
@@ -22,7 +22,7 @@ const PROGRAMMATIC_SNIPPET = `try {
   });
 } catch (error) {
   // Handle errors — for example, show a message to the user
-}`
+}`;
 const ATTACH_FORM_SNIPPET = `
 <!-- Your form with form id goes here -->
 <form id="subscribe-form">
@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", function () {
     console.error("Error:", e.detail.message);
   });
 });
-</script>`
+</script>`;
 
 const EVENTS_SNIPPET = `document.getElementById("subscribe-form").addEventListener("bff:success", function () {
   // Subscriber added — show a thank-you message, confetti, etc.
@@ -57,15 +57,15 @@ const EVENTS_SNIPPET = `document.getElementById("subscribe-form").addEventListen
 document.getElementById("subscribe-form").addEventListener("bff:error", function (e) {
   // Something went wrong — show the error to the user
   console.error("Error:", e.detail.message);
-});`
+});`;
 
 const SEPARATOR_CLASS =
-  "absolute top-7 left-3 -order-1 m-0 -translate-x-1/2 group-data-[orientation=vertical]/stepper-nav:h-[calc(100%-2rem)]"
+  "absolute top-7 left-3 -order-1 m-0 -translate-x-1/2 group-data-[orientation=vertical]/stepper-nav:h-[calc(100%-2rem)]";
 
-const TRIGGER_CLASS = "items-start gap-3 pb-0 w-full cursor-default pointer-events-none rounded-none"
+const TRIGGER_CLASS = "items-start gap-3 pb-0 w-full cursor-default pointer-events-none rounded-none";
 
 export function IntegrationGuide({ websiteId }: { websiteId: string }) {
-  const scriptSnippet = `<script src="https://heybackend.com/bff.js?websiteId=${websiteId}"></script>`
+  const scriptSnippet = `<script src="https://heybackend.com/bff.js?websiteId=${websiteId}"></script>`;
 
   return (
     <Stepper
@@ -109,7 +109,8 @@ export function IntegrationGuide({ websiteId }: { websiteId: string }) {
             <div className="mt-0.5 text-left">
               <StepperTitle className="text-base font-semibold">Execute Subscriptions</StepperTitle>
               <StepperDescription>
-                Use the methods provided by the BFF library to send data to the Subscriber API. You can trigger a subscription programmatically or bind the logic to an existing HTML form.
+                Use the methods provided by the BFF library to send data to the Subscriber API. You can
+                trigger a subscription programmatically or bind the logic to an existing HTML form.
               </StepperDescription>
             </div>
           </StepperTrigger>
@@ -121,7 +122,8 @@ export function IntegrationGuide({ websiteId }: { websiteId: string }) {
                 Option A &mdash; <code className="text-xs">BFF.subscribe()</code> — Programmatic Trigger
               </p>
               <p className="mb-3 text-xs text-muted-foreground">
-                Use this method for full control over the subscription flow. It allows you to manually send subscriber data from custom event listeners, AJAX callbacks, or non-standard UI components.
+                Use this method for full control over the subscription flow. It allows you to manually send
+                subscriber data from custom event listeners, AJAX callbacks, or non-standard UI components.
               </p>
               <div className="relative">
                 <pre className="overflow-x-auto rounded-md bg-muted p-4 text-sm leading-relaxed">
@@ -131,7 +133,6 @@ export function IntegrationGuide({ websiteId }: { websiteId: string }) {
               </div>
             </div>
 
-
             <Separator />
 
             {/* Option B */}
@@ -140,7 +141,9 @@ export function IntegrationGuide({ websiteId }: { websiteId: string }) {
                 Option B &mdash; <code className="text-xs">BFF.attachForms()</code> — Form Binding
               </p>
               <p className="mb-3 text-xs text-muted-foreground">
-                The fastest way to integrate. Use this to bind the SDK logic to a standard HTML form; it automatically intercepts the submit event, handles the API request, and manages the loading state for you.
+                The fastest way to integrate. Use this to bind the SDK logic to a standard HTML form; it
+                automatically intercepts the submit event, handles the API request, and manages the loading
+                state for you.
               </p>
               <div className="relative">
                 <pre className="overflow-x-auto rounded-md bg-muted p-4 text-sm leading-relaxed">
@@ -150,11 +153,13 @@ export function IntegrationGuide({ websiteId }: { websiteId: string }) {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              <strong>Important:</strong> For the auto-binding to work, your &lt;input&gt; tags must use the exact name attributes: email (required), first_name, and last_name. The SDK uses these keys to map your form data to the Subscriber API.
+              <strong>Important:</strong> For the auto-binding to work, your &lt;input&gt; tags must use the
+              exact name attributes: email (required), first_name, and last_name. The SDK uses these keys to
+              map your form data to the Subscriber API.
             </p>
           </div>
         </StepperItem>
       </StepperNav>
     </Stepper>
-  )
+  );
 }

@@ -109,6 +109,7 @@ export interface Subscriber {
   os: string | null;
   deviceType: string | null;
   browser: string | null;
+  metadata: SubscriberMetadata | null;
   tags: Pick<Tag, "id" | "name" | "color" | "description">[];
 }
 

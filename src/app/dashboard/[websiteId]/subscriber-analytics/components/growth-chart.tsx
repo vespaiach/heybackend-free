@@ -1,41 +1,41 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
-import type { GrowthDataPoint } from "@/lib/domain/types"
+import * as React from "react";
+import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import type { GrowthDataPoint } from "@/lib/domain/types";
 
-const SERIES = ["newSubscribers", "unsubscribes"] as const
-type SeriesKey = (typeof SERIES)[number]
+const SERIES = ["newSubscribers", "unsubscribes"] as const;
+type SeriesKey = (typeof SERIES)[number];
 
 const chartConfig = {
   newSubscribers: { label: "New Subscribers", color: "var(--chart-1)" },
   unsubscribes: { label: "Unsubscribes", color: "var(--chart-4)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function GrowthChart({ data }: { data: GrowthDataPoint[] }) {
-  const [active, setActive] = React.useState<Set<SeriesKey>>(new Set(["newSubscribers"]))
+  const [active, setActive] = React.useState<Set<SeriesKey>>(new Set(["newSubscribers"]));
 
   const totals = React.useMemo(
     () => ({
       newSubscribers: data.reduce((sum, d) => sum + d.newSubscribers, 0),
       unsubscribes: data.reduce((sum, d) => sum + d.unsubscribes, 0),
     }),
-    [data]
-  )
+    [data],
+  );
 
   function toggle(key: SeriesKey) {
     setActive((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(key)) {
         // keep at least one active
-        if (next.size > 1) next.delete(key)
+        if (next.size > 1) next.delete(key);
       } else {
-        next.add(key)
+        next.add(key);
       }
-      return next
-    })
+      return next;
+    });
   }
 
   return (
@@ -109,11 +109,11 @@ export function GrowthChart({ data }: { data: GrowthDataPoint[] }) {
                   dot={false}
                   isAnimationActive={false}
                 />
-              ) : null
+              ) : null,
             )}
           </LineChart>
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

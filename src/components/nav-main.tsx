@@ -1,6 +1,8 @@
 "use client";
 
+import { ChevronRightIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
@@ -12,16 +14,12 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import { ChevronRightIcon } from "lucide-react";
-import { usePathname } from "next/navigation";
 
 export function NavMain({
   items,
-  selectedWebsiteId,
   category,
 }: {
   category: string;
-  selectedWebsiteId?: string;
   items: {
     title: string;
     url: string;
@@ -54,7 +52,7 @@ export function NavMain({
                     {item.items.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
                         <SidebarMenuSubButton asChild>
-                          <a href={`${subItem.url}?wid=${selectedWebsiteId ?? "auto"}`}>
+                          <a href={subItem.url}>
                             <span>{subItem.title}</span>
                           </a>
                         </SidebarMenuSubButton>
@@ -67,7 +65,7 @@ export function NavMain({
           ) : (
             <SidebarMenuItem key={item.title}>
               <SidebarMenuButton tooltip={item.title} asChild isActive={pathname === item.url}>
-                <Link href={`${item.url}?wid=${selectedWebsiteId ?? "auto"}`}>
+                <Link href={item.url}>
                   {item.icon}
                   <span>{item.title}</span>
                 </Link>

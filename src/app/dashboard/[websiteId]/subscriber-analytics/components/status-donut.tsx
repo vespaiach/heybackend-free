@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { Pie, PieChart } from "recharts"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Pie, PieChart } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
@@ -9,18 +9,18 @@ import {
   ChartLegend,
   ChartLegendContent,
   type ChartConfig,
-} from "@/components/ui/chart"
+} from "@/components/ui/chart";
 
 const chartConfig = {
   active: { label: "Active", color: "var(--chart-1)" },
   unsubscribed: { label: "Unsubscribed", color: "var(--chart-2)" },
-} satisfies ChartConfig
+} satisfies ChartConfig;
 
 export function StatusDonut({ active, unsubscribed }: { active: number; unsubscribed: number }) {
   const data = [
     { status: "active", count: active, fill: "var(--color-active)" },
     { status: "unsubscribed", count: unsubscribed, fill: "var(--color-unsubscribed)" },
-  ]
+  ];
 
   return (
     <Card>
@@ -37,5 +37,5 @@ export function StatusDonut({ active, unsubscribed }: { active: number; unsubscr
         </ChartContainer>
       </CardContent>
     </Card>
-  )
+  );
 }

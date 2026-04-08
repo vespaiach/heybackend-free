@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useRouter, useSearchParams } from "next/navigation"
-import { Button } from "@/components/ui/button"
+import * as React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+} from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ArrowUpDownIcon,
   ArrowUpIcon,
@@ -22,115 +22,115 @@ import {
   Copy,
   Code2,
   LayoutListIcon,
-} from "lucide-react"
-import { toast } from "sonner"
-import { deactivateWebsite } from "./actions"
-import { WebsiteFormModal } from "@/components/website-form-modal"
-import { WebsiteIntegrationModal } from "@/components/website-integration-modal"
-import { WebsiteFieldsSheet } from "@/components/website-fields-sheet"
+} from "lucide-react";
+import { toast } from "sonner";
+import { deactivateWebsite } from "./actions";
+import { WebsiteFormModal } from "@/components/website-form-modal";
+import { WebsiteIntegrationModal } from "@/components/website-integration-modal";
+import { WebsiteFieldsSheet } from "@/components/website-fields-sheet";
 
 type Website = {
-  id: string
-  name: string
-  url: string
-  key: string
-  isActive: boolean
-  createdAt: Date
-}
+  id: string;
+  name: string;
+  url: string;
+  key: string;
+  isActive: boolean;
+  createdAt: Date;
+};
 
-type SortField = "name" | "createdAt"
-type SortDir = "asc" | "desc"
+type SortField = "name" | "createdAt";
+type SortDir = "asc" | "desc";
 
 function SortIcon({
   field,
   sortField,
   sortDir,
 }: {
-  field: SortField
-  sortField: SortField
-  sortDir: SortDir
+  field: SortField;
+  sortField: SortField;
+  sortDir: SortDir;
 }) {
-  if (field !== sortField) return <ArrowUpDownIcon className="ml-1 inline-block h-3 w-3 opacity-50" />
+  if (field !== sortField) return <ArrowUpDownIcon className="ml-1 inline-block h-3 w-3 opacity-50" />;
   return sortDir === "asc" ? (
     <ArrowUpIcon className="ml-1 inline-block h-3 w-3" />
   ) : (
     <ArrowDownIcon className="ml-1 inline-block h-3 w-3" />
-  )
+  );
 }
 
 export function WebsitesTable({ websites }: { websites: Website[] }) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [sortField, setSortField] = React.useState<SortField>("createdAt")
-  const [sortDir, setSortDir] = React.useState<SortDir>("desc")
-  const [modalOpen, setModalOpen] = React.useState(false)
-  const [editingWebsite, setEditingWebsite] = React.useState<Website | null>(null)
-  const [integrationModalOpen, setIntegrationModalOpen] = React.useState(false)
-  const [integrationWebsite, setIntegrationWebsite] = React.useState<Website | null>(null)
-  const [fieldsSheetOpen, setFieldsSheetOpen] = React.useState(false)
-  const [fieldsWebsite, setFieldsWebsite] = React.useState<Website | null>(null)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [sortField, setSortField] = React.useState<SortField>("createdAt");
+  const [sortDir, setSortDir] = React.useState<SortDir>("desc");
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [editingWebsite, setEditingWebsite] = React.useState<Website | null>(null);
+  const [integrationModalOpen, setIntegrationModalOpen] = React.useState(false);
+  const [integrationWebsite, setIntegrationWebsite] = React.useState<Website | null>(null);
+  const [fieldsSheetOpen, setFieldsSheetOpen] = React.useState(false);
+  const [fieldsWebsite, setFieldsWebsite] = React.useState<Website | null>(null);
 
   React.useEffect(() => {
     if (searchParams.get("add") === "1") {
-      setEditingWebsite(null)
-      setModalOpen(true)
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete("add")
-      const newUrl = params.size > 0 ? `/dashboard/websites?${params.toString()}` : "/dashboard/websites"
-      router.replace(newUrl)
+      setEditingWebsite(null);
+      setModalOpen(true);
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("add");
+      const newUrl = params.size > 0 ? `/dashboard/websites?${params.toString()}` : "/dashboard/websites";
+      router.replace(newUrl);
     }
-  }, [searchParams, router])
+  }, [searchParams, router]);
 
   const sorted = React.useMemo(() => {
     return [...websites].sort((a, b) => {
-      let cmp: number
+      let cmp: number;
       if (sortField === "name") {
-        cmp = a.name.localeCompare(b.name)
+        cmp = a.name.localeCompare(b.name);
       } else {
-        cmp = a.createdAt.getTime() - b.createdAt.getTime()
+        cmp = a.createdAt.getTime() - b.createdAt.getTime();
       }
-      return sortDir === "asc" ? cmp : -cmp
-    })
-  }, [websites, sortField, sortDir])
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+  }, [websites, sortField, sortDir]);
 
   function toggleSort(field: SortField) {
     if (field === sortField) {
-      setSortDir((d) => (d === "asc" ? "desc" : "asc"))
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
-      setSortField(field)
-      setSortDir("asc")
+      setSortField(field);
+      setSortDir("asc");
     }
   }
 
   function openAdd() {
-    setEditingWebsite(null)
-    setModalOpen(true)
+    setEditingWebsite(null);
+    setModalOpen(true);
   }
 
   function openEdit(website: Website) {
-    setEditingWebsite(website)
-    setModalOpen(true)
+    setEditingWebsite(website);
+    setModalOpen(true);
   }
 
   function openIntegration(website: Website) {
-    setIntegrationWebsite(website)
-    setIntegrationModalOpen(true)
+    setIntegrationWebsite(website);
+    setIntegrationModalOpen(true);
   }
 
   function openFields(website: Website) {
-    setFieldsWebsite(website)
-    setFieldsSheetOpen(true)
+    setFieldsWebsite(website);
+    setFieldsSheetOpen(true);
   }
 
   async function handleDeactivate(id: string) {
-    await deactivateWebsite(id)
-    router.refresh()
+    await deactivateWebsite(id);
+    router.refresh();
   }
 
   async function handleCopyId(id: string) {
     try {
-      await navigator.clipboard.writeText(id)
-      toast("Website ID copied!")
+      await navigator.clipboard.writeText(id);
+      toast("Website ID copied!");
     } catch {
       // clipboard not available
     }
@@ -138,8 +138,8 @@ export function WebsitesTable({ websites }: { websites: Website[] }) {
 
   async function handleCopyKey(key: string) {
     try {
-      await navigator.clipboard.writeText(key)
-      toast("Copied!")
+      await navigator.clipboard.writeText(key);
+      toast("Copied!");
     } catch {
       // clipboard not available
     }
@@ -298,5 +298,5 @@ export function WebsitesTable({ websites }: { websites: Website[] }) {
         />
       )}
     </>
-  )
+  );
 }

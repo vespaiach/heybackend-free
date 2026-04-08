@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { GlobeIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -9,13 +9,9 @@ type Website = { id: string; name: string; url: string };
 
 export function WebsiteSelectDialog({ websites }: { websites: Website[] }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   function handleSelect(id: string) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("wid", id);
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`/dashboard/${id}/home`);
   }
 
   return (

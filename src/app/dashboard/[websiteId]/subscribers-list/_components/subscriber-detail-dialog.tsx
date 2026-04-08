@@ -1,30 +1,14 @@
-"use client"
+"use client";
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Separator } from "@/components/ui/separator"
-import type { WebsiteField } from "@/lib/domain/types"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import type { Subscriber, WebsiteField } from "@/lib/domain/types";
 
-export type Tag = { id: string; name: string; color: string | null; description: string | null }
+export type Tag = { id: string; name: string; color: string | null; description: string | null };
 
-export type Subscriber = {
-  id: string
-  email: string
-  firstName: string | null
-  lastName: string | null
-  createdAt: Date
-  unsubscribedAt: Date | null
-  tags: Tag[]
-  os: string | null
-  deviceType: string | null
-  browser: string | null
-  timezone: string | null
-  country: string | null
-  region: string | null
-  city: string | null
-  metadata: Record<string, string | number | boolean | null> | null
-}
+export type { Subscriber };
 
 function DetailRow({ label, value }: { label: string; value: string | number | null | undefined }) {
   return (
@@ -32,7 +16,7 @@ function DetailRow({ label, value }: { label: string; value: string | number | n
       <span className="text-muted-foreground">{label}:</span>
       <span className="font-mono">{value ?? "—"}</span>
     </div>
-  )
+  );
 }
 
 export function SubscriberDetailPanel({
@@ -40,26 +24,22 @@ export function SubscriberDetailPanel({
   websiteFields,
   onEditMetadata,
 }: {
-  subscriber: Subscriber
-  websiteFields: WebsiteField[]
-  onEditMetadata: () => void
+  subscriber: Subscriber;
+  websiteFields: WebsiteField[];
+  onEditMetadata: () => void;
 }) {
   const hasCapture =
-    subscriber.os ||
-    subscriber.deviceType ||
-    subscriber.browser ||
-    subscriber.timezone ||
-    subscriber.country
+    subscriber.os || subscriber.deviceType || subscriber.browser || subscriber.timezone || subscriber.country;
 
-  const hasCustomFields = websiteFields.length > 0
+  const hasCustomFields = websiteFields.length > 0;
 
   if (!hasCapture && !hasCustomFields) {
     return (
       <p className="px-2 text-xs text-muted-foreground">No enrichment data captured for this subscriber.</p>
-    )
+    );
   }
 
-  const location = [subscriber.city, subscriber.region, subscriber.country].filter(Boolean).join(", ")
+  const location = [subscriber.city, subscriber.region, subscriber.country].filter(Boolean).join(", ");
 
   return (
     <div className="space-y-4 px-2">
@@ -100,7 +80,7 @@ export function SubscriberDetailPanel({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export function SubscriberDetailDialog({
@@ -110,11 +90,11 @@ export function SubscriberDetailDialog({
   onOpenChange,
   onEditMetadata,
 }: {
-  subscriber: Subscriber
-  websiteFields: WebsiteField[]
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onEditMetadata: () => void
+  subscriber: Subscriber;
+  websiteFields: WebsiteField[];
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onEditMetadata: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -138,7 +118,7 @@ export function SubscriberDetailDialog({
                 <Badge key={tag.id} variant="outline" className="gap-1 text-xs">
                   {tag.color && (
                     <span
-                      className="inline-block h-2 w-2 flex-shrink-0 rounded-full"
+                      className="inline-block h-2 w-2 shrink-0 rounded-full"
                       style={{ backgroundColor: tag.color }}
                     />
                   )}
@@ -156,5 +136,5 @@ export function SubscriberDetailDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

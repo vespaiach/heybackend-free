@@ -1,23 +1,23 @@
-import { Suspense } from "react"
-import { redirect } from "next/navigation"
-import { auth } from "@/auth"
-import { tenantService } from "@/lib/domain"
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb"
-import { Separator } from "@/components/ui/separator"
-import { SidebarTrigger } from "@/components/ui/sidebar"
-import { WebsitesTable } from "./websites-table"
+import { redirect } from "next/navigation";
+import { Suspense } from "react";
+import { auth } from "@/auth";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { tenantService } from "@/lib/domain";
+import { WebsitesTable } from "./websites-table";
 
 export default async function WebsitesPage() {
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/login")
+    redirect("/login");
   }
 
-  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id)
+  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
 
   if (!tenant) {
-    redirect("/onboarding")
+    redirect("/onboarding");
   }
 
   return (
@@ -39,5 +39,5 @@ export default async function WebsitesPage() {
         </Suspense>
       </main>
     </>
-  )
+  );
 }

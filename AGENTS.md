@@ -17,6 +17,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | UI | React 19 + shadcn/ui v4 + Radix UI |
 | Styling | Tailwind CSS v4 + CSS variables (OKLCH) |
 | Icons | lucide-react |
+| Forms | Formisch + Valibot |
+| Auth | NextAuth v5 (email magic links + Google OAuth) |
+| Database | MySQL + Prisma 6 |
 | Linting/Formatting | Biome v2 |
 | Build | React Compiler enabled (`reactCompiler: true`) |
 
@@ -29,22 +32,55 @@ npm start            # start production server
 npm test             # run tests (vitest)
 npm run test:watch   # run tests in watch mode
 npm run lint         # run Biome linter
+npm run lint:fix     # run Biome linter with auto-fix
 npm run format       # run Biome formatter (write mode)
+npm run db:generate  # generate Prisma client
+npm run db:migrate   # run Prisma dev migrations
+npm run db:push      # push schema changes (no migration file)
+npm run db:studio    # open Prisma Studio UI
 ```
 
 ## Project Structure
 
 ```
+prisma/
+└── schema.prisma            # MySQL schema (User, Tenant, Website, Subscriber, Tag, WebsiteField)
 src/
 ├── app/
-│   ├── layout.tsx       # Root layout — fonts, metadata, global CSS
-│   ├── page.tsx         # Home page
-│   └── globals.css      # Tailwind v4 + CSS theme variables (light/dark)
+│   ├── layout.tsx           # Root layout — fonts, metadata, global CSS
+│   ├── page.tsx             # Landing page
+│   ├── globals.css          # Tailwind v4 + CSS theme variables (light/dark)
+│   ├── api/
+│   │   ├── [websiteId]/subscribe/route.ts  # Public subscriber POST endpoint
+│   │   └── auth/[...nextauth]/route.ts     # NextAuth handlers
+│   ├── login/               # Magic link + Google OAuth login
+│   ├── onboarding/          # New user onboarding form
+│   └── dashboard/
+│       ├── home/            # Dashboard home
+│       ├── websites/        # Website management
+│       └── [websiteId]/
+│           ├── home/        # Per-website analytics
+│           └── subscribers-list/  # Subscriber management (tags, export)
 ├── components/
-│   └── ui/              # shadcn/ui components live here
-│       └── button.tsx
-└── lib/
-    └── utils.ts         # cn() helper (clsx + tailwind-merge)
+│   ├── ui/                  # shadcn/ui components
+│   └── *.tsx                # Shared app components (sidebar, modals, etc.)
+├── lib/
+│   ├── utils.ts             # cn() helper (clsx + tailwind-merge)
+│   ├── prisma.ts            # Prisma client singleton
+│   ├── auth.ts              # (see src/auth.ts) NextAuth config
+│   ├── logger.ts            # Error logging
+│   ├── schemas/             # Valibot schemas
+│   ├── api/
+│   │   └── route-helpers.ts # API response helpers + CORS guards
+│   └── domain/              # Clean Architecture service layer
+│       ├── subscriber/      # Subscriber service (CRUD, tags, analytics, export)
+│       ├── website/         # Website service (CRUD, fields)
+│       └── tenant/          # Tenant service (multi-tenancy)
+├── hooks/
+│   └── use-mobile.ts
+├── auth.ts                  # NextAuth configuration (email + Google providers)
+└── test/
+    └── setup.ts             # Vitest global setup
 ```
 
 ## Development Rules
@@ -63,6 +99,28 @@ src/
 - shadcn/ui components go in `src/components/ui/`
 - Use `npx shadcn@latest add <component>` to add new shadcn components (see `components.json`)
 - shadcn style: `radix-vega`, RSC enabled, icon library: lucide
+
+### Forms & Validation
+- Use **Formisch** (`@formisch/react`) for form state management
+- Use **Valibot** for schema validation — define schemas in `src/lib/schemas/` or co-located `schema.ts`
+- Do not use React Hook Form or Zod
+
+### Database
+- ORM: **Prisma 6** with MySQL
+- Prisma client singleton is in `src/lib/prisma.ts` — always import from there, never instantiate directly
+- Schema is in `prisma/schema.prisma` — run `npm run db:generate` after schema changes
+- Use `npm run db:migrate` for migrations in development; `npm run db:push` for quick schema sync without a migration file
+
+### Authentication
+- Auth is handled by **NextAuth v5** — config is in `src/auth.ts`
+- Providers: email magic links (Nodemailer) and Google OAuth
+- Session and user data is persisted via `@auth/prisma-adapter`
+- Environment variables required: `EMAIL_FROM`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+
+### Architecture
+- Business logic lives in `src/lib/domain/` — keep HTTP, UI, and DB concerns out of the domain layer
+- Each domain module exports a service interface and a Prisma-backed implementation
+- API route helpers (`src/lib/api/route-helpers.ts`) provide typed response factories (`ok()`, `created()`, `validationError()`, etc.) and origin guards — use them in all API routes
 
 ### TypeScript
 - `strict: true` is required — do not disable

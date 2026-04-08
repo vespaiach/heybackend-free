@@ -144,7 +144,7 @@ export class PrismaWebsiteService implements WebsiteService {
     });
     if (!existing) return null;
 
-    const data: Partial<{ label: string; type: string; required: boolean; position: number }> = {};
+    const data: Partial<{ label: string; type: WebsiteFieldType; required: boolean; position: number }> = {};
     if (input.label !== undefined) data.label = input.label;
     if (input.type !== undefined) data.type = input.type;
     if (input.required !== undefined) data.required = input.required;

@@ -6,6 +6,7 @@ import type {
   ListSubscribersResult,
   Subscriber,
   SubscriberAnalytics,
+  SubscriberMetadata,
   Tag,
   UpdateSubscriberMetadataInput,
   UpsertSubscriberInput,

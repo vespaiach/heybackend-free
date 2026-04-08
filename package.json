@@ -1,7 +1,7 @@
 {
   "name": "heybackend-free",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "scripts": {
     "dev": "next dev",
     "prebuild": "npm run db_prod:migrate",

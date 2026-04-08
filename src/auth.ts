@@ -56,12 +56,12 @@ const emailProvider =
     : Nodemailer({
         from: process.env.EMAIL_FROM,
         server: {
-          host: process.env.EMAIL_HOST,
-          port: Number(process.env.EMAIL_PORT ?? 465),
-          secure: true,
+          host: process.env.EMAIL_SERVER_HOST,
+          port: Number(process.env.EMAIL_SERVER_PORT ?? 465),
+          secure: process.env.EMAIL_SERVER_SECURE === "true",
           auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
+            user: process.env.EMAIL_SERVER_USER,
+            pass: process.env.EMAIL_SERVER_PASSWORD,
           },
         },
         sendVerificationRequest,

@@ -2,6 +2,7 @@ name: CI
 
 on:
   pull_request:
+    branches: [main]
   push:
     branches: [main]
 
@@ -27,7 +28,7 @@ jobs:
         run: npm run lint
 
       - name: Test
-        run: npm run test:run
+        run: npm run test
 
       - name: Build
         run: npm run build

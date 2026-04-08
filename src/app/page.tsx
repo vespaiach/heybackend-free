@@ -1,4 +1,4 @@
-import { Badge, Construction } from "lucide-react";
+import { Construction } from "lucide-react";
 
 export default async function Home() {
   return (
@@ -26,13 +26,12 @@ export default async function Home() {
         </div>
 
         <h1 className="text-4xl sm:text-5xl font-bold tracking-tight leading-tight">
-          Something great is{" "}
-          <span className="text-primary">coming soon.</span>
+          Something great is <span className="text-primary">coming soon.</span>
         </h1>
 
         <p className="text-muted-foreground text-lg leading-relaxed">
-          We&apos;re putting the finishing touches on HeyBackend — the easiest way to capture
-          subscribers from any static website. Stay tuned.
+          We&apos;re putting the finishing touches on HeyBackend — the easiest way to capture subscribers from
+          any static website. Stay tuned.
         </p>
       </div>
 
@@ -41,5 +40,5 @@ export default async function Home() {
         &copy; {new Date().getFullYear()} HeyBackend. All rights reserved.
       </footer>
     </div>
-  )
+  );
 }

@@ -22,6 +22,7 @@ model User {
 
   accounts Account[]
   sessions Session[]
+  tenant   Tenant?
 }
 
 model Account {
@@ -61,4 +62,105 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Tenant {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String
+  userId    String   @unique
+  createdAt DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  websites Website[]
+}
+
+model Website {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  key       String   @unique
+  isActive  Boolean  @default(true)
+  tenantId  String
+  createdAt DateTime @default(now())
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscribers Subscriber[]
+  tags        Tag[]
+  fields      WebsiteField[]
+
+  @@index([tenantId])
+}
+
+model Subscriber {
+  id             String    @id @default(cuid())
+  email          String
+  firstName      String?
+  lastName       String?
+  websiteId      String
+  timezone       String?
+  country        String?
+  region         String?
+  city           String?
+  os             String?
+  deviceType     String?
+  browser        String?
+  metadata       Json?
+  unsubscribedAt DateTime?
+  createdAt      DateTime  @default(now())
+
+  website Website         @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  tags    SubscriberTag[]
+
+  @@unique([email, websiteId])
+  @@index([websiteId])
+}
+
+model Tag {
+  id          String   @id @default(cuid())
+  name        String
+  color       String?
+  description String?
+  websiteId   String
+  createdAt   DateTime @default(now())
+
+  website     Website         @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+  subscribers SubscriberTag[]
+
+  @@unique([name, websiteId])
+  @@index([websiteId])
+}
+
+model SubscriberTag {
+  subscriberId String
+  tagId        String
+  createdAt    DateTime @default(now())
+
+  subscriber Subscriber @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  tag        Tag        @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([subscriberId, tagId])
+}
+
+model WebsiteField {
+  id        String           @id @default(cuid())
+  websiteId String
+  slug      String
+  label     String
+  type      WebsiteFieldType
+  required  Boolean          @default(false)
+  position  Int              @default(0)
+  createdAt DateTime         @default(now())
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@unique([websiteId, slug])
+  @@index([websiteId])
+}
+
+enum WebsiteFieldType {
+  text
+  number
+  boolean
+  date
 }

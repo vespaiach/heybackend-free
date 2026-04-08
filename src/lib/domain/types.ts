@@ -109,6 +109,7 @@ export interface Subscriber {
   os: string | null;
   deviceType: string | null;
   browser: string | null;
+  tags: Pick<Tag, "id" | "name" | "color" | "description">[];
 }
 
 export interface WebsiteForSubscribe {
@@ -148,25 +149,6 @@ export interface UpdateWebsiteInput {
   name: string;
   url: string;
   regenerateKey?: boolean;
-}
-
-export interface SubscriberEnrichment {
-  userAgent?: string | null;
-  referrer?: string | null;
-  timezone?: string | null;
-  locale?: string | null;
-  screenWidth?: number | null;
-  screenHeight?: number | null;
-  viewportWidth?: number | null;
-  viewportHeight?: number | null;
-  country?: string | null;
-  region?: string | null;
-  city?: string | null;
-  utmSource?: string | null;
-  utmMedium?: string | null;
-  utmCampaign?: string | null;
-  utmTerm?: string | null;
-  utmContent?: string | null;
 }
 
 export interface UpsertSubscriberInput {

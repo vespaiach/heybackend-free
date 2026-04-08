@@ -57,22 +57,13 @@ const WEBSITE_ID = "site-1"
 const DEFAULT_SEARCH = { q: "", status: "all" as const }
 
 const enrichmentDefaults = {
-  userAgent: null,
-  referrer: null,
+  os: null,
+  deviceType: null,
+  browser: null,
   timezone: null,
-  locale: null,
-  screenWidth: null,
-  screenHeight: null,
-  viewportWidth: null,
-  viewportHeight: null,
   country: null,
   region: null,
   city: null,
-  utmSource: null,
-  utmMedium: null,
-  utmCampaign: null,
-  utmTerm: null,
-  utmContent: null,
   metadata: null,
 }
 
@@ -520,7 +511,7 @@ describe("SubscribersTable", () => {
           ...subscribers[0]!,
           timezone: "America/New_York",
           country: "US",
-          utmSource: "newsletter",
+          browser: "Firefox",
         },
       ]
       render(<SubscribersTable {...makeProps({ subscribers: enrichedSubscribers, total: 1 })} />)
@@ -528,7 +519,7 @@ describe("SubscribersTable", () => {
       await userEvent.click(expandBtn!)
       expect(await screen.findByText("America/New_York")).toBeInTheDocument()
       expect(screen.getByText("US")).toBeInTheDocument()
-      expect(screen.getByText("newsletter")).toBeInTheDocument()
+      expect(screen.getByText("Firefox")).toBeInTheDocument()
     })
 
     it("clicking the expand button again collapses the detail panel", async () => {

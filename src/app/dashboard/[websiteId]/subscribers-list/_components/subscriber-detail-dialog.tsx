@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import type { WebsiteField } from "@/lib/domain/types"
-import { cn } from "@/lib/utils"
 
 export type Tag = { id: string; name: string; color: string | null; description: string | null }
 
@@ -17,22 +16,13 @@ export type Subscriber = {
   createdAt: Date
   unsubscribedAt: Date | null
   tags: Tag[]
-  userAgent: string | null
-  referrer: string | null
+  os: string | null
+  deviceType: string | null
+  browser: string | null
   timezone: string | null
-  locale: string | null
-  screenWidth: number | null
-  screenHeight: number | null
-  viewportWidth: number | null
-  viewportHeight: number | null
   country: string | null
   region: string | null
   city: string | null
-  utmSource: string | null
-  utmMedium: string | null
-  utmCampaign: string | null
-  utmTerm: string | null
-  utmContent: string | null
   metadata: Record<string, string | number | boolean | null> | null
 }
 
@@ -55,68 +45,34 @@ export function SubscriberDetailPanel({
   onEditMetadata: () => void
 }) {
   const hasCapture =
-    subscriber.userAgent ||
-    subscriber.referrer ||
+    subscriber.os ||
+    subscriber.deviceType ||
+    subscriber.browser ||
     subscriber.timezone ||
-    subscriber.locale ||
-    subscriber.screenWidth ||
     subscriber.country
-
-  const hasUtm =
-    subscriber.utmSource ||
-    subscriber.utmMedium ||
-    subscriber.utmCampaign ||
-    subscriber.utmTerm ||
-    subscriber.utmContent
 
   const hasCustomFields = websiteFields.length > 0
 
-  if (!hasCapture && !hasUtm && !hasCustomFields) {
+  if (!hasCapture && !hasCustomFields) {
     return (
       <p className="px-2 text-xs text-muted-foreground">No enrichment data captured for this subscriber.</p>
     )
   }
 
   const location = [subscriber.city, subscriber.region, subscriber.country].filter(Boolean).join(", ")
-  const screen =
-    subscriber.screenWidth && subscriber.screenHeight
-      ? `${subscriber.screenWidth}×${subscriber.screenHeight}`
-      : null
-  const viewport =
-    subscriber.viewportWidth && subscriber.viewportHeight
-      ? `${subscriber.viewportWidth}×${subscriber.viewportHeight}`
-      : null
 
   return (
     <div className="space-y-4 px-2">
-      {(hasCapture || hasUtm) && (
-        <div className={cn(hasCapture && hasUtm && "grid gap-4 sm:grid-cols-2")}>
-          {hasCapture && (
-            <div className="space-y-1">
-              <p className="pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Capture context
-              </p>
-              <DetailRow label="User-Agent" value={subscriber.userAgent} />
-              <DetailRow label="Referrer" value={subscriber.referrer} />
-              <DetailRow label="Timezone" value={subscriber.timezone} />
-              <DetailRow label="Locale" value={subscriber.locale} />
-              <DetailRow label="Screen" value={screen} />
-              <DetailRow label="Viewport" value={viewport} />
-              <DetailRow label="Location" value={location || null} />
-            </div>
-          )}
-          {hasUtm && (
-            <div className="space-y-1">
-              <p className="pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                UTM attribution
-              </p>
-              <DetailRow label="Source" value={subscriber.utmSource} />
-              <DetailRow label="Medium" value={subscriber.utmMedium} />
-              <DetailRow label="Campaign" value={subscriber.utmCampaign} />
-              <DetailRow label="Term" value={subscriber.utmTerm} />
-              <DetailRow label="Content" value={subscriber.utmContent} />
-            </div>
-          )}
+      {hasCapture && (
+        <div className="space-y-1">
+          <p className="pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+            Capture context
+          </p>
+          <DetailRow label="OS" value={subscriber.os} />
+          <DetailRow label="Device" value={subscriber.deviceType} />
+          <DetailRow label="Browser" value={subscriber.browser} />
+          <DetailRow label="Timezone" value={subscriber.timezone} />
+          <DetailRow label="Location" value={location || null} />
         </div>
       )}
 

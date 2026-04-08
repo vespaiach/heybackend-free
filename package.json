@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prestart": "npx prisma migrate deploy",
+    "prebuild": "npm run db_prod:migrate",
+    "db_prod:migrate": "node scripts/db-migrate.mjs",
     "build": "next build",
     "start": "next start",
     "test": "vitest run",

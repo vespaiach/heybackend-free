@@ -1,7 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { signIn } from "next-auth/react";
-import React from "react";
+import { type SignInResponse, signIn } from "next-auth/react";
 import { LoginForm } from "@/app/login/_components/login-form";
 
 vi.mock("next-auth/react", () => ({
@@ -26,26 +25,32 @@ describe("LoginForm", () => {
     expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
   });
 
-  it("renders Apple and Google login buttons as disabled placeholders", () => {
+  it("renders Apple button as disabled placeholder", () => {
     render(<LoginForm />);
-    const appleBtn = screen.getByRole("button", { name: /login with apple/i });
-    const googleBtn = screen.getByRole("button", { name: /login with google/i });
-    expect(appleBtn).toBeDisabled();
-    expect(googleBtn).toBeDisabled();
+    expect(screen.getByRole("button", { name: /login with apple/i })).toBeDisabled();
   });
 
-  it("does not call signIn when Apple or Google buttons are clicked", async () => {
+  it("renders Google button as enabled", () => {
+    render(<LoginForm />);
+    expect(screen.getByRole("button", { name: /login with google/i })).not.toBeDisabled();
+  });
+
+  it("calls signIn with google provider when Google button is clicked", async () => {
+    render(<LoginForm />);
+    await userEvent.click(screen.getByRole("button", { name: /login with google/i }));
+    expect(mockSignIn).toHaveBeenCalledWith("google", { callbackUrl: "/dashboard/home" });
+  });
+
+  it("does not call signIn when Apple button is clicked", async () => {
     render(<LoginForm />);
     await userEvent.click(screen.getByRole("button", { name: /login with apple/i }));
-    await userEvent.click(screen.getByRole("button", { name: /login with google/i }));
     expect(mockSignIn).not.toHaveBeenCalled();
   });
 
   it("disables the submit button while loading", async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let resolve!: (value: any) => void;
+    let resolve!: (value: SignInResponse) => void;
     mockSignIn.mockReturnValueOnce(
-      new Promise((r) => {
+      new Promise<SignInResponse>((r) => {
         resolve = r;
       }),
     );
@@ -55,7 +60,7 @@ describe("LoginForm", () => {
     await userEvent.click(screen.getByRole("button", { name: /send magic link/i }));
 
     expect(screen.getByRole("button", { name: /sending/i })).toBeDisabled();
-    resolve(undefined);
+    resolve({ error: undefined, code: undefined, status: 200, ok: true, url: null });
   });
 
   it("shows check-your-email confirmation after successful submission", async () => {

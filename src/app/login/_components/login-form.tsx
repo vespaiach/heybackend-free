@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 
+const CALLBACK_URL = "/dashboard/home";
+
 export function LoginForm({ className, ...props }: React.ComponentProps<"div">) {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -17,9 +19,13 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setIsLoading(true);
-    await signIn("nodemailer", { email, callbackUrl: "/dashboard/home", redirect: false });
+    await signIn("nodemailer", { email, callbackUrl: CALLBACK_URL, redirect: false });
     setIsLoading(false);
     setSubmitted(true);
+  }
+
+  async function handleGoogleSignIn() {
+    await signIn("google", { callbackUrl: CALLBACK_URL });
   }
 
   if (submitted) {
@@ -56,7 +62,7 @@ export function LoginForm({ className, ...props }: React.ComponentProps<"div">) 
                   </svg>
                   Login with Apple
                 </Button>
-                <Button variant="outline" type="button" disabled>
+                <Button variant="outline" type="button" onClick={handleGoogleSignIn}>
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                     <title>Google</title>
                     <path

@@ -8,6 +8,7 @@
     "db_prod:migrate": "node scripts/db-migrate.mjs",
     "build": "next build",
     "start": "next start",
+    "poststart": "node scripts/poststart.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check",

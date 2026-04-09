@@ -43,7 +43,7 @@ export async function sendVerificationRequest({
 }
 
 const emailProvider =
-  process.env.NODE_ENV !== "production"
+  process.env.NODE_ENV === "development"
     ? Nodemailer({
         from: "noreply@localhost",
         server: "smtp://localhost:25?ignoreTLS=true",

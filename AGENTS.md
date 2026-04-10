@@ -27,8 +27,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ```bash
 npm run dev          # start dev server
-npm run build        # production build
-npm start            # start production server
+npm run build        # production build — NOTE: automatically runs db_prod:migrate (Prisma migration) via prebuild hook
+npm start            # start production server — NOTE: runs scripts/poststart.mjs via poststart hook
 npm test             # run tests (vitest)
 npm run test:watch   # run tests in watch mode
 npm run lint         # run Biome linter
@@ -67,11 +67,12 @@ src/
 ├── lib/
 │   ├── utils.ts             # cn() helper (clsx + tailwind-merge)
 │   ├── prisma.ts            # Prisma client singleton
-│   ├── auth.ts              # (see src/auth.ts) NextAuth config
 │   ├── logger.ts            # Error logging
+│   ├── export-csv.ts        # CSV export utility
+│   ├── route-helpers.ts     # RSC/server helpers: getSession(), getLoggedInTenant()
 │   ├── schemas/             # Valibot schemas
 │   ├── api/
-│   │   └── route-helpers.ts # API response helpers + CORS guards
+│   │   └── route-helpers.ts # API response factories: ok(), created(), validationError(), etc.
 │   └── domain/              # Clean Architecture service layer
 │       ├── subscriber/      # Subscriber service (CRUD, tags, analytics, export)
 │       ├── website/         # Website service (CRUD, fields)
@@ -115,7 +116,13 @@ src/
 - Auth is handled by **NextAuth v5** — config is in `src/auth.ts`
 - Providers: email magic links (Nodemailer) and Google OAuth
 - Session and user data is persisted via `@auth/prisma-adapter`
-- Environment variables required: `EMAIL_FROM`, `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`
+- Environment variables required:
+  - `AUTH_SECRET` — NextAuth v5 signing secret
+  - `DATABASE_URL` — MySQL connection string for Prisma
+  - `EMAIL_FROM` — sender address for magic links
+  - `EMAIL_SERVER_HOST`, `EMAIL_SERVER_PORT`, `EMAIL_SERVER_SECURE` — SMTP server config
+  - `EMAIL_SERVER_USER`, `EMAIL_SERVER_PASSWORD` — SMTP credentials
+  - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` — Google OAuth app credentials
 
 ### Architecture
 - Business logic lives in `src/lib/domain/` — keep HTTP, UI, and DB concerns out of the domain layer
@@ -152,7 +159,7 @@ src/
 
 ### Testing
 - Framework: **Vitest** + **React Testing Library** (`@testing-library/react`, `@testing-library/user-event`).
-- Test files live alongside the code they test: `foo.test.tsx` next to `foo.tsx`.
+- Test files live in a `__tests__/` subdirectory next to the code they test (e.g. `foo/__tests__/bar.test.ts`).
 - Every new UI component in `src/components/` must have a corresponding `.test.tsx` file.
 - Every new function, module, or feature must have corresponding unit tests.
 - Every bug fix must include a regression test that would have caught the bug.

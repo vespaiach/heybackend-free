@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { beforeEach, describe, expect, it } from "vitest";
-import { checkRateLimit, sweepExpired } from "../rate-limiter";
+import { checkRateLimit, getStoreSize, sweepExpired } from "../rate-limiter";
 
 // The rate limiter uses a module-level Map. Tests that set entries must run in
 // isolation — use unique key prefixes per test to avoid cross-contamination.
@@ -16,29 +16,29 @@ beforeEach(() => {
 });
 
 describe("sweepExpired()", () => {
-  it("deletes entries whose resetAt is in the past", () => {
+  it("deletes entries whose resetAt is in the past", async () => {
     const key = uniqueKey("past");
     // Create an entry by checking the limit (sets resetAt = now + 60_000)
-    checkRateLimit(key, 10, 60_000);
+    await checkRateLimit(key, 10, 60_000);
 
     // Sweep at a time after the window has closed
     sweepExpired(Date.now() + 61_000);
 
     // A new checkRateLimit call should behave as if the entry never existed
     // (count resets to 1, returns true)
-    expect(checkRateLimit(key, 1, 60_000)).toBe(true);
+    expect(await checkRateLimit(key, 1, 60_000)).toBe(true);
   });
 
-  it("keeps entries whose resetAt is in the future", () => {
+  it("keeps entries whose resetAt is in the future", async () => {
     const key = uniqueKey("future");
     // Max 1 request — first call succeeds
-    checkRateLimit(key, 1, 60_000);
+    await checkRateLimit(key, 1, 60_000);
 
     // Sweep at current time (entry is still active)
     sweepExpired(Date.now());
 
     // The entry must still exist — second call should be rejected
-    expect(checkRateLimit(key, 1, 60_000)).toBe(false);
+    expect(await checkRateLimit(key, 1, 60_000)).toBe(false);
   });
 
   it("is a no-op on an empty store", () => {
@@ -50,16 +50,37 @@ describe("sweepExpired()", () => {
 });
 
 describe("checkRateLimit() — behaviour after a sweep", () => {
-  it("still enforces limits correctly after expired entries are swept", () => {
+  it("still enforces limits correctly after expired entries are swept", async () => {
     const key = uniqueKey("post-sweep");
     // Use 2 of 3 allowed requests
-    expect(checkRateLimit(key, 3, 60_000)).toBe(true);
-    expect(checkRateLimit(key, 3, 60_000)).toBe(true);
+    expect(await checkRateLimit(key, 3, 60_000)).toBe(true);
+    expect(await checkRateLimit(key, 3, 60_000)).toBe(true);
 
     // Sweep at a time after the window closes
     sweepExpired(Date.now() + 61_000);
 
     // Window resets — should be allowed again from the start
-    expect(checkRateLimit(key, 3, 60_000)).toBe(true);
+    expect(await checkRateLimit(key, 3, 60_000)).toBe(true);
+  });
+});
+
+describe("size cap — FIFO eviction", () => {
+  it("evicts the oldest entry when MAX_ENTRIES is reached", async () => {
+    // Sweep everything so we start from a known-empty store
+    sweepExpired(Date.now() + 10 * 60 * 1000);
+
+    // Fill the store to exactly MAX_ENTRIES using unique keys
+    for (let i = 0; i < 10_000; i++) {
+      await checkRateLimit(`cap-test:${i}`, 10, 60_000);
+    }
+
+    expect(getStoreSize()).toBe(10_000);
+
+    // Adding one more entry must evict the oldest (cap-test:0)
+    await checkRateLimit("cap-test:overflow", 10, 60_000);
+
+    expect(getStoreSize()).toBe(10_000);
+    // The overflow entry itself must be allowed (count = 1 → second call returns true)
+    expect(await checkRateLimit("cap-test:overflow", 10, 60_000)).toBe(true);
   });
 });

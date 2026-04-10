@@ -200,7 +200,14 @@ src/
 - Aim for meaningful coverage, not just line coverage. Test edge cases and failure paths.
 - Use `vi.fn()` for mocks and `userEvent` (not `fireEvent`) for user interactions.
 - Global test APIs (`describe`, `it`, `expect`, `vi`) are available without imports (`globals: true` in vitest config).
+- Mocking constructors: use `vi.fn(function Ctor(this) { this.method = vi.fn(); })` — arrow functions cannot be `new`-ed and will throw
+- Mock variables used inside `vi.mock()` factories must be declared with `vi.hoisted()` to avoid temporal dead zone errors
+- Module-level singletons (caches, lazy clients) need an exported `_resetForTesting()` called in `beforeEach` to isolate tests
 - Run `npm test` before marking work as done.
+
+### Shell / Git
+- `git add` paths containing brackets must be quoted: `git add 'src/app/api/[websiteId]/route.ts'`
+- `.env.local.example` is gitignored — edit locally but do not attempt to commit
 
 ## Pull Requests & CI
 - Before opening a PR, verify all of the following pass locally:

@@ -25,6 +25,8 @@
     "@formisch/react": "^0.4.4",
     "@prisma/client": "^6.19.3",
     "@types/nodemailer": "^8.0.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.37.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "fast-geoip": "^1.1.88",

@@ -46,7 +46,6 @@ describe("GET /api/[websiteId]/sdk.js", () => {
     const res = await GET(new Request("http://localhost"), params());
     const text = await res.text();
     expect(text).not.toContain(WEBSITE_KEY);
-    expect(text).not.toContain("__HB_KEY__");
   });
 
   it("includes Cache-Control header", async () => {

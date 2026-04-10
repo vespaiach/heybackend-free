@@ -145,8 +145,8 @@ src/
 
 ### Browser SDK (`sdk/`)
 - The SDK is a vanilla TypeScript IIFE bundle served as a **server-rendered script** — each website's key is injected at request time, not shipped in source
-- `sdk/dist/hb.min.js` is the build artifact; it contains two literal placeholder strings: `"__HB_WEBSITE_ID__"` and `"__HB_KEY__"`. The Next.js route `GET /api/[websiteId]/sdk.js` replaces these with `JSON.stringify(website.id)` and `JSON.stringify(website.key)` on every request
-- **Never hard-code a key in `sdk/src/`** — the placeholders are intentional; the route handles substitution
+- `sdk/dist/hb.min.js` is the build artifact; it contains one literal placeholder string: `"__HB_WEBSITE_ID__"`. The Next.js route `GET /api/[websiteId]/sdk.js` replaces it with `JSON.stringify(website.id)` on every request
+- The website key is **never injected into the SDK** — auth uses server-minted tokens via `GET /api/[websiteId]/token`
 - The SDK uses **Web Crypto API** (`crypto.subtle`) for HMAC-SHA256 signing — no Node crypto, no third-party libs
 - Run `npm run sdk:build` after any change to `sdk/src/` to rebuild the template bundle
 - `sdk/dist/` is excluded from Biome linting (configured in `biome.json`)

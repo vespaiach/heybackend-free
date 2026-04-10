@@ -8,9 +8,7 @@ const JS_HEADERS: HeadersInit = {
   "Cache-Control": "public, max-age=3600",
 };
 
-function readTemplate(): string {
-  return readFileSync(join(process.cwd(), "sdk/dist/hb.min.js"), "utf8");
-}
+const SDK_TEMPLATE = readFileSync(join(process.cwd(), "sdk/dist/hb.min.js"), "utf8");
 
 export async function GET(
   _request: Request,
@@ -23,7 +21,7 @@ export async function GET(
     return new Response(JS_STUB, { status: 200, headers: JS_HEADERS });
   }
 
-  const js = readTemplate().replace('"__HB_WEBSITE_ID__"', JSON.stringify(website.id));
+  const js = SDK_TEMPLATE.replace('"__HB_WEBSITE_ID__"', JSON.stringify(website.id));
 
   return new Response(js, { status: 200, headers: JS_HEADERS });
 }

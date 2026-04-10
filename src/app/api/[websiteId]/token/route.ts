@@ -53,7 +53,7 @@ export async function GET(
     // Rate limit: 10 requests per 60 s per IP (tokens last 15 min, so legitimate
     // use is at most 1/15 min; this headroom accommodates page refreshes + tabs).
     const ip = getClientIp(request);
-    if (!checkRateLimit(`ip:${ip}:token`, 10, 60_000)) {
+    if (!(await checkRateLimit(`ip:${ip}:token`, 10, 60_000))) {
       return new Response(JSON.stringify({ message: "Too many requests" }), {
         status: 429,
         headers: { "Content-Type": "application/json", "Retry-After": "60", ...corsHeaders },

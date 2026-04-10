@@ -87,7 +87,8 @@ export async function POST(
     // Rate limiting: per-IP and per-website buckets.
     const ip = getClientIp(request);
     const withinLimit =
-      checkRateLimit(`ip:${ip}:sub`, 5, 60_000) && checkRateLimit(`site:${website.id}:sub`, 200, 60_000);
+      (await checkRateLimit(`ip:${ip}:sub`, 5, 60_000)) &&
+      (await checkRateLimit(`site:${website.id}:sub`, 200, 60_000));
 
     if (!withinLimit) {
       return new Response(JSON.stringify({ message: "Too many requests" }), {

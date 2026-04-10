@@ -48,18 +48,22 @@ beforeEach(() => {
   vi.clearAllMocks();
   // Restore after() to synchronously invoke its callback so enrichSubscriber
   // assertions can be made without async delay.
-  vi.mocked(after).mockImplementation((task) => {
+  // Must use function keyword — arrow functions cannot be used as constructors
+  // and Vitest warns when arrow functions are used in mockImplementation for
+  // mocks that may be called with `new`.
+  // biome-ignore lint/complexity/useArrowFunction: function keyword required — after() callback is awaited
+  vi.mocked(after).mockImplementation(function (task) {
     void (task as () => Promise<void>)();
   });
   // Restore UAParser constructor — returns a minimal parser stub.
-  vi.mocked(UAParser).mockImplementation(
-    () =>
-      ({
-        getBrowser: () => ({ name: "Chrome" }),
-        getDevice: () => ({ type: undefined }),
-        getOS: () => ({ name: "macOS" }),
-      }) as never,
-  );
+  // biome-ignore lint/complexity/useArrowFunction: function keyword required — UAParser is called with `new`
+  vi.mocked(UAParser).mockImplementation(function () {
+    return {
+      getBrowser: () => ({ name: "Chrome" }),
+      getDevice: () => ({ type: undefined }),
+      getOS: () => ({ name: "macOS" }),
+    } as never;
+  });
   vi.mocked(checkRateLimit).mockReturnValue(true);
   vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(mockWebsite);
   vi.mocked(subscriberService.upsertSubscriber).mockResolvedValue(mockSubscriber);

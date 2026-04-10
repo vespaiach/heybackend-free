@@ -117,7 +117,7 @@ export async function guardToken(
   const origin = request.headers.get("origin");
   if (!validateOrigin(origin, website.url)) throw new RouteError(forbidden());
 
-  return { websiteId, website };
+  return { websiteId, website: { id: website.id, url: website.url } };
 }
 
 // ─── Email validation ──────────────────────────────────────────────────────────

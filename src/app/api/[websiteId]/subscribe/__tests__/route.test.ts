@@ -202,7 +202,9 @@ describe("POST — token & origin guard", () => {
 
   it("returns 401 when website is inactive", async () => {
     vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, isActive: false });
-    expect((await POST(makePost(validBody()), params())).status).toBe(401);
+    const res = await POST(makePost(validBody()), params());
+    expect(res.status).toBe(401);
+    expect(res.headers.get("access-control-allow-origin")).toBe(WEBSITE_URL);
   });
 
   it("returns 403 when origin does not match website URL", async () => {

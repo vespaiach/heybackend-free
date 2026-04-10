@@ -50,8 +50,9 @@ export async function POST(
   // Resolve website first so CORS headers are available on every response path.
   const { websiteId } = await params;
   const website = await websiteService.getWebsiteForSigning(websiteId);
-  if (!website || !website.isActive) return unauthorized();
+  if (!website) return unauthorized();
   const corsHeaders = buildCorsHeaders(website.url);
+  if (!website.isActive) return unauthorized(corsHeaders);
 
   // Parse body — token + expiresAt are validated before HMAC verification.
   let body: unknown;

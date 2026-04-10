@@ -123,7 +123,9 @@ describe("GET /api/[websiteId]/token", () => {
 
   it("returns 401 when website is inactive", async () => {
     vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, isActive: false });
-    expect((await GET(makeGet(), params())).status).toBe(401);
+    const res = await GET(makeGet(), params());
+    expect(res.status).toBe(401);
+    expect(res.headers.get("access-control-allow-origin")).toBe(WEBSITE_URL);
   });
 
   it("returns 403 when origin does not match", async () => {

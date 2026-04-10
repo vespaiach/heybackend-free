@@ -49,13 +49,13 @@ prisma/
 └── schema.prisma            # MySQL schema (User, Tenant, Website, Subscriber, Tag, WebsiteField)
 sdk/
 ├── src/
-│   ├── signing.ts           # Browser HMAC-SHA256 signing (Web Crypto API)
+│   ├── signing.ts           # fetchToken() — fetches server-minted HMAC token from /api/[websiteId]/token
 │   ├── subscribe.ts         # coreSubscribe() + HbError class; 1 retry on network failure
 │   ├── form.ts              # bindForm(selector | HTMLFormElement, config, callbacks)
 │   ├── index.ts             # Config placeholders; window.__HB global; subscribe() + bindForm() wrappers
 │   └── __tests__/           # signing, subscribe (node), form (jsdom) tests
 ├── dist/
-│   └── hb.min.js            # Built IIFE — contains "__HB_WEBSITE_ID__" and "__HB_KEY__" placeholders
+│   └── hb.min.js            # Built IIFE — contains "__HB_WEBSITE_ID__" placeholder only (no key)
 └── build.mjs                # esbuild: sdk/src/index.ts → sdk/dist/hb.min.js (IIFE, globalName __HB)
 src/
 ├── app/
@@ -64,8 +64,8 @@ src/
 │   ├── globals.css          # Tailwind v4 + CSS theme variables (light/dark)
 │   ├── api/
 │   │   ├── [websiteId]/
-│   │   │   ├── subscribe/route.ts  # Public subscriber POST endpoint (HMAC-signed, rate-limited, honeypot)
-│   │   │   └── sdk.js/route.ts     # GET: reads hb.min.js, injects websiteId+key, returns JS
+│   │   │   ├── subscribe/route.ts  # Public subscriber POST endpoint (token-guarded, rate-limited, honeypot)
+│   │   │   └── sdk.js/route.ts     # GET: reads hb.min.js, injects websiteId, returns JS
 │   │   └── auth/[...nextauth]/route.ts     # NextAuth handlers
 │   ├── login/               # Magic link + Google OAuth login
 │   ├── onboarding/          # New user onboarding form
@@ -144,10 +144,10 @@ src/
 - API route helpers (`src/lib/api/route-helpers.ts`) provide typed response factories (`ok()`, `created()`, `validationError()`, etc.) and origin guards — use them in all API routes
 
 ### Browser SDK (`sdk/`)
-- The SDK is a vanilla TypeScript IIFE bundle served as a **server-rendered script** — each website's key is injected at request time, not shipped in source
+- The SDK is a vanilla TypeScript IIFE bundle served as a **server-rendered script** — each website's ID is injected at request time, not shipped in source
 - `sdk/dist/hb.min.js` is the build artifact; it contains one literal placeholder string: `"__HB_WEBSITE_ID__"`. The Next.js route `GET /api/[websiteId]/sdk.js` replaces it with `JSON.stringify(website.id)` on every request
 - The website key is **never injected into the SDK** — auth uses server-minted tokens via `GET /api/[websiteId]/token`
-- The SDK uses **Web Crypto API** (`crypto.subtle`) for HMAC-SHA256 signing — no Node crypto, no third-party libs
+- The SDK derives its `baseUrl` from `document.currentScript.src` at init time so that fetch() targets the heybackend origin even when embedded on a third-party site
 - Run `npm run sdk:build` after any change to `sdk/src/` to rebuild the template bundle
 - `sdk/dist/` is excluded from Biome linting (configured in `biome.json`)
 - Usage on customer sites:

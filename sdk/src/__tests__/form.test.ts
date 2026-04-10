@@ -10,7 +10,7 @@ vi.mock("../subscribe", async (importOriginal) => {
 
 import { coreSubscribe } from "../subscribe";
 
-const CONFIG = { websiteId: "site_abc", key: "key" };
+const CONFIG = { websiteId: "site_abc", baseUrl: "https://example.com" };
 
 function makeForm(html: string): HTMLFormElement {
   const div = document.createElement("div");

@@ -43,12 +43,12 @@ export async function GET(
   try {
     const { websiteId } = await params;
     const website = await websiteService.getWebsiteForSigning(websiteId);
-    if (!website || !website.isActive) return unauthorized();
+    if (!website) return unauthorized();
+    const corsHeaders = buildCorsHeaders(website.url, "GET, OPTIONS");
+    if (!website.isActive) return unauthorized(corsHeaders);
 
     const origin = request.headers.get("origin");
-    if (!validateOrigin(origin, website.url)) return forbidden();
-
-    const corsHeaders = buildCorsHeaders(website.url, "GET, OPTIONS");
+    if (!validateOrigin(origin, website.url)) return forbidden(corsHeaders);
 
     // Rate limit: 10 requests per 60 s per IP (tokens last 15 min, so legitimate
     // use is at most 1/15 min; this headroom accommodates page refreshes + tabs).

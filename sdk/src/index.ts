@@ -2,12 +2,29 @@ import { bindForm as _bindForm, type BindFormCallbacks } from "./form";
 import { coreSubscribe, type HbConfig, type SubscribeData } from "./subscribe";
 
 // ─── Embedded config ──────────────────────────────────────────────────────────
-// The placeholder string below is replaced server-side by the sdk.js route
-// before the script is returned to the browser. It must remain an exact string
-// literal so esbuild preserves it in the minified output.
+// The placeholder strings below are replaced server-side by the sdk.js route
+// before the script is returned to the browser. They must remain exact string
+// literals so esbuild preserves them in the minified output.
+//
+// baseUrl is derived from the script's own src so that fetch() targets the
+// heybackend origin even when this script is embedded on a third-party site.
+// document.currentScript is only available during synchronous script evaluation,
+// so we capture it here at module init time.
+
+function deriveBaseUrl(): string {
+  if (typeof document === "undefined") return "";
+  try {
+    const src = (document.currentScript as HTMLScriptElement | null)?.src;
+    if (src) return new URL(src).origin;
+  } catch {
+    // ignore malformed URLs
+  }
+  return "";
+}
 
 const config: HbConfig = {
   websiteId: "__HB_WEBSITE_ID__",
+  baseUrl: deriveBaseUrl(),
 };
 
 // ─── Public API ───────────────────────────────────────────────────────────────

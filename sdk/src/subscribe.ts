@@ -20,6 +20,10 @@ export class HbError extends Error {
 
 export interface HbConfig {
   readonly websiteId: string;
+  /** Absolute origin of the heybackend server, e.g. "https://app.heybackend.com".
+   *  Derived automatically from the script's own src at init time so the SDK works
+   *  when embedded on third-party sites. Defaults to "" (same-origin) for local dev. */
+  readonly baseUrl: string;
 }
 
 export interface SubscribeData {
@@ -45,25 +49,25 @@ export function __resetTokenCache(): void {
   tokenCache.clear();
 }
 
-async function getToken(websiteId: string): Promise<CachedToken> {
-  const cached = tokenCache.get(websiteId);
+async function getToken(config: HbConfig): Promise<CachedToken> {
+  const cached = tokenCache.get(config.websiteId);
   if (cached && Date.now() < cached.expiresAt - EXPIRY_BUFFER_MS) {
     return cached;
   }
-  const fresh = await fetchToken(websiteId);
-  tokenCache.set(websiteId, fresh);
+  const fresh = await fetchToken(config.baseUrl, config.websiteId);
+  tokenCache.set(config.websiteId, fresh);
   return fresh;
 }
 
 async function attempt(config: HbConfig, data: SubscribeData): Promise<{ status: number }> {
   let tokenData: CachedToken;
   try {
-    tokenData = await getToken(config.websiteId);
+    tokenData = await getToken(config);
   } catch {
     throw new HbError("TOKEN_ERROR", "Failed to obtain subscription token");
   }
 
-  const res = await fetch(`/api/${config.websiteId}/subscribe`, {
+  const res = await fetch(`${config.baseUrl}/api/${config.websiteId}/subscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

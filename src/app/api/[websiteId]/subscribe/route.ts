@@ -6,11 +6,11 @@ import * as v from "valibot";
 import {
   buildCorsHeaders,
   created,
+  forbidden,
   getClientIp,
-  guardToken,
   ok,
-  RouteError,
   serverError,
+  unauthorized,
   validateOrigin,
   validationError,
 } from "@/lib/api/route-helpers";
@@ -18,6 +18,7 @@ import { subscriberService, websiteService } from "@/lib/domain";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { SubscribeRequestSchema } from "@/lib/schemas/subscribe-request";
+import { verifyToken } from "@/lib/signing";
 
 // ─── OPTIONS (preflight) ──────────────────────────────────────────────────────
 // No body is sent in preflights — verify website exists and origin matches only.
@@ -46,26 +47,42 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ websiteId: string }> },
 ): Promise<Response> {
-  // Parse body first — timestamp + signature are needed before we can guard.
+  // Resolve website first so CORS headers are available on every response path.
+  const { websiteId } = await params;
+  const website = await websiteService.getWebsiteForSigning(websiteId);
+  if (!website || !website.isActive) return unauthorized();
+  const corsHeaders = buildCorsHeaders(website.url);
+
+  // Parse body — token + expiresAt are validated before HMAC verification.
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return validationError("Invalid JSON body");
+    return validationError("Invalid JSON body", corsHeaders);
   }
 
   // Validate with Valibot (includes token + expiresAt fields).
   const result = v.safeParse(SubscribeRequestSchema, body);
   if (!result.success) {
-    return validationError(result.issues.map((i) => i.message));
+    return validationError(
+      result.issues.map((i) => i.message),
+      corsHeaders,
+    );
   }
 
   const { email, firstName, lastName, __hp, token, expiresAt } = result.output;
 
   try {
-    // Token + origin guard.
-    const { website } = await guardToken(request, params, token, expiresAt);
-    const corsHeaders = buildCorsHeaders(website.url);
+    // Token verification.
+    if (!verifyToken(website.key, websiteId, token, expiresAt)) {
+      return unauthorized(corsHeaders);
+    }
+
+    // Origin check.
+    const origin = request.headers.get("origin");
+    if (!validateOrigin(origin, website.url)) {
+      return forbidden(corsHeaders);
+    }
 
     // Rate limiting: per-IP and per-website buckets.
     const ip = getClientIp(request);
@@ -118,8 +135,7 @@ export async function POST(
       ? created({ message: "Subscribed" }, corsHeaders)
       : ok({ message: "Subscribed" }, corsHeaders);
   } catch (e) {
-    if (e instanceof RouteError) return e.response;
     logger.error("POST /api/[websiteId]/subscribe", e);
-    return serverError();
+    return serverError(corsHeaders);
   }
 }

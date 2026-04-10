@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { __resetTokenCache, coreSubscribe, HbError } from "../subscribe";
 
-const CONFIG = { websiteId: "site_abc" };
+const CONFIG = { websiteId: "site_abc", baseUrl: "https://app.heybackend.com" };
 const DATA = { email: "user@example.com" };
 
 // Mock fetchToken so tests don't perform real network calls.
@@ -181,11 +181,11 @@ describe("coreSubscribe()", () => {
     expect(body.__hp).toBe("");
   });
 
-  it("POSTs to /api/{websiteId}/subscribe", async () => {
+  it("POSTs to {baseUrl}/api/{websiteId}/subscribe", async () => {
     mockFetch(201);
     await coreSubscribe(CONFIG, DATA);
     expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledWith(
-      `/api/${CONFIG.websiteId}/subscribe`,
+      `${CONFIG.baseUrl}/api/${CONFIG.websiteId}/subscribe`,
       expect.anything(),
     );
   });

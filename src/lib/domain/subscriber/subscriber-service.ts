@@ -181,32 +181,45 @@ export class PrismaSubscriberService implements SubscriberService {
   }
 
   async enrichSubscriber(email: string, websiteId: string, data: EnrichmentData): Promise<void> {
-    const existing = await prisma.subscriber.findUnique({
-      where: { email_websiteId: { email, websiteId } },
-      select: {
-        country: true,
-        region: true,
-        city: true,
-        timezone: true,
-        browser: true,
-        deviceType: true,
-        os: true,
-      },
-    });
-    if (!existing) return;
+    // Each updateMany is atomic: WHERE field IS NULL ensures first-touch semantics without a prior read.
+    // Concurrent calls race at the DB level; only the first to find field=NULL wins.
+    const base = { email, websiteId };
+    const updates: Promise<unknown>[] = [];
 
-    await prisma.subscriber.update({
-      where: { email_websiteId: { email, websiteId } },
-      data: {
-        country: existing.country ?? data.country,
-        region: existing.region ?? data.region,
-        city: existing.city ?? data.city,
-        timezone: existing.timezone ?? data.timezone,
-        browser: existing.browser ?? data.browser,
-        deviceType: existing.deviceType ?? data.deviceType,
-        os: existing.os ?? data.os,
-      },
-    });
+    if (data.country != null)
+      updates.push(
+        prisma.subscriber.updateMany({ where: { ...base, country: null }, data: { country: data.country } }),
+      );
+    if (data.region != null)
+      updates.push(
+        prisma.subscriber.updateMany({ where: { ...base, region: null }, data: { region: data.region } }),
+      );
+    if (data.city != null)
+      updates.push(
+        prisma.subscriber.updateMany({ where: { ...base, city: null }, data: { city: data.city } }),
+      );
+    if (data.timezone != null)
+      updates.push(
+        prisma.subscriber.updateMany({
+          where: { ...base, timezone: null },
+          data: { timezone: data.timezone },
+        }),
+      );
+    if (data.browser != null)
+      updates.push(
+        prisma.subscriber.updateMany({ where: { ...base, browser: null }, data: { browser: data.browser } }),
+      );
+    if (data.deviceType != null)
+      updates.push(
+        prisma.subscriber.updateMany({
+          where: { ...base, deviceType: null },
+          data: { deviceType: data.deviceType },
+        }),
+      );
+    if (data.os != null)
+      updates.push(prisma.subscriber.updateMany({ where: { ...base, os: null }, data: { os: data.os } }));
+
+    await Promise.all(updates);
   }
 
   async unsubscribeSubscriber(subscriberId: string, tenantId: string): Promise<boolean> {

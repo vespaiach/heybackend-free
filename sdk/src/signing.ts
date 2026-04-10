@@ -7,8 +7,11 @@
  * Throws on non-2xx responses or malformed response shape (caller handles
  * retry / fallback).
  */
-export async function fetchToken(websiteId: string): Promise<{ token: string; expiresAt: number }> {
-  const res = await fetch(`/api/${websiteId}/token`);
+export async function fetchToken(
+  baseUrl: string,
+  websiteId: string,
+): Promise<{ token: string; expiresAt: number }> {
+  const res = await fetch(`${baseUrl}/api/${websiteId}/token`);
   if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
 
   const body = (await res.json()) as { token?: unknown; expiresAt?: unknown };

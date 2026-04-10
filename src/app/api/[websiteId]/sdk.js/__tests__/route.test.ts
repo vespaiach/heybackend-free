@@ -7,13 +7,6 @@ vi.mock("@/lib/domain", () => ({
   },
 }));
 
-// Pass-through mock so placeholder-replacement assertions work without real obfuscation.
-vi.mock("javascript-obfuscator", () => ({
-  default: {
-    obfuscate: vi.fn((code: string) => ({ getObfuscatedCode: () => code })),
-  },
-}));
-
 // Simulates the real minified bundle pattern where each placeholder is a standalone quoted string
 vi.mock("node:fs", () => ({
   readFileSync: vi.fn().mockReturnValue('var c={websiteId:"__HB_WEBSITE_ID__",key:"__HB_KEY__"}'),

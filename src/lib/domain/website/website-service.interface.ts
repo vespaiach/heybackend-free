@@ -18,6 +18,15 @@ export interface WebsiteService {
   getWebsiteByIdAndKey(id: string, key: string): Promise<WebsiteForSubscribe | null>;
 
   /**
+   * Fetch minimal website data including the signing key.
+   * Used exclusively by the public subscribe guard for HMAC verification.
+   * Returns null when not found.
+   */
+  getWebsiteForSigning(
+    id: string,
+  ): Promise<{ id: string; url: string; isActive: boolean; key: string } | null>;
+
+  /**
    * Looks up a website by ID only (no key check).
    * Returns a minimal projection, or null when not found.
    * The isActive flag is included so callers can reject inactive websites.

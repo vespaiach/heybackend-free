@@ -1,4 +1,5 @@
 import { websiteService } from "@/lib/domain";
+import { verifySubscribeSignature } from "@/lib/signing";
 
 // ─── JSON response helper ──────────────────────────────────────────────────────
 
@@ -56,7 +57,7 @@ export function buildCorsHeaders(websiteUrl: string): HeadersInit {
   return {
     "Access-Control-Allow-Origin": websiteUrl,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "X-BFF-Token, Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
@@ -81,9 +82,7 @@ export async function resolveWebsite(
   return { websiteId, website };
 }
 
-// ─── Auth + CORS guard ─────────────────────────────────────────────────────────
-// TODO: Re-add X-BFF-Token validation once the SDK's anti-spoofing mechanism is
-// re-implemented. For now only Origin is checked.
+// ─── Auth + CORS guard (authenticated dashboard routes) ───────────────────────
 
 export async function guard(
   request: Request,
@@ -93,6 +92,32 @@ export async function guard(
   const origin = request.headers.get("origin");
   if (!validateOrigin(origin, result.website.url)) throw new RouteError(forbidden());
   return result;
+}
+
+// ─── Signed-request guard (public browser SDK routes) ────────────────────────
+// Validates HMAC signature + timestamp window. The signing key never travels
+// on the wire — only the derived signature and timestamp are sent by the SDK.
+// Call AFTER parsing and validating the request body (needs timestamp + signature).
+
+export async function guardSigned(
+  request: Request,
+  params: Promise<{ websiteId: string }>,
+  timestamp: number,
+  signature: string,
+): Promise<{ websiteId: string; website: { id: string; url: string } }> {
+  const { websiteId } = await params;
+
+  const website = await websiteService.getWebsiteForSigning(websiteId);
+  if (!website || !website.isActive) throw new RouteError(unauthorized());
+
+  if (!verifySubscribeSignature(website.key, websiteId, timestamp, signature)) {
+    throw new RouteError(unauthorized());
+  }
+
+  const origin = request.headers.get("origin");
+  if (!validateOrigin(origin, website.url)) throw new RouteError(forbidden());
+
+  return { websiteId, website };
 }
 
 // ─── Email validation ──────────────────────────────────────────────────────────

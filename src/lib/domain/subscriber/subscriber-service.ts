@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import type {
   AnalyticsRange,
+  EnrichmentData,
   GrowthDataPoint,
   ListSubscribersFilter,
   ListSubscribersResult,
@@ -147,41 +148,65 @@ export class PrismaSubscriberService implements SubscriberService {
     return { subscribers: subscribers.map(toSubscriber), total };
   }
 
-  async upsertSubscriber(input: UpsertSubscriberInput): Promise<Subscriber> {
-    const {
-      email,
-      firstName,
-      lastName,
-      websiteId,
-      timezone,
-      country,
-      region,
-      city,
-      browser,
-      deviceType,
-      os,
-    } = input;
+  async upsertSubscriber(
+    input: UpsertSubscriberInput,
+  ): Promise<{ subscriber: Subscriber; created: boolean }> {
+    const { email, websiteId, firstName, lastName } = input;
 
-    const updateData = {
-      firstName: firstName ?? null,
-      lastName: lastName ?? null,
-      timezone: timezone ?? null,
-      country: country ?? null,
-      region: region ?? null,
-      city: city ?? null,
-      browser: browser ?? null,
-      deviceType: deviceType ?? null,
-      os: os ?? null,
-    };
-
-    const result = await prisma.subscriber.upsert({
+    const existing = await prisma.subscriber.findUnique({
       where: { email_websiteId: { email, websiteId } },
-      update: updateData,
-      create: { email, websiteId, ...updateData },
       include: subscriberInclude,
     });
 
-    return toSubscriber(result);
+    if (existing) {
+      const updated = await prisma.subscriber.update({
+        where: { id: existing.id },
+        data: {
+          // First-touch: keep existing non-null values
+          firstName: existing.firstName ?? firstName,
+          lastName: existing.lastName ?? lastName,
+          // Always re-subscribe
+          unsubscribedAt: null,
+        },
+        include: subscriberInclude,
+      });
+      return { subscriber: toSubscriber(updated), created: false };
+    }
+
+    const row = await prisma.subscriber.create({
+      data: { email, websiteId, firstName: firstName ?? null, lastName: lastName ?? null },
+      include: subscriberInclude,
+    });
+    return { subscriber: toSubscriber(row), created: true };
+  }
+
+  async enrichSubscriber(email: string, websiteId: string, data: EnrichmentData): Promise<void> {
+    const existing = await prisma.subscriber.findUnique({
+      where: { email_websiteId: { email, websiteId } },
+      select: {
+        country: true,
+        region: true,
+        city: true,
+        timezone: true,
+        browser: true,
+        deviceType: true,
+        os: true,
+      },
+    });
+    if (!existing) return;
+
+    await prisma.subscriber.update({
+      where: { email_websiteId: { email, websiteId } },
+      data: {
+        country: existing.country ?? data.country,
+        region: existing.region ?? data.region,
+        city: existing.city ?? data.city,
+        timezone: existing.timezone ?? data.timezone,
+        browser: existing.browser ?? data.browser,
+        deviceType: existing.deviceType ?? data.deviceType,
+        os: existing.os ?? data.os,
+      },
+    });
   }
 
   async unsubscribeSubscriber(subscriberId: string, tenantId: string): Promise<boolean> {

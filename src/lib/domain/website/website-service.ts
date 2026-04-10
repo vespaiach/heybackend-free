@@ -56,6 +56,16 @@ function toWebsiteField(f: {
 }
 
 export class PrismaWebsiteService implements WebsiteService {
+  async getWebsiteForSigning(
+    id: string,
+  ): Promise<{ id: string; url: string; isActive: boolean; key: string } | null> {
+    const w = await prisma.website.findUnique({
+      where: { id },
+      select: { id: true, url: true, isActive: true, key: true },
+    });
+    return w ?? null;
+  }
+
   async getWebsiteByIdAndKey(id: string, key: string): Promise<WebsiteForSubscribe | null> {
     const website = await prisma.website.findUnique({
       where: { id },

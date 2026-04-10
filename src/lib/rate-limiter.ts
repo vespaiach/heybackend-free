@@ -30,3 +30,21 @@ export function checkRateLimit(key: string, maxRequests: number, windowMs: numbe
   entry.count++;
   return true;
 }
+
+/**
+ * Removes all expired entries from the store.
+ * Exported for testing; called automatically every 5 minutes by the sweep timer.
+ *
+ * @param now Injectable timestamp (defaults to Date.now()) — use in tests to
+ *            avoid fake timers.
+ */
+export function sweepExpired(now = Date.now()): void {
+  for (const [key, entry] of store) {
+    if (now >= entry.resetAt) store.delete(key);
+  }
+}
+
+// Evict expired entries every 5 minutes so the Map does not grow without bound.
+// .unref() prevents this timer from keeping the Node.js process alive in tests.
+const sweepTimer = setInterval(() => sweepExpired(), 5 * 60 * 1000);
+sweepTimer.unref?.();

@@ -7,7 +7,7 @@ import {
   buildCorsHeaders,
   created,
   getClientIp,
-  guardSigned,
+  guardToken,
   ok,
   RouteError,
   serverError,
@@ -54,17 +54,17 @@ export async function POST(
     return validationError("Invalid JSON body");
   }
 
-  // Validate with Valibot (includes timestamp + signature fields).
+  // Validate with Valibot (includes token + expiresAt fields).
   const result = v.safeParse(SubscribeRequestSchema, body);
   if (!result.success) {
     return validationError(result.issues.map((i) => i.message));
   }
 
-  const { email, firstName, lastName, __hp, timestamp, signature } = result.output;
+  const { email, firstName, lastName, __hp, token, expiresAt } = result.output;
 
   try {
-    // HMAC signature + origin guard.
-    const { website } = await guardSigned(request, params, timestamp, signature);
+    // Token + origin guard.
+    const { website } = await guardToken(request, params, token, expiresAt);
     const corsHeaders = buildCorsHeaders(website.url);
 
     // Rate limiting: per-IP and per-website buckets.

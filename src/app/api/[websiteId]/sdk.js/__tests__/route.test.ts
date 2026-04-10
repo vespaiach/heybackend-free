@@ -7,9 +7,9 @@ vi.mock("@/lib/domain", () => ({
   },
 }));
 
-// Simulates the real minified bundle pattern where each placeholder is a standalone quoted string
+// Simulates the real minified bundle pattern where the placeholder is a standalone quoted string
 vi.mock("node:fs", () => ({
-  readFileSync: vi.fn().mockReturnValue('var c={websiteId:"__HB_WEBSITE_ID__",key:"__HB_KEY__"}'),
+  readFileSync: vi.fn().mockReturnValue('var c={websiteId:"__HB_WEBSITE_ID__"}'),
 }));
 
 import { websiteService } from "@/lib/domain";
@@ -42,10 +42,10 @@ describe("GET /api/[websiteId]/sdk.js", () => {
     expect(text).not.toContain("__HB_WEBSITE_ID__");
   });
 
-  it("replaces __HB_KEY__ placeholder with the real key", async () => {
+  it("does NOT inject website.key into the script", async () => {
     const res = await GET(new Request("http://localhost"), params());
     const text = await res.text();
-    expect(text).toContain(JSON.stringify(WEBSITE_KEY));
+    expect(text).not.toContain(WEBSITE_KEY);
     expect(text).not.toContain("__HB_KEY__");
   });
 
@@ -68,13 +68,5 @@ describe("GET /api/[websiteId]/sdk.js", () => {
     const res = await GET(new Request("http://localhost"), params());
     const text = await res.text();
     expect(text).toContain("console.warn");
-  });
-
-  it("JSON-encodes the key correctly (handles special chars)", async () => {
-    const specialKey = 'key-with-"quotes"-and-backslash\\';
-    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, key: specialKey });
-    const res = await GET(new Request("http://localhost"), params());
-    const text = await res.text();
-    expect(text).toContain(JSON.stringify(specialKey));
   });
 });

@@ -1,52 +1,83 @@
 // @vitest-environment node
-// Cross-verify the browser sign() against the server-side algorithm.
-// Both must produce identical output for the same inputs.
-import { createHmac } from "node:crypto";
-import { describe, expect, it } from "vitest";
-import { sign } from "../signing";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fetchToken } from "../signing";
 
-/** Server-side reference implementation (mirrors buildSignature in route.test.ts) */
-function serverSign(websiteId: string, key: string, timestamp: number): string {
-  const ts = String(timestamp);
-  const dynamicKey = createHmac("sha256", key).update(ts).digest();
-  return createHmac("sha256", dynamicKey).update(`${websiteId}:${ts}`).digest("base64url");
-}
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
-describe("sign()", () => {
-  const WEBSITE_ID = "site_abc123";
-  const KEY = "test-signing-secret-32chars!!!!!";
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
-  it("produces the same signature as the server-side algorithm", async () => {
-    const ts = Date.now();
-    const browser = await sign(WEBSITE_ID, KEY, ts);
-    const server = serverSign(WEBSITE_ID, KEY, ts);
-    expect(browser).toBe(server);
+describe("fetchToken()", () => {
+  it("fetches from /api/{websiteId}/token", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ token: "abc123", expiresAt: 9_999_999_999_000 }),
+      }),
+    );
+
+    await fetchToken("site_abc");
+
+    expect(vi.mocked(globalThis.fetch)).toHaveBeenCalledWith("/api/site_abc/token");
   });
 
-  it("produces different signatures for different timestamps", async () => {
-    const ts1 = 1_700_000_000_000;
-    const ts2 = 1_700_000_001_000;
-    const sig1 = await sign(WEBSITE_ID, KEY, ts1);
-    const sig2 = await sign(WEBSITE_ID, KEY, ts2);
-    expect(sig1).not.toBe(sig2);
+  it("returns { token, expiresAt } on a 200 response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ token: "abc123", expiresAt: 9_999_999_999_000 }),
+      }),
+    );
+
+    const result = await fetchToken("site_abc");
+    expect(result).toEqual({ token: "abc123", expiresAt: 9_999_999_999_000 });
   });
 
-  it("produces different signatures for different keys", async () => {
-    const ts = 1_700_000_000_000;
-    const sig1 = await sign(WEBSITE_ID, KEY, ts);
-    const sig2 = await sign(WEBSITE_ID, "different-key-32chars!!!!!!!!!", ts);
-    expect(sig1).not.toBe(sig2);
+  it("throws on a non-2xx response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({ ok: false, status: 401, json: () => Promise.resolve({}) }),
+    );
+
+    await expect(fetchToken("site_abc")).rejects.toThrow("Token fetch failed: 401");
   });
 
-  it("produces different signatures for different websiteIds", async () => {
-    const ts = 1_700_000_000_000;
-    const sig1 = await sign("site_aaa", KEY, ts);
-    const sig2 = await sign("site_bbb", KEY, ts);
-    expect(sig1).not.toBe(sig2);
+  it("throws when response body is missing the token field", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ expiresAt: 9_999_999_999_000 }),
+      }),
+    );
+
+    await expect(fetchToken("site_abc")).rejects.toThrow("Invalid token response");
   });
 
-  it("output is base64url (no +, /, or = chars)", async () => {
-    const sig = await sign(WEBSITE_ID, KEY, Date.now());
-    expect(sig).toMatch(/^[A-Za-z0-9_-]+$/);
+  it("throws when response body is missing the expiresAt field", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ token: "abc123" }),
+      }),
+    );
+
+    await expect(fetchToken("site_abc")).rejects.toThrow("Invalid token response");
+  });
+
+  it("throws on a network error (fetch throws)", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+
+    await expect(fetchToken("site_abc")).rejects.toThrow("Failed to fetch");
   });
 });

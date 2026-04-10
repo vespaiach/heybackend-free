@@ -37,18 +37,19 @@ export function bindForm(
     return () => {};
   }
 
-  const submitButton = form.querySelector<HTMLButtonElement | HTMLInputElement>('[type="submit"]');
+  const resolvedForm: HTMLFormElement = form;
+  const submitButton = resolvedForm.querySelector<HTMLButtonElement | HTMLInputElement>('[type="submit"]');
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
 
-    const email = getFieldValue(form, "email");
+    const email = getFieldValue(resolvedForm, "email");
     if (!email) return;
 
     const data: SubscribeData = {
       email,
-      firstName: getFieldValue(form, "firstName"),
-      lastName: getFieldValue(form, "lastName"),
+      firstName: getFieldValue(resolvedForm, "firstName"),
+      lastName: getFieldValue(resolvedForm, "lastName"),
     };
 
     if (submitButton) submitButton.disabled = true;
@@ -62,6 +63,6 @@ export function bindForm(
     }
   }
 
-  form.addEventListener("submit", handleSubmit);
-  return () => form.removeEventListener("submit", handleSubmit);
+  resolvedForm.addEventListener("submit", handleSubmit);
+  return () => resolvedForm.removeEventListener("submit", handleSubmit);
 }

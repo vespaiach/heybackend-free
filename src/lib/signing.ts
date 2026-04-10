@@ -1,35 +1,44 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 
-const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000; // 5 minutes
+const TOKEN_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 /**
- * Verifies an HMAC-signed subscribe request.
+ * Mints a short-lived token by computing HMAC-SHA256(websiteKey, `${websiteId}:${expiresAt}`).
+ * The raw key never leaves the server; only the opaque token and expiry are sent to the client.
  *
- * Signing scheme (SDK side):
- *   dynamicKey = HMAC-SHA256(timestamp, staticKey)
- *   signature  = HMAC-SHA256(websiteId + ":" + timestamp, dynamicKey) → base64url
- *
- * The static key never travels on the wire. Replay attacks are blocked by the
- * 5-minute timestamp window. Constant-time comparison prevents timing attacks.
+ * @param now Injectable timestamp for deterministic testing (defaults to Date.now()).
  */
-export function verifySubscribeSignature(
+export function mintToken(
   websiteKey: string,
   websiteId: string,
-  timestamp: number,
-  signature: string,
+  now?: number,
+): { token: string; expiresAt: number } {
+  const expiresAt = (now ?? Date.now()) + TOKEN_TTL_MS;
+  const token = createHmac("sha256", websiteKey).update(`${websiteId}:${expiresAt}`).digest("base64url");
+  return { token, expiresAt };
+}
+
+/**
+ * Verifies a server-minted token.
+ * Returns false if the token is expired or if the constant-time comparison fails.
+ *
+ * @param now Injectable timestamp for deterministic testing (defaults to Date.now()).
+ */
+export function verifyToken(
+  websiteKey: string,
+  websiteId: string,
+  token: string,
+  expiresAt: number,
+  now?: number,
 ): boolean {
-  if (Math.abs(Date.now() - timestamp) > TIMESTAMP_TOLERANCE_MS) return false;
+  if ((now ?? Date.now()) > expiresAt) return false;
 
-  const ts = String(timestamp);
-
-  const dynamicKey = createHmac("sha256", websiteKey).update(ts).digest();
-
-  const expected = createHmac("sha256", dynamicKey).update(`${websiteId}:${ts}`).digest("base64url");
+  const expected = createHmac("sha256", websiteKey).update(`${websiteId}:${expiresAt}`).digest("base64url");
 
   try {
-    return timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
+    return timingSafeEqual(Buffer.from(expected), Buffer.from(token));
   } catch {
-    // Buffer lengths differ — signature is definitely invalid
+    // Buffer lengths differ — token is definitely invalid
     return false;
   }
 }

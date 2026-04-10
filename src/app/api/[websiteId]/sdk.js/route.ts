@@ -23,9 +23,7 @@ export async function GET(
     return new Response(JS_STUB, { status: 200, headers: JS_HEADERS });
   }
 
-  const js = readTemplate()
-    .replace('"__HB_WEBSITE_ID__"', JSON.stringify(website.id))
-    .replace('"__HB_KEY__"', JSON.stringify(website.key));
+  const js = readTemplate().replace('"__HB_WEBSITE_ID__"', JSON.stringify(website.id));
 
   return new Response(js, { status: 200, headers: JS_HEADERS });
 }

@@ -1,5 +1,4 @@
 // @vitest-environment node
-import { createHmac } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -41,21 +40,16 @@ import { after } from "next/server";
 import { UAParser } from "ua-parser-js";
 import { subscriberService, websiteService } from "@/lib/domain";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { mintToken } from "@/lib/signing";
 import { OPTIONS, POST } from "../route";
 
 // Reset all mocks and restore defaults before every test.
 beforeEach(() => {
   vi.clearAllMocks();
-  // Restore after() to synchronously invoke its callback so enrichSubscriber
-  // assertions can be made without async delay.
-  // Must use function keyword — arrow functions cannot be used as constructors
-  // and Vitest warns when arrow functions are used in mockImplementation for
-  // mocks that may be called with `new`.
   // biome-ignore lint/complexity/useArrowFunction: function keyword required — after() callback is awaited
   vi.mocked(after).mockImplementation(function (task) {
     void (task as () => Promise<void>)();
   });
-  // Restore UAParser constructor — returns a minimal parser stub.
   // biome-ignore lint/complexity/useArrowFunction: function keyword required — UAParser is called with `new`
   vi.mocked(UAParser).mockImplementation(function () {
     return {
@@ -82,17 +76,9 @@ const mockSubscriber = { subscriber: {} as never, created: true };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/** Reproduces the SDK signing algorithm server-side for test fixture generation. */
-function buildSignature(websiteId: string, key: string, timestamp: number): string {
-  const ts = String(timestamp);
-  const dynamicKey = createHmac("sha256", key).update(ts).digest();
-  return createHmac("sha256", dynamicKey).update(`${websiteId}:${ts}`).digest("base64url");
-}
-
 function validBody(overrides?: Record<string, unknown>) {
-  const timestamp = Date.now();
-  const signature = buildSignature(WEBSITE_ID, WEBSITE_KEY, timestamp);
-  return { email: "alice@example.com", timestamp, signature, ...overrides };
+  const { token, expiresAt } = mintToken(WEBSITE_KEY, WEBSITE_ID);
+  return { email: "alice@example.com", token, expiresAt, ...overrides };
 }
 
 function makePost(body: Record<string, unknown>, origin: string | null = WEBSITE_URL): Request {
@@ -169,7 +155,6 @@ describe("POST — request parsing & validation", () => {
   });
 
   it("returns 400 when email exceeds 320 characters", async () => {
-    // 316 chars local + "@" + domain = well over 320 to ensure maxLength triggers
     const long = `${"a".repeat(316)}@b.com`;
     expect((await POST(makePost(validBody({ email: long })), params())).status).toBe(400);
   });
@@ -186,34 +171,28 @@ describe("POST — request parsing & validation", () => {
     expect((await POST(makePost(validBody({ lastName: "b".repeat(257) })), params())).status).toBe(400);
   });
 
-  it("returns 400 when timestamp is missing", async () => {
-    const { timestamp: _t, ...body } = validBody();
+  it("returns 400 when token is missing", async () => {
+    const { token: _t, ...body } = validBody();
     expect((await POST(makePost(body), params())).status).toBe(400);
   });
 
-  it("returns 400 when signature is missing", async () => {
-    const { signature: _s, ...body } = validBody();
+  it("returns 400 when expiresAt is missing", async () => {
+    const { expiresAt: _e, ...body } = validBody();
     expect((await POST(makePost(body), params())).status).toBe(400);
   });
 });
 
-// ─── POST: signature + origin guard ──────────────────────────────────────────
+// ─── POST: token + origin guard ───────────────────────────────────────────────
 
-describe("POST — signature & origin guard", () => {
-  it("returns 401 when signature is wrong", async () => {
-    expect((await POST(makePost(validBody({ signature: "wrong" })), params())).status).toBe(401);
+describe("POST — token & origin guard", () => {
+  it("returns 401 when token is tampered", async () => {
+    expect((await POST(makePost(validBody({ token: "tampered-token" })), params())).status).toBe(401);
   });
 
-  it("returns 401 when timestamp is expired (>5 min old)", async () => {
-    const ts = Date.now() - 6 * 60 * 1000;
-    const sig = buildSignature(WEBSITE_ID, WEBSITE_KEY, ts);
-    expect((await POST(makePost(validBody({ timestamp: ts, signature: sig })), params())).status).toBe(401);
-  });
-
-  it("returns 401 when timestamp is too far in the future (>5 min)", async () => {
-    const ts = Date.now() + 6 * 60 * 1000;
-    const sig = buildSignature(WEBSITE_ID, WEBSITE_KEY, ts);
-    expect((await POST(makePost(validBody({ timestamp: ts, signature: sig })), params())).status).toBe(401);
+  it("returns 401 when token is expired (expiresAt in the past)", async () => {
+    // Mint a token that has already expired
+    const { token, expiresAt } = mintToken(WEBSITE_KEY, WEBSITE_ID, Date.now() - 16 * 60 * 1000);
+    expect((await POST(makePost(validBody({ token, expiresAt })), params())).status).toBe(401);
   });
 
   it("returns 401 when website is not found", async () => {
@@ -316,7 +295,6 @@ describe("POST — happy paths", () => {
 
   it("calls enrichSubscriber with websiteId and email after upsert", async () => {
     await POST(makePost(validBody()), params());
-    // enrichSubscriber runs inside an async after() callback — flush microtasks first.
     await vi.waitFor(() =>
       expect(subscriberService.enrichSubscriber).toHaveBeenCalledWith(
         "alice@example.com",

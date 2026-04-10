@@ -1,5 +1,5 @@
 import { websiteService } from "@/lib/domain";
-import { verifySubscribeSignature } from "@/lib/signing";
+import { verifyToken } from "@/lib/signing";
 
 // ─── JSON response helper ──────────────────────────────────────────────────────
 
@@ -53,10 +53,10 @@ export function validateOrigin(origin: string | null, websiteUrl: string): boole
   return origin === websiteUrl;
 }
 
-export function buildCorsHeaders(websiteUrl: string): HeadersInit {
+export function buildCorsHeaders(websiteUrl: string, methods = "POST, OPTIONS"): HeadersInit {
   return {
     "Access-Control-Allow-Origin": websiteUrl,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Methods": methods,
     "Access-Control-Allow-Headers": "Content-Type",
   };
 }
@@ -94,23 +94,23 @@ export async function guard(
   return result;
 }
 
-// ─── Signed-request guard (public browser SDK routes) ────────────────────────
-// Validates HMAC signature + timestamp window. The signing key never travels
-// on the wire — only the derived signature and timestamp are sent by the SDK.
-// Call AFTER parsing and validating the request body (needs timestamp + signature).
+// ─── Token guard (public browser SDK routes) ─────────────────────────────────
+// Validates a server-minted short-lived token. The signing key never leaves the
+// server — the SDK obtains a token from /api/[websiteId]/token and forwards it.
+// Call AFTER parsing and validating the request body (needs token + expiresAt).
 
-export async function guardSigned(
+export async function guardToken(
   request: Request,
   params: Promise<{ websiteId: string }>,
-  timestamp: number,
-  signature: string,
+  token: string,
+  expiresAt: number,
 ): Promise<{ websiteId: string; website: { id: string; url: string } }> {
   const { websiteId } = await params;
 
   const website = await websiteService.getWebsiteForSigning(websiteId);
   if (!website || !website.isActive) throw new RouteError(unauthorized());
 
-  if (!verifySubscribeSignature(website.key, websiteId, timestamp, signature)) {
+  if (!verifyToken(website.key, websiteId, token, expiresAt)) {
     throw new RouteError(unauthorized());
   }
 

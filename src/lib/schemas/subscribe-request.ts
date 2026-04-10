@@ -8,8 +8,9 @@ import * as v from "valibot";
  * - firstName  Optional. Trimmed, non-empty if present, max 256 chars.
  * - lastName   Optional. Trimmed, non-empty if present, max 256 chars.
  * - __hp       Honeypot — if non-empty the request is silently dropped (bot).
- * - timestamp  Unix milliseconds. Validated server-side against a 5-min window.
- * - signature  HMAC-SHA256 base64url signature. Verified server-side.
+ * - token      Server-minted short-lived HMAC token. Verified server-side.
+ * - expiresAt  Unix millisecond expiry embedded in the token. Echoed back by
+ *              the SDK so the server can verify without storing state.
  *
  * Uses v.object() (not v.strictObject()) so unknown keys are stripped rather
  * than rejected — prevents breakage when the SDK adds new optional fields.
@@ -19,8 +20,8 @@ export const SubscribeRequestSchema = v.object({
   firstName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(256))),
   lastName: v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(256))),
   __hp: v.optional(v.string()),
-  timestamp: v.pipe(v.number(), v.integer(), v.minValue(0)),
-  signature: v.pipe(v.string(), v.minLength(1)),
+  token: v.pipe(v.string(), v.minLength(1)),
+  expiresAt: v.pipe(v.number(), v.integer(), v.minValue(0)),
 });
 
 export type SubscribeRequest = v.InferOutput<typeof SubscribeRequestSchema>;

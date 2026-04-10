@@ -1,6 +1,11 @@
-import { sign } from "./signing";
+import { fetchToken } from "./signing";
 
-export type HbErrorCode = "RATE_LIMITED" | "VALIDATION_ERROR" | "SERVER_ERROR" | "NETWORK_ERROR";
+export type HbErrorCode =
+  | "RATE_LIMITED"
+  | "VALIDATION_ERROR"
+  | "SERVER_ERROR"
+  | "NETWORK_ERROR"
+  | "TOKEN_ERROR";
 
 export class HbError extends Error {
   constructor(
@@ -15,7 +20,6 @@ export class HbError extends Error {
 
 export interface HbConfig {
   readonly websiteId: string;
-  readonly key: string;
 }
 
 export interface SubscribeData {
@@ -24,9 +28,40 @@ export interface SubscribeData {
   lastName?: string;
 }
 
+// ─── In-memory token cache ────────────────────────────────────────────────────
+// Refresh the token 60 s before it actually expires to avoid a race where the
+// token is valid at cache-read time but expires before the subscribe POST lands.
+
+interface CachedToken {
+  token: string;
+  expiresAt: number;
+}
+
+const tokenCache = new Map<string, CachedToken>();
+const EXPIRY_BUFFER_MS = 60_000;
+
+/** Export for tests — clears the module-scoped cache between test cases. */
+export function __resetTokenCache(): void {
+  tokenCache.clear();
+}
+
+async function getToken(websiteId: string): Promise<CachedToken> {
+  const cached = tokenCache.get(websiteId);
+  if (cached && Date.now() < cached.expiresAt - EXPIRY_BUFFER_MS) {
+    return cached;
+  }
+  const fresh = await fetchToken(websiteId);
+  tokenCache.set(websiteId, fresh);
+  return fresh;
+}
+
 async function attempt(config: HbConfig, data: SubscribeData): Promise<{ status: number }> {
-  const timestamp = Date.now();
-  const signature = await sign(config.websiteId, config.key, timestamp);
+  let tokenData: CachedToken;
+  try {
+    tokenData = await getToken(config.websiteId);
+  } catch {
+    throw new HbError("TOKEN_ERROR", "Failed to obtain subscription token");
+  }
 
   const res = await fetch(`/api/${config.websiteId}/subscribe`, {
     method: "POST",
@@ -36,16 +71,23 @@ async function attempt(config: HbConfig, data: SubscribeData): Promise<{ status:
       firstName: data.firstName,
       lastName: data.lastName,
       __hp: "",
-      timestamp,
-      signature,
+      token: tokenData.token,
+      expiresAt: tokenData.expiresAt,
     }),
   });
 
   if (res.ok) return { status: res.status };
 
+  // On 401 the token may have just expired in a race; clear cache so a retry
+  // will re-fetch a fresh token automatically.
+  if (res.status === 401) {
+    tokenCache.delete(config.websiteId);
+  }
+
   let code: HbErrorCode = "SERVER_ERROR";
   if (res.status === 429) code = "RATE_LIMITED";
   else if (res.status === 400) code = "VALIDATION_ERROR";
+  else if (res.status === 401) code = "TOKEN_ERROR";
 
   let message = "Subscribe failed";
   try {
@@ -58,13 +100,24 @@ async function attempt(config: HbConfig, data: SubscribeData): Promise<{ status:
   throw new HbError(code, message, res.status);
 }
 
-/** POSTs a subscribe request. Retries once after 2 s on network errors only. */
+/** POSTs a subscribe request. Retries once after 2 s on network or token errors. */
 export async function coreSubscribe(config: HbConfig, data: SubscribeData): Promise<{ status: number }> {
   try {
     return await attempt(config, data);
   } catch (err) {
-    if (err instanceof HbError) throw err;
-    // Network error (fetch threw) — retry once after 2 s
+    if (err instanceof HbError) {
+      // Retry once on token errors (e.g. 401 race) and network failures.
+      // Other HbErrors (400, 429, 500) are not retried.
+      if (err.code !== "TOKEN_ERROR" && err.code !== "NETWORK_ERROR") throw err;
+      await new Promise<void>((resolve) => setTimeout(resolve, 2000));
+      try {
+        return await attempt(config, data);
+      } catch (retryErr) {
+        if (retryErr instanceof HbError) throw retryErr;
+        throw new HbError("NETWORK_ERROR", "Network error");
+      }
+    }
+    // Raw fetch threw (network error) — retry once after 2 s
     await new Promise<void>((resolve) => setTimeout(resolve, 2000));
     try {
       return await attempt(config, data);

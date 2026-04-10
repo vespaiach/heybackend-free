@@ -1,32 +1,20 @@
 /**
- * Signs a subscribe request using the same two-layer HMAC-SHA256 scheme
- * as the server's verifySubscribeSignature (src/lib/signing.ts).
+ * Fetches a short-lived token from the server.
+ * The server computes HMAC-SHA256(key, websiteId:expiresAt) — the raw key
+ * never reaches the browser. The SDK simply forwards the opaque token when
+ * submitting a subscribe request.
  *
- * Step 1: dynamicKey = HMAC-SHA256(timestamp, staticKey)
- * Step 2: signature  = HMAC-SHA256(websiteId + ":" + timestamp, dynamicKey)
- *
- * Uses native Web Crypto API — no polyfills, modern browsers only.
+ * Throws on non-2xx responses or malformed response shape (caller handles
+ * retry / fallback).
  */
-export async function sign(websiteId: string, key: string, timestamp: number): Promise<string> {
-  const enc = new TextEncoder();
-  const ts = String(timestamp);
+export async function fetchToken(websiteId: string): Promise<{ token: string; expiresAt: number }> {
+  const res = await fetch(`/api/${websiteId}/token`);
+  if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
 
-  const rawKey = await crypto.subtle.importKey(
-    "raw",
-    enc.encode(key),
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const dynKeyBytes = await crypto.subtle.sign("HMAC", rawKey, enc.encode(ts));
+  const body = (await res.json()) as { token?: unknown; expiresAt?: unknown };
+  if (typeof body.token !== "string" || typeof body.expiresAt !== "number") {
+    throw new Error("Invalid token response");
+  }
 
-  const dynKey = await crypto.subtle.importKey("raw", dynKeyBytes, { name: "HMAC", hash: "SHA-256" }, false, [
-    "sign",
-  ]);
-  const sigBytes = await crypto.subtle.sign("HMAC", dynKey, enc.encode(`${websiteId}:${ts}`));
-
-  return btoa(String.fromCharCode(...new Uint8Array(sigBytes)))
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
+  return { token: body.token, expiresAt: body.expiresAt };
 }

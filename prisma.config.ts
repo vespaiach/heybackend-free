@@ -1,5 +1,6 @@
-// Prisma v6 reads DATABASE_URL directly from the environment via schema.prisma.
-// This file is kept as a placeholder for future Prisma CLI configuration.
+// Prisma CLI configuration for this project.
+// This file defines the schema location, migration settings (including the seed command),
+// and the datasource URL from the DATABASE_URL environment variable.
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 

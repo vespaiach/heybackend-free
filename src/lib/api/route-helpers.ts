@@ -1,4 +1,5 @@
 import { websiteService } from "@/lib/domain";
+import { verifyToken } from "@/lib/signing";
 
 // ─── JSON response helper ──────────────────────────────────────────────────────
 
@@ -52,11 +53,11 @@ export function validateOrigin(origin: string | null, websiteUrl: string): boole
   return origin === websiteUrl;
 }
 
-export function buildCorsHeaders(websiteUrl: string): HeadersInit {
+export function buildCorsHeaders(websiteUrl: string, methods = "POST, OPTIONS"): HeadersInit {
   return {
     "Access-Control-Allow-Origin": websiteUrl,
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "X-BFF-Token, Content-Type",
+    "Access-Control-Allow-Methods": methods,
+    "Access-Control-Allow-Headers": "Content-Type",
   };
 }
 
@@ -81,9 +82,7 @@ export async function resolveWebsite(
   return { websiteId, website };
 }
 
-// ─── Auth + CORS guard ─────────────────────────────────────────────────────────
-// TODO: Re-add X-BFF-Token validation once the SDK's anti-spoofing mechanism is
-// re-implemented. For now only Origin is checked.
+// ─── Auth + CORS guard (authenticated dashboard routes) ───────────────────────
 
 export async function guard(
   request: Request,
@@ -93,6 +92,32 @@ export async function guard(
   const origin = request.headers.get("origin");
   if (!validateOrigin(origin, result.website.url)) throw new RouteError(forbidden());
   return result;
+}
+
+// ─── Token guard (public browser SDK routes) ─────────────────────────────────
+// Validates a server-minted short-lived token. The signing key never leaves the
+// server — the SDK obtains a token from /api/[websiteId]/token and forwards it.
+// Call AFTER parsing and validating the request body (needs token + expiresAt).
+
+export async function guardToken(
+  request: Request,
+  params: Promise<{ websiteId: string }>,
+  token: string,
+  expiresAt: number,
+): Promise<{ websiteId: string; website: { id: string; url: string } }> {
+  const { websiteId } = await params;
+
+  const website = await websiteService.getWebsiteForSigning(websiteId);
+  if (!website || !website.isActive) throw new RouteError(unauthorized());
+
+  if (!verifyToken(website.key, websiteId, token, expiresAt)) {
+    throw new RouteError(unauthorized());
+  }
+
+  const origin = request.headers.get("origin");
+  if (!validateOrigin(origin, website.url)) throw new RouteError(forbidden());
+
+  return { websiteId, website: { id: website.id, url: website.url } };
 }
 
 // ─── Email validation ──────────────────────────────────────────────────────────

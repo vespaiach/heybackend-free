@@ -1,138 +1,143 @@
 import geoip from "fast-geoip";
+import { after } from "next/server";
 import { UAParser } from "ua-parser-js";
+import * as v from "valibot";
+
 import {
   buildCorsHeaders,
   created,
+  forbidden,
   getClientIp,
-  guard,
-  isValidEmail,
-  RouteError,
+  ok,
   serverError,
+  unauthorized,
+  validateOrigin,
   validationError,
 } from "@/lib/api/route-helpers";
-import { subscriberService } from "@/lib/domain";
+import { subscriberService, websiteService } from "@/lib/domain";
 import { logger } from "@/lib/logger";
+import { checkRateLimit } from "@/lib/rate-limiter";
+import { SubscribeRequestSchema } from "@/lib/schemas/subscribe-request";
+import { verifyToken } from "@/lib/signing";
 
-type ValidBody = {
-  email: string;
-  firstName: string | undefined;
-  lastName: string | undefined;
-};
-
-type BodyResult = { ok: true; data: ValidBody } | { ok: false; error: string };
-
-const ALLOWED_BODY_KEYS = new Set(["email", "first_name", "last_name"]);
-
-function validateBody(body: unknown): BodyResult {
-  if (typeof body !== "object" || body === null) {
-    return { ok: false, error: "Request body must be a JSON object" };
-  }
-
-  const raw = body as Record<string, unknown>;
-
-  for (const key of Object.keys(raw)) {
-    if (!ALLOWED_BODY_KEYS.has(key)) {
-      return { ok: false, error: "Only email, first_name, and last_name are allowed" };
-    }
-  }
-
-  // email — required
-  const email = raw.email;
-  if (typeof email !== "string" || email.trim().length === 0) {
-    return { ok: false, error: "email is required" };
-  }
-  if (!isValidEmail(email.trim())) {
-    return { ok: false, error: "email is invalid" };
-  }
-
-  const firstName = typeof raw.first_name === "string" ? raw.first_name : undefined;
-  if (firstName && firstName.length > 256) {
-    return { ok: false, error: "first_name must be at most 256 characters" };
-  }
-
-  const lastName = typeof raw.last_name === "string" ? raw.last_name : undefined;
-  if (lastName !== undefined && lastName.trim().length === 0) {
-    return { ok: false, error: "last_name cannot be empty" };
-  }
-  if (lastName !== undefined && lastName.length > 256) {
-    return { ok: false, error: "last_name must be at most 256 characters" };
-  }
-
-  return {
-    ok: true,
-    data: {
-      email: email.trim().toLowerCase(),
-      firstName,
-      lastName,
-    },
-  };
-}
-
-// ─── Route handlers ────────────────────────────────────────────────────────────
+// ─── OPTIONS (preflight) ──────────────────────────────────────────────────────
+// No body is sent in preflights — verify website exists and origin matches only.
 
 export async function OPTIONS(
   request: Request,
   { params }: { params: Promise<{ websiteId: string }> },
 ): Promise<Response> {
   try {
-    const { website } = await guard(request, params);
+    const { websiteId } = await params;
+    const website = await websiteService.getWebsiteById(websiteId);
+    if (!website || !website.isActive) return new Response(null, { status: 401 });
+
+    const origin = request.headers.get("origin");
+    if (!validateOrigin(origin, website.url)) return new Response(null, { status: 403 });
+
     return new Response(null, { status: 204, headers: buildCorsHeaders(website.url) });
-  } catch (e) {
-    if (e instanceof RouteError) return e.response;
+  } catch {
     return new Response(null, { status: 500 });
   }
 }
+
+// ─── POST /api/[websiteId]/subscribe ─────────────────────────────────────────
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ websiteId: string }> },
 ): Promise<Response> {
+  // Resolve website first so CORS headers are available on every response path.
+  const { websiteId } = await params;
+  const website = await websiteService.getWebsiteForSigning(websiteId);
+  if (!website) return unauthorized();
+  const corsHeaders = buildCorsHeaders(website.url);
+  if (!website.isActive) return unauthorized(corsHeaders);
+
+  // Parse body — token + expiresAt are validated before HMAC verification.
+  let body: unknown;
   try {
-    const { website } = await guard(request, params);
-    const corsHeaders = buildCorsHeaders(website.url);
+    body = await request.json();
+  } catch {
+    return validationError("Invalid JSON body", corsHeaders);
+  }
 
-    let body: unknown;
-    try {
-      body = await request.json();
-    } catch {
-      return validationError("Invalid JSON body", corsHeaders);
+  // Validate with Valibot (includes token + expiresAt fields).
+  const result = v.safeParse(SubscribeRequestSchema, body);
+  if (!result.success) {
+    return validationError(
+      result.issues.map((i) => i.message),
+      corsHeaders,
+    );
+  }
+
+  const { email, firstName, lastName, __hp, token, expiresAt } = result.output;
+
+  try {
+    // Token verification.
+    if (!verifyToken(website.key, websiteId, token, expiresAt)) {
+      return unauthorized(corsHeaders);
     }
 
-    const validation = validateBody(body);
-    if (!validation.ok) {
-      return validationError(validation.error, corsHeaders);
+    // Origin check.
+    const origin = request.headers.get("origin");
+    if (!validateOrigin(origin, website.url)) {
+      return forbidden(corsHeaders);
     }
 
-    const { email, firstName, lastName } = validation.data;
-
-    // Resolve geo from IP — store only derived location, never the raw IP
+    // Rate limiting: per-IP and per-website buckets.
     const ip = getClientIp(request);
-    const geo = ip !== "unknown" ? await geoip.lookup(ip) : null;
+    const withinLimit =
+      (await checkRateLimit(`ip:${ip}:sub`, 5, 60_000)) &&
+      (await checkRateLimit(`site:${website.id}:sub`, 200, 60_000));
 
+    if (!withinLimit) {
+      return new Response(JSON.stringify({ message: "Too many requests" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "60", ...corsHeaders },
+      });
+    }
+
+    // Honeypot: real users leave this blank; bots fill it in.
+    // Silently accept so bots don't learn they were detected.
+    if (__hp) return created({ message: "Subscribed" }, corsHeaders);
+
+    const normalizedEmail = email.toLowerCase();
     const ua = request.headers.get("user-agent") ?? "";
-    const parser = new UAParser(ua);
-    const browser = parser.getBrowser().name ?? null;
-    const deviceType = parser.getDevice().type ?? null;
-    const os = parser.getOS().name ?? null;
 
-    await subscriberService.upsertSubscriber({
-      email,
+    // Upsert subscriber. Geo/UA are enriched post-response to avoid blocking.
+    const { created: isNew } = await subscriberService.upsertSubscriber({
+      email: normalizedEmail,
       firstName: firstName ?? null,
       lastName: lastName ?? null,
       websiteId: website.id,
-      country: geo?.country ?? null,
-      region: geo?.region || null,
-      city: geo?.city || null,
-      timezone: geo?.timezone || null,
-      browser,
-      deviceType,
-      os,
     });
 
-    return created({ message: "Subscribed" }, corsHeaders);
+    // Geo + UA enrichment runs after the response is sent — zero latency impact.
+    after(async () => {
+      try {
+        const geo = ip !== "unknown" ? await geoip.lookup(ip) : null;
+        const parser = new UAParser(ua);
+
+        await subscriberService.enrichSubscriber(normalizedEmail, website.id, {
+          country: geo?.country ?? null,
+          region: geo?.region || null,
+          city: geo?.city || null,
+          timezone: geo?.timezone || null,
+          browser: parser.getBrowser().name ?? null,
+          deviceType: parser.getDevice().type ?? null,
+          os: parser.getOS().name ?? null,
+        });
+      } catch (err) {
+        logger.error("enrichSubscriber after()", err);
+      }
+    });
+
+    return isNew
+      ? created({ message: "Subscribed" }, corsHeaders)
+      : ok({ message: "Subscribed" }, corsHeaders);
   } catch (e) {
-    if (e instanceof RouteError) return e.response;
     logger.error("POST /api/[websiteId]/subscribe", e);
-    return serverError();
+    return serverError(corsHeaders);
   }
 }

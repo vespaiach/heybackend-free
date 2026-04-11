@@ -12,6 +12,7 @@
       "!node_modules",
       "!.next",
       "!dist",
+      "!sdk/dist",
       "!build",
       "!.claude",
       "!.agents",

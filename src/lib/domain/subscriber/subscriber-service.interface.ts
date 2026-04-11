@@ -1,5 +1,6 @@
 import type {
   AnalyticsRange,
+  EnrichmentData,
   ListSubscribersFilter,
   ListSubscribersResult,
   Subscriber,
@@ -17,8 +18,16 @@ export interface SubscriberService {
 
   /**
    * Upsert a subscriber by email + websiteId (used by the public subscribe API).
+   * First-touch semantics: existing non-null name fields are preserved.
+   * Always clears unsubscribedAt (re-subscribe).
    */
-  upsertSubscriber(input: UpsertSubscriberInput): Promise<Subscriber>;
+  upsertSubscriber(input: UpsertSubscriberInput): Promise<{ subscriber: Subscriber; created: boolean }>;
+
+  /**
+   * Update geo/UA fields only where currently null (first-touch semantics).
+   * Called post-response via after(). Safe to call concurrently.
+   */
+  enrichSubscriber(email: string, websiteId: string, data: EnrichmentData): Promise<void>;
 
   /**
    * Set unsubscribedAt = now, verifying that the subscriber belongs to the tenant.

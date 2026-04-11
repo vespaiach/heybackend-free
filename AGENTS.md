@@ -22,18 +22,20 @@ This version has breaking changes — APIs, conventions, and file structure may 
 | Database | MySQL + Prisma 6 |
 | Linting/Formatting | Biome v2 |
 | Build | React Compiler enabled (`reactCompiler: true`) |
+| Browser SDK | Vanilla TS → esbuild IIFE (`sdk/`) — `window.__HB` global |
 
 ## Commands
 
 ```bash
 npm run dev          # start dev server
-npm run build        # production build — NOTE: automatically runs db_prod:migrate (Prisma migration) via prebuild hook
+npm run build        # production build — NOTE: automatically runs sdk:build then db_prod:migrate via prebuild hook
 npm start            # start production server — NOTE: runs scripts/poststart.mjs via poststart hook
 npm test             # run tests (vitest)
 npm run test:watch   # run tests in watch mode
 npm run lint         # run Biome linter
 npm run lint:fix     # run Biome linter with auto-fix
 npm run format       # run Biome formatter (write mode)
+npm run sdk:build    # build browser SDK IIFE → sdk/dist/hb.min.js (run after changes to sdk/src/)
 npm run db:generate  # generate Prisma client
 npm run db:migrate   # run Prisma dev migrations
 npm run db:push      # push schema changes (no migration file)
@@ -45,13 +47,25 @@ npm run db:studio    # open Prisma Studio UI
 ```
 prisma/
 └── schema.prisma            # MySQL schema (User, Tenant, Website, Subscriber, Tag, WebsiteField)
+sdk/
+├── src/
+│   ├── signing.ts           # fetchToken() — fetches server-minted HMAC token from /api/[websiteId]/token
+│   ├── subscribe.ts         # coreSubscribe() + HbError class; 1 retry on network failure
+│   ├── form.ts              # bindForm(selector | HTMLFormElement, config, callbacks)
+│   ├── index.ts             # Config placeholders; window.__HB global; subscribe() + bindForm() wrappers
+│   └── __tests__/           # signing, subscribe (node), form (jsdom) tests
+├── dist/
+│   └── hb.min.js            # Built IIFE — contains "__HB_WEBSITE_ID__" placeholder only (no key)
+└── build.mjs                # esbuild: sdk/src/index.ts → sdk/dist/hb.min.js (IIFE, globalName __HB)
 src/
 ├── app/
 │   ├── layout.tsx           # Root layout — fonts, metadata, global CSS
 │   ├── page.tsx             # Landing page
 │   ├── globals.css          # Tailwind v4 + CSS theme variables (light/dark)
 │   ├── api/
-│   │   ├── [websiteId]/subscribe/route.ts  # Public subscriber POST endpoint
+│   │   ├── [websiteId]/
+│   │   │   ├── subscribe/route.ts  # Public subscriber POST endpoint (token-guarded, rate-limited, honeypot)
+│   │   │   └── sdk.js/route.ts     # GET: reads hb.min.js, injects websiteId, returns JS
 │   │   └── auth/[...nextauth]/route.ts     # NextAuth handlers
 │   ├── login/               # Magic link + Google OAuth login
 │   ├── onboarding/          # New user onboarding form
@@ -129,6 +143,25 @@ src/
 - Each domain module exports a service interface and a Prisma-backed implementation
 - API route helpers (`src/lib/api/route-helpers.ts`) provide typed response factories (`ok()`, `created()`, `validationError()`, etc.) and origin guards — use them in all API routes
 
+### Browser SDK (`sdk/`)
+- The SDK is a vanilla TypeScript IIFE bundle served as a **server-rendered script** — each website's ID is injected at request time, not shipped in source
+- `sdk/dist/hb.min.js` is the build artifact; it contains one literal placeholder string: `"__HB_WEBSITE_ID__"`. The Next.js route `GET /api/[websiteId]/sdk.js` replaces it with `JSON.stringify(website.id)` on every request
+- The website key is **never injected into the SDK** — auth uses server-minted tokens via `GET /api/[websiteId]/token`
+- The SDK derives its `baseUrl` from `document.currentScript.src` at init time so that fetch() targets the heybackend origin even when embedded on a third-party site
+- Run `npm run sdk:build` after any change to `sdk/src/` to rebuild the template bundle
+- `sdk/dist/` is excluded from Biome linting (configured in `biome.json`)
+- Usage on customer sites:
+  ```html
+  <script src="https://app.heybackend.com/api/site_abc123/sdk.js"></script>
+  <script>
+    __HB.bindForm('#signup-form', {
+      onSuccess: () => alert('Subscribed!'),
+      onError: (err) => console.error(err.message),
+    })
+  </script>
+  ```
+- `bindForm` accepts any CSS selector string or a direct `HTMLFormElement` reference; reads `name="email"`, `name="firstName"`, `name="lastName"` fields from the form
+
 ### TypeScript
 - `strict: true` is required — do not disable
 - Module resolution: `bundler`
@@ -167,7 +200,14 @@ src/
 - Aim for meaningful coverage, not just line coverage. Test edge cases and failure paths.
 - Use `vi.fn()` for mocks and `userEvent` (not `fireEvent`) for user interactions.
 - Global test APIs (`describe`, `it`, `expect`, `vi`) are available without imports (`globals: true` in vitest config).
+- Mocking constructors: use `vi.fn(function Ctor(this) { this.method = vi.fn(); })` — arrow functions cannot be `new`-ed and will throw
+- Mock variables used inside `vi.mock()` factories must be declared with `vi.hoisted()` to avoid temporal dead zone errors
+- Module-level singletons (caches, lazy clients) need an exported `_resetForTesting()` called in `beforeEach` to isolate tests
 - Run `npm test` before marking work as done.
+
+### Shell / Git
+- `git add` paths containing brackets must be quoted: `git add 'src/app/api/[websiteId]/route.ts'`
+- `.env.local.example` is gitignored — edit locally but do not attempt to commit
 
 ## Pull Requests & CI
 - Before opening a PR, verify all of the following pass locally:

@@ -157,13 +157,16 @@ export interface UpsertSubscriberInput {
   firstName: string | null;
   lastName: string | null;
   websiteId: string;
-  timezone?: string | null;
-  country?: string | null;
-  region?: string | null;
-  city?: string | null;
-  browser?: string | null;
-  deviceType?: string | null;
-  os?: string | null;
+}
+
+export interface EnrichmentData {
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  timezone: string | null;
+  browser: string | null;
+  deviceType: string | null;
+  os: string | null;
 }
 
 export interface UpdateSubscriberMetadataInput {

@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client";
 import type {
   AnalyticsRange,
+  EnrichmentData,
   GrowthDataPoint,
   ListSubscribersFilter,
   ListSubscribersResult,
@@ -147,41 +148,96 @@ export class PrismaSubscriberService implements SubscriberService {
     return { subscribers: subscribers.map(toSubscriber), total };
   }
 
-  async upsertSubscriber(input: UpsertSubscriberInput): Promise<Subscriber> {
-    const {
-      email,
-      firstName,
-      lastName,
-      websiteId,
-      timezone,
-      country,
-      region,
-      city,
-      browser,
-      deviceType,
-      os,
-    } = input;
+  async upsertSubscriber(
+    input: UpsertSubscriberInput,
+  ): Promise<{ subscriber: Subscriber; created: boolean }> {
+    const { email, websiteId, firstName, lastName } = input;
 
-    const updateData = {
-      firstName: firstName ?? null,
-      lastName: lastName ?? null,
-      timezone: timezone ?? null,
-      country: country ?? null,
-      region: region ?? null,
-      city: city ?? null,
-      browser: browser ?? null,
-      deviceType: deviceType ?? null,
-      os: os ?? null,
-    };
-
-    const result = await prisma.subscriber.upsert({
+    // Atomic upsert avoids the race where two concurrent requests for the
+    // same (email, websiteId) both see "no row" and attempt to create,
+    // causing a unique constraint violation.
+    const before = await prisma.subscriber.findUnique({
       where: { email_websiteId: { email, websiteId } },
-      update: updateData,
-      create: { email, websiteId, ...updateData },
+      select: { id: true },
+    });
+
+    const row = await prisma.subscriber.upsert({
+      where: { email_websiteId: { email, websiteId } },
+      create: { email, websiteId, firstName: firstName ?? null, lastName: lastName ?? null },
+      update: {
+        // First-touch: only set name fields when the existing value is null.
+        // Prisma doesn't support conditional field updates, so we use raw
+        // SQL-like semantics via a nested approach: if the field is already
+        // set, keep it; otherwise use the new value.  We handle this by
+        // reading + merging after the upsert for the update case.
+        unsubscribedAt: null,
+      },
       include: subscriberInclude,
     });
 
-    return toSubscriber(result);
+    const created = before === null;
+
+    // For returning subscribers, apply first-touch name semantics:
+    // only fill in name fields that are currently null.
+    if (!created && (firstName || lastName)) {
+      const needsFirstName = row.firstName === null && firstName != null;
+      const needsLastName = row.lastName === null && lastName != null;
+      if (needsFirstName || needsLastName) {
+        const updated = await prisma.subscriber.update({
+          where: { id: row.id },
+          data: {
+            ...(needsFirstName ? { firstName } : {}),
+            ...(needsLastName ? { lastName } : {}),
+          },
+          include: subscriberInclude,
+        });
+        return { subscriber: toSubscriber(updated), created: false };
+      }
+    }
+
+    return { subscriber: toSubscriber(row), created };
+  }
+
+  async enrichSubscriber(email: string, websiteId: string, data: EnrichmentData): Promise<void> {
+    // Each updateMany is atomic: WHERE field IS NULL ensures first-touch semantics without a prior read.
+    // Concurrent calls race at the DB level; only the first to find field=NULL wins.
+    const base = { email, websiteId };
+    const updates: Promise<unknown>[] = [];
+
+    if (data.country != null)
+      updates.push(
+        prisma.subscriber.updateMany({ where: { ...base, country: null }, data: { country: data.country } }),
+      );
+    if (data.region != null)
+      updates.push(
+        prisma.subscriber.updateMany({ where: { ...base, region: null }, data: { region: data.region } }),
+      );
+    if (data.city != null)
+      updates.push(
+        prisma.subscriber.updateMany({ where: { ...base, city: null }, data: { city: data.city } }),
+      );
+    if (data.timezone != null)
+      updates.push(
+        prisma.subscriber.updateMany({
+          where: { ...base, timezone: null },
+          data: { timezone: data.timezone },
+        }),
+      );
+    if (data.browser != null)
+      updates.push(
+        prisma.subscriber.updateMany({ where: { ...base, browser: null }, data: { browser: data.browser } }),
+      );
+    if (data.deviceType != null)
+      updates.push(
+        prisma.subscriber.updateMany({
+          where: { ...base, deviceType: null },
+          data: { deviceType: data.deviceType },
+        }),
+      );
+    if (data.os != null)
+      updates.push(prisma.subscriber.updateMany({ where: { ...base, os: null }, data: { os: data.os } }));
+
+    await Promise.all(updates);
   }
 
   async unsubscribeSubscriber(subscriberId: string, tenantId: string): Promise<boolean> {

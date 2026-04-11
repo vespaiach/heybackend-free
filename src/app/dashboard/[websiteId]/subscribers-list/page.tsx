@@ -4,39 +4,41 @@ import { auth } from "@/auth";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { subscriberService, tenantService, websiteService } from "@/lib/domain";
-import { SubscribersTable } from "./subscribers-table";
+import { subscriberService, tenantService } from "@/lib/domain";
+import { SubscribersTable } from "./_components/subscribers-table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 
 export default async function SubscribersPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ websiteId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
-  const params = await searchParams;
-  const wid = typeof params.wid === "string" ? params.wid : undefined;
-  const page = Math.max(1, parseInt(typeof params.page === "string" ? params.page : "1", 10) || 1);
-  const pageSizeRaw = parseInt(typeof params.pageSize === "string" ? params.pageSize : "20", 10);
+  const { websiteId } = await params;
+  const sp = await searchParams;
+  const page = Math.max(1, parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
+  const pageSizeRaw = parseInt(typeof sp.pageSize === "string" ? sp.pageSize : "20", 10);
   const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(pageSizeRaw) ? pageSizeRaw : 20;
-  const q = typeof params.q === "string" ? params.q.trim() : "";
-  const statusRaw = typeof params.status === "string" ? params.status : "all";
+  const q = typeof sp.q === "string" ? sp.q.trim() : "";
+  const statusRaw = typeof sp.status === "string" ? sp.status : "all";
   const status = (["all", "active", "unsubscribed"] as const).includes(
     statusRaw as "all" | "active" | "unsubscribed",
   )
     ? (statusRaw as "all" | "active" | "unsubscribed")
     : "all";
-  const sortFieldRaw = typeof params.sortField === "string" ? params.sortField : "createdAt";
+  const sortFieldRaw = typeof sp.sortField === "string" ? sp.sortField : "createdAt";
   const sortField = (["firstName", "lastName", "createdAt"] as const).includes(
     sortFieldRaw as "firstName" | "lastName" | "createdAt",
   )
     ? (sortFieldRaw as "firstName" | "lastName" | "createdAt")
     : "createdAt";
-  const sortDir = params.sortDir === "asc" ? "asc" : ("desc" as const);
-  const tagsRaw = typeof params.tags === "string" ? params.tags : "";
+  const sortDir = sp.sortDir === "asc" ? "asc" : ("desc" as const);
+  const tagsRaw = typeof sp.tags === "string" ? sp.tags : "";
   const selectedTagIds = tagsRaw
     .split(",")
     .map((s) => s.trim())
@@ -46,15 +48,14 @@ export default async function SubscribersPage({
 
   if (!tenant) redirect("/onboarding");
 
-  const resolvedId = tenant.websites.find((w) => w.id === wid)?.id;
+  const resolvedId = tenant.websites.find((w) => w.id === websiteId)?.id;
 
   let subscribers: import("@/lib/domain/types").Subscriber[] = [];
   let total = 0;
   let availableTags: { id: string; name: string; color: string | null; description: string | null }[] = [];
-  let websiteFields: import("@/lib/domain/types").WebsiteField[] = [];
 
   if (resolvedId) {
-    const [result, tags, fields] = await Promise.all([
+    const [result, tags] = await Promise.all([
       subscriberService.listSubscribers({
         websiteId: resolvedId,
         q: q || undefined,
@@ -66,13 +67,11 @@ export default async function SubscribersPage({
         tags: selectedTagIds.length > 0 ? selectedTagIds : undefined,
       }),
       subscriberService.getTagsForWebsite(resolvedId),
-      websiteService.getWebsiteFields(resolvedId),
     ]);
 
     subscribers = result.subscribers;
     total = result.total;
     availableTags = tags;
-    websiteFields = fields;
   }
 
   return (
@@ -101,7 +100,6 @@ export default async function SubscribersPage({
             sortDir={sortDir}
             availableTags={availableTags}
             selectedTagIds={selectedTagIds}
-            websiteFields={websiteFields}
           />
         </Suspense>
       </main>

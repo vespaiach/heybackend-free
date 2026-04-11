@@ -9,7 +9,8 @@ import { Input } from "@/components/ui/input";
 type Tag = { id: string; name: string; color: string | null; description: string | null };
 
 interface ManageTagsDialogProps {
-  email: string;
+  title?: string;
+  description: string;
   tags: Tag[];
   availableTags: Tag[];
   isPending: boolean;
@@ -20,7 +21,8 @@ interface ManageTagsDialogProps {
 }
 
 export function ManageTagsDialog({
-  email,
+  title,
+  description,
   tags,
   availableTags,
   isPending,
@@ -47,9 +49,9 @@ export function ManageTagsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Manage tags</DialogTitle>
+          <DialogTitle>{title ?? "Manage tags"}</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">{email}</p>
+        <p className="text-sm text-muted-foreground">{description}</p>
 
         {tags.length > 0 && (
           <div className="flex flex-wrap gap-1">

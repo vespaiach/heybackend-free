@@ -1,10 +1,9 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import type { Subscriber, WebsiteField } from "@/lib/domain/types";
+import type { Subscriber } from "@/lib/domain/types";
 
 export type Tag = { id: string; name: string; color: string | null; description: string | null };
 
@@ -19,21 +18,11 @@ function DetailRow({ label, value }: { label: string; value: string | number | n
   );
 }
 
-export function SubscriberDetailPanel({
-  subscriber,
-  websiteFields,
-  onEditMetadata,
-}: {
-  subscriber: Subscriber;
-  websiteFields: WebsiteField[];
-  onEditMetadata: () => void;
-}) {
+export function SubscriberDetailPanel({ subscriber }: { subscriber: Subscriber }) {
   const hasCapture =
     subscriber.os || subscriber.deviceType || subscriber.browser || subscriber.timezone || subscriber.country;
 
-  const hasCustomFields = websiteFields.length > 0;
-
-  if (!hasCapture && !hasCustomFields) {
+  if (!hasCapture) {
     return (
       <p className="px-2 text-xs text-muted-foreground">No enrichment data captured for this subscriber.</p>
     );
@@ -43,58 +32,28 @@ export function SubscriberDetailPanel({
 
   return (
     <div className="space-y-4 px-2">
-      {hasCapture && (
-        <div className="space-y-1">
-          <p className="pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Capture context
-          </p>
-          <DetailRow label="OS" value={subscriber.os} />
-          <DetailRow label="Device" value={subscriber.deviceType} />
-          <DetailRow label="Browser" value={subscriber.browser} />
-          <DetailRow label="Timezone" value={subscriber.timezone} />
-          <DetailRow label="Location" value={location || null} />
-        </div>
-      )}
-
-      {hasCustomFields && (
-        <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Custom fields</p>
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={onEditMetadata}>
-              Edit
-            </Button>
-          </div>
-          <div className="grid gap-1 sm:grid-cols-2">
-            {websiteFields.map((field) => (
-              <DetailRow
-                key={field.id}
-                label={field.label}
-                value={
-                  subscriber.metadata?.[field.slug] !== undefined
-                    ? String(subscriber.metadata[field.slug])
-                    : null
-                }
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="space-y-1">
+        <p className="pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+          Capture context
+        </p>
+        <DetailRow label="OS" value={subscriber.os} />
+        <DetailRow label="Device" value={subscriber.deviceType} />
+        <DetailRow label="Browser" value={subscriber.browser} />
+        <DetailRow label="Timezone" value={subscriber.timezone} />
+        <DetailRow label="Location" value={location || null} />
+      </div>
     </div>
   );
 }
 
 export function SubscriberDetailDialog({
   subscriber,
-  websiteFields,
   open,
   onOpenChange,
-  onEditMetadata,
 }: {
   subscriber: Subscriber;
-  websiteFields: WebsiteField[];
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onEditMetadata: () => void;
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -128,11 +87,7 @@ export function SubscriberDetailDialog({
             </div>
           )}
           <Separator />
-          <SubscriberDetailPanel
-            subscriber={subscriber}
-            websiteFields={websiteFields}
-            onEditMetadata={onEditMetadata}
-          />
+          <SubscriberDetailPanel subscriber={subscriber} />
         </div>
       </DialogContent>
     </Dialog>

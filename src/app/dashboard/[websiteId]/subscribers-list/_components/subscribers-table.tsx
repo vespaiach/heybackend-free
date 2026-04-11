@@ -5,14 +5,11 @@ import {
   ArrowUpDownIcon,
   ArrowUpIcon,
   ChevronDownIcon,
-  SearchIcon,
   SearchXIcon,
   TagIcon,
-  XIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
-import { BulkTagPopover } from "@/components/bulk-tag-popover";
 import { ManageTagsDialog } from "@/components/manage-tags-dialog";
 import { type PageSizeOption, PaginationBar } from "@/components/pagination-bar";
 import { RelativeDate } from "@/components/relative-date";
@@ -20,28 +17,22 @@ import { TablePageHeader } from "@/components/table-page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Separator } from "@/components/ui/separator";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import type { SubscriberMetadata, WebsiteField } from "@/lib/domain/types";
 import { downloadCsv } from "@/lib/export-csv";
 import { formatDate } from "@/lib/utils";
-import { type Subscriber, SubscriberDetailPanel, type Tag } from "./_components/subscriber-detail-dialog";
 import {
   addTagToSubscriber,
   bulkAddTag,
+  bulkRemoveTag,
   bulkResubscribeSubscribers,
   bulkUnsubscribeSubscribers,
   exportSubscribers,
   removeTagFromSubscriber,
-  updateSubscriberMetadata,
-} from "./actions";
-
-type StatusFilter = "all" | "active" | "unsubscribed";
+} from "../actions";
+import { type Subscriber, SubscriberDetailPanel, type Tag } from "./subscriber-detail-dialog";
+import { SubscribersActiveFilters } from "./subscribers-active-filters";
+import { SubscribersBulkActionBar } from "./subscribers-bulk-action-bar";
+import { type StatusFilter, SubscribersFilterPopover } from "./subscribers-filter-popover";
 
 type ColumnKey = "firstName" | "lastName" | "email" | "createdAt" | "unsubscribedAt" | "tags";
 
@@ -65,11 +56,10 @@ interface SubscribersTableProps {
   sortDir: SortDir;
   availableTags: Tag[];
   selectedTagIds: string[];
-  websiteFields: WebsiteField[];
 }
 
-type SortField = "firstName" | "lastName" | "createdAt";
-type SortDir = "asc" | "desc";
+export type SortField = "firstName" | "lastName" | "createdAt";
+export type SortDir = "asc" | "desc";
 
 function SortIcon({
   field,
@@ -88,96 +78,6 @@ function SortIcon({
   );
 }
 
-function SubscriberMetadataDialog({
-  subscriber,
-  websiteFields,
-  open,
-  onOpenChange,
-}: {
-  subscriber: Subscriber;
-  websiteFields: WebsiteField[];
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const router = useRouter();
-  const [values, setValues] = React.useState<SubscriberMetadata>(() => subscriber.metadata ?? {});
-  const [isPending, startTransition] = React.useTransition();
-
-  React.useEffect(() => {
-    if (open) setValues(subscriber.metadata ?? {});
-  }, [open, subscriber.metadata]);
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    startTransition(async () => {
-      await updateSubscriberMetadata(subscriber.id, values);
-      onOpenChange(false);
-      router.refresh();
-    });
-  }
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Edit custom fields</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-muted-foreground">{subscriber.email}</p>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {websiteFields.map((field) => {
-            const val = values[field.slug];
-            return (
-              <div key={field.id} className="space-y-1">
-                <Label htmlFor={`meta-${field.slug}`} className="text-sm">
-                  {field.label}
-                  {field.required && <span className="ml-0.5 text-destructive">*</span>}
-                </Label>
-                {field.type === "boolean" ? (
-                  <Checkbox
-                    id={`meta-${field.slug}`}
-                    checked={!!val}
-                    onCheckedChange={(checked) => setValues((prev) => ({ ...prev, [field.slug]: !!checked }))}
-                    disabled={isPending}
-                  />
-                ) : (
-                  <Input
-                    id={`meta-${field.slug}`}
-                    type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
-                    value={val !== null && val !== undefined ? String(val) : ""}
-                    onChange={(e) => {
-                      const raw = e.target.value;
-                      setValues((prev) => ({
-                        ...prev,
-                        [field.slug]:
-                          field.type === "number" ? (raw === "" ? null : Number(raw)) : raw || null,
-                      }));
-                    }}
-                    disabled={isPending}
-                    required={field.required}
-                  />
-                )}
-              </div>
-            );
-          })}
-          <div className="flex justify-end gap-2 pt-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              disabled={isPending}>
-              Cancel
-            </Button>
-            <SubmitButton pending={isPending} size="sm">
-              Save
-            </SubmitButton>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 export function SubscribersTable({
   selectedWebsiteId,
   subscribers,
@@ -189,13 +89,11 @@ export function SubscribersTable({
   sortDir,
   availableTags,
   selectedTagIds,
-  websiteFields,
 }: SubscribersTableProps) {
   const router = useRouter();
   const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
   const [detailSubscriberId, setDetailSubscriberId] = React.useState<string | null>(null);
   const [manageTagsForId, setManageTagsForId] = React.useState<string | null>(null);
-  const [editMetadataForId, setEditMetadataForId] = React.useState<string | null>(null);
   const [isBulkPending, startBulkTransition] = React.useTransition();
   const [isPagePending, startPageTransition] = React.useTransition();
   const [isManageTagsPending, startManageTagsTransition] = React.useTransition();
@@ -203,25 +101,26 @@ export function SubscribersTable({
   const [visibleColumns, setVisibleColumns] = React.useState<Set<ColumnKey>>(
     () => new Set(COLUMNS.filter((c) => c.defaultVisible).map((c) => c.key)),
   );
-  const [isFilterOpen, setIsFilterOpen] = React.useState(false);
-  const [draftFilters, setDraftFilters] = React.useState<{
-    query: string;
-    status: StatusFilter;
-    tagIds: string[];
-  }>({ query: search.q, status: search.status, tagIds: selectedTagIds });
+  const [bulkTagDialogOpen, setBulkTagDialogOpen] = React.useState(false);
 
   const hasActiveFilters = search.q !== "" || search.status !== "all" || selectedTagIds.length > 0;
 
-  function handleFilterOpenChange(open: boolean) {
-    if (open) {
-      setDraftFilters({ query: search.q, status: search.status, tagIds: selectedTagIds });
+  const selectedSubscriberTags = React.useMemo(() => {
+    const tagMap = new Map<string, Tag>();
+    for (const sub of subscribers) {
+      if (selectedIds.has(sub.id)) {
+        for (const tag of sub.tags) {
+          tagMap.set(tag.id, tag);
+        }
+      }
     }
-    setIsFilterOpen(open);
-  }
+    return [...tagMap.values()];
+  }, [subscribers, selectedIds]);
+
+  const baseUrl = `/dashboard/${selectedWebsiteId}/subscribers-list`;
 
   function buildParams(overrides: Record<string, string>) {
     const params = new URLSearchParams();
-    if (selectedWebsiteId) params.set("wid", selectedWebsiteId);
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
     if (search.q) params.set("q", search.q);
@@ -238,59 +137,53 @@ export function SubscribersTable({
 
   function toggleSort(field: SortField) {
     const newDir = field === sortField && sortDir === "asc" ? "desc" : field === sortField ? "asc" : "asc";
-    router.push(`/dashboard/subscribers?${buildParams({ sortField: field, sortDir: newDir, page: "1" })}`);
+    router.push(`${baseUrl}?${buildParams({ sortField: field, sortDir: newDir, page: "1" })}`);
   }
 
-  function applyFilters() {
+  function handleApplyFilters(filters: { query: string; status: StatusFilter; tagIds: string[] }) {
     const params = new URLSearchParams();
-    if (selectedWebsiteId) params.set("wid", selectedWebsiteId);
     params.set("page", "1");
     params.set("pageSize", String(pageSize));
-    if (draftFilters.query) params.set("q", draftFilters.query);
-    if (draftFilters.status !== "all") params.set("status", draftFilters.status);
-    if (draftFilters.tagIds.length > 0) params.set("tags", draftFilters.tagIds.join(","));
+    if (filters.query) params.set("q", filters.query);
+    if (filters.status !== "all") params.set("status", filters.status);
+    if (filters.tagIds.length > 0) params.set("tags", filters.tagIds.join(","));
     params.set("sortField", sortField);
     params.set("sortDir", sortDir);
-    setIsFilterOpen(false);
-    router.push(`/dashboard/subscribers?${params.toString()}`);
+    router.push(`${baseUrl}?${params.toString()}`);
   }
 
-  function removeFilter(type: "query" | "status" | "tag", tagId?: string) {
+  function handleResetAllFilters() {
     const params = new URLSearchParams();
-    if (selectedWebsiteId) params.set("wid", selectedWebsiteId);
     params.set("page", "1");
     params.set("pageSize", String(pageSize));
+    params.set("sortField", sortField);
+    params.set("sortDir", sortDir);
+    router.push(`${baseUrl}?${params.toString()}`);
+  }
+
+  function handleRemoveFilter(type: "query" | "status" | "tag", tagId?: string) {
     const newQuery = type === "query" ? "" : search.q;
     const newStatus: StatusFilter = type === "status" ? "all" : search.status;
     const newTagIds = type === "tag" ? selectedTagIds.filter((id) => id !== tagId) : selectedTagIds;
-    if (newQuery) params.set("q", newQuery);
-    if (newStatus !== "all") params.set("status", newStatus);
-    if (newTagIds.length > 0) params.set("tags", newTagIds.join(","));
-    params.set("sortField", sortField);
-    params.set("sortDir", sortDir);
-    router.push(`/dashboard/subscribers?${params.toString()}`);
-  }
-
-  function resetAllFilters() {
-    const params = new URLSearchParams();
-    if (selectedWebsiteId) params.set("wid", selectedWebsiteId);
-    params.set("page", "1");
-    params.set("pageSize", String(pageSize));
-    params.set("sortField", sortField);
-    params.set("sortDir", sortDir);
-    setIsFilterOpen(false);
-    router.push(`/dashboard/subscribers?${params.toString()}`);
+    router.push(
+      `${baseUrl}?${buildParams({
+        page: "1",
+        q: newQuery,
+        status: newStatus === "all" ? "" : newStatus,
+        tags: newTagIds.join(","),
+      })}`,
+    );
   }
 
   function handlePageChange(newPage: number) {
     startPageTransition(() => {
-      router.push(`/dashboard/subscribers?${buildParams({ page: String(newPage) })}`);
+      router.push(`${baseUrl}?${buildParams({ page: String(newPage) })}`);
     });
   }
 
   function handlePageSizeChange(newPageSize: PageSizeOption) {
     startPageTransition(() => {
-      router.push(`/dashboard/subscribers?${buildParams({ page: "1", pageSize: String(newPageSize) })}`);
+      router.push(`${baseUrl}?${buildParams({ page: "1", pageSize: String(newPageSize) })}`);
     });
   }
 
@@ -382,10 +275,6 @@ export function SubscribersTable({
   const manageTagsSubscriber = manageTagsForId
     ? (subscribers.find((s) => s.id === manageTagsForId) ?? null)
     : null;
-  const editMetadataSubscriber = editMetadataForId
-    ? (subscribers.find((s) => s.id === editMetadataForId) ?? null)
-    : null;
-
   const COL_COUNT = 2 + visibleColumns.size; // checkbox + expand + visible cols
 
   return (
@@ -403,185 +292,45 @@ export function SubscribersTable({
             return next;
           })
         }
-        hasActiveFilters={hasActiveFilters}
-        total={total}
-        isFilterOpen={isFilterOpen}
-        onFilterOpenChange={handleFilterOpenChange}
-        filtersContent={
-          <>
-            <div className="border-b p-3">
-              <p className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Search
-              </p>
-              <div className="relative">
-                <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Name or email..."
-                  value={draftFilters.query}
-                  onChange={(e) => setDraftFilters((prev) => ({ ...prev, query: e.target.value }))}
-                  className="pl-9"
-                />
-              </div>
-            </div>
-
-            <div className="border-b p-3">
-              <p className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                Status
-              </p>
-              <RadioGroup
-                value={draftFilters.status}
-                onValueChange={(v) => setDraftFilters((prev) => ({ ...prev, status: v as StatusFilter }))}
-                className="gap-1.5">
-                {(["all", "active", "unsubscribed"] as const).map((s) => (
-                  <div key={s} className="flex items-center gap-2">
-                    <RadioGroupItem value={s} id={`filter-status-${s}`} />
-                    <Label htmlFor={`filter-status-${s}`} className="cursor-pointer font-normal capitalize">
-                      {s}
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-
-            {availableTags.length > 0 && (
-              <div className="border-b p-3">
-                <p className="mb-1.5 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Tags
-                </p>
-                <div className="max-h-36 overflow-y-auto">
-                  {availableTags.map((tag) => (
-                    <div key={tag.id} className="flex items-center gap-2 py-1">
-                      <Checkbox
-                        id={`filter-tag-${tag.id}`}
-                        checked={draftFilters.tagIds.includes(tag.id)}
-                        onCheckedChange={(checked) =>
-                          setDraftFilters((prev) => ({
-                            ...prev,
-                            tagIds: checked
-                              ? [...prev.tagIds, tag.id]
-                              : prev.tagIds.filter((id) => id !== tag.id),
-                          }))
-                        }
-                      />
-                      <Label htmlFor={`filter-tag-${tag.id}`} className="cursor-pointer font-normal">
-                        {tag.name}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center gap-2 p-3">
-              {hasActiveFilters && (
-                <Button variant="secondary" onClick={resetAllFilters}>
-                  Clear all ×
-                </Button>
-              )}
-              <Button className="flex-1" size="sm" onClick={applyFilters}>
-                Apply
-              </Button>
-            </div>
-          </>
+        filterSlot={
+          <SubscribersFilterPopover
+            search={search}
+            selectedTagIds={selectedTagIds}
+            availableTags={availableTags}
+            total={total}
+            hasActiveFilters={hasActiveFilters}
+            onApply={handleApplyFilters}
+            onReset={handleResetAllFilters}
+          />
         }
         activeFiltersContent={
-          hasActiveFilters ? (
-            <div className="flex flex-wrap items-center gap-1.5">
-              {search.q && (
-                <Badge variant="secondary" className="gap-1 pr-1">
-                  Search: {search.q}
-                  <button
-                    type="button"
-                    onClick={() => removeFilter("query")}
-                    className="ml-0.5 rounded-sm opacity-70 hover:opacity-100"
-                    aria-label="Remove search filter">
-                    <XIcon className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {search.status !== "all" && (
-                <Badge variant="secondary" className="gap-1 pr-1 capitalize">
-                  {search.status}
-                  <button
-                    type="button"
-                    onClick={() => removeFilter("status")}
-                    className="ml-0.5 rounded-sm opacity-70 hover:opacity-100"
-                    aria-label="Remove status filter">
-                    <XIcon className="h-3 w-3" />
-                  </button>
-                </Badge>
-              )}
-              {selectedTagIds.map((tagId) => {
-                const tag = availableTags.find((t) => t.id === tagId);
-                if (!tag) return null;
-                return (
-                  <Badge key={tagId} variant="secondary" className="gap-1 pr-1">
-                    <TagIcon className="h-3 w-3" />
-                    {tag.name}
-                    <button
-                      type="button"
-                      onClick={() => removeFilter("tag", tagId)}
-                      className="ml-0.5 rounded-sm opacity-70 hover:opacity-100"
-                      aria-label={`Remove tag filter: ${tag.name}`}>
-                      <XIcon className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                );
-              })}
-              <button
-                type="button"
-                onClick={resetAllFilters}
-                className="text-xs text-muted-foreground underline-offset-2 hover:underline">
-                Clear all ×
-              </button>
-            </div>
-          ) : undefined
+          <SubscribersActiveFilters
+            search={search}
+            selectedTagIds={selectedTagIds}
+            availableTags={availableTags}
+            onRemoveFilter={handleRemoveFilter}
+            onResetAll={handleResetAllFilters}
+          />
         }
         onExport={handleExport}
         isExportPending={isExportPending}
       />
 
-      {selectedCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
-          <div className="flex items-center gap-1 rounded-full border bg-background px-3 py-2 shadow-lg">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 rounded-full"
-              onClick={clearSelection}
-              aria-label="Clear selection">
-              <XIcon className="h-4 w-4" />
-            </Button>
-            <span className="min-w-16 text-center text-sm font-medium">{selectedCount} selected</span>
-            <Separator orientation="vertical" className="mx-1 h-4" />
-            <Button variant="ghost" size="sm" disabled={isBulkPending} onClick={handleBulkUnsubscribe}>
-              Unsubscribe
-            </Button>
-            <Button variant="ghost" size="sm" disabled={isBulkPending} onClick={handleBulkResubscribe}>
-              Re-subscribe
-            </Button>
-            <BulkTagPopover
-              availableTags={availableTags}
-              isPending={isBulkPending}
-              onAdd={(tagName) => {
-                startBulkTransition(async () => {
-                  await bulkAddTag([...selectedIds], tagName);
-                  clearSelection();
-                  router.refresh();
-                });
-              }}
-              onDone={clearSelection}
-            />
-          </div>
-        </div>
-      )}
+      <SubscribersBulkActionBar
+        selectedCount={selectedCount}
+        isBulkPending={isBulkPending}
+        onClear={clearSelection}
+        onUnsubscribe={handleBulkUnsubscribe}
+        onResubscribe={handleBulkResubscribe}
+        onManageTags={() => setBulkTagDialogOpen(true)}
+      />
 
       {subscribers.length === 0 && hasActiveFilters ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <SearchXIcon className="mb-4 h-12 w-12 text-muted-foreground/40" />
           <h3 className="mb-1 text-base font-medium">No subscribers found</h3>
           <p className="mb-4 text-sm text-muted-foreground">No results match your current filters.</p>
-          <Button variant="outline" size="sm" onClick={resetAllFilters}>
+          <Button variant="outline" size="sm" onClick={handleResetAllFilters}>
             Clear Filters
           </Button>
         </div>
@@ -722,14 +471,7 @@ export function SubscribersTable({
                     {detailSubscriberId === subscriber.id && (
                       <TableRow>
                         <TableCell colSpan={COL_COUNT} className="bg-muted/30 px-6 py-4">
-                          <SubscriberDetailPanel
-                            subscriber={subscriber}
-                            websiteFields={websiteFields}
-                            onEditMetadata={() => {
-                              setDetailSubscriberId(null);
-                              setEditMetadataForId(subscriber.id);
-                            }}
-                          />
+                          <SubscriberDetailPanel subscriber={subscriber} />
                         </TableCell>
                       </TableRow>
                     )}
@@ -752,7 +494,7 @@ export function SubscribersTable({
 
       {manageTagsSubscriber && (
         <ManageTagsDialog
-          email={manageTagsSubscriber.email}
+          description={manageTagsSubscriber.email}
           tags={manageTagsSubscriber.tags}
           availableTags={availableTags}
           isPending={isManageTagsPending}
@@ -775,16 +517,28 @@ export function SubscribersTable({
         />
       )}
 
-      {editMetadataSubscriber && websiteFields.length > 0 && (
-        <SubscriberMetadataDialog
-          subscriber={editMetadataSubscriber}
-          websiteFields={websiteFields}
-          open={true}
-          onOpenChange={(open) => {
-            if (!open) setEditMetadataForId(null);
-          }}
-        />
-      )}
+      <ManageTagsDialog
+        description={`${selectedCount} subscriber${selectedCount === 1 ? "" : "s"} selected`}
+        tags={selectedSubscriberTags}
+        availableTags={availableTags}
+        isPending={isBulkPending}
+        open={bulkTagDialogOpen}
+        onOpenChange={setBulkTagDialogOpen}
+        onAdd={(tagName) => {
+          startBulkTransition(async () => {
+            await bulkAddTag([...selectedIds], tagName);
+            setBulkTagDialogOpen(false);
+            clearSelection();
+            router.refresh();
+          });
+        }}
+        onRemove={(tagId) => {
+          startBulkTransition(async () => {
+            await bulkRemoveTag([...selectedIds], tagId);
+            router.refresh();
+          });
+        }}
+      />
     </>
   );
 }

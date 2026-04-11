@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/domain", () => ({
   websiteService: {
     getWebsiteForSigning: vi.fn(),
+    getWebsiteById: vi.fn(),
   },
 }));
 
@@ -31,6 +32,7 @@ const WEBSITE_URL = "https://example.com";
 const WEBSITE_KEY = "test-signing-secret-32chars!!!!!";
 
 const mockWebsite = { id: WEBSITE_ID, url: WEBSITE_URL, isActive: true, key: WEBSITE_KEY };
+const mockWebsitePublic = { id: WEBSITE_ID, url: WEBSITE_URL, isActive: true };
 
 function params(id = WEBSITE_ID) {
   return { params: Promise.resolve({ websiteId: id }) };
@@ -51,6 +53,7 @@ function makeOptions(origin: string | null = WEBSITE_URL): Request {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(mockWebsite);
+  vi.mocked(websiteService.getWebsiteById).mockResolvedValue(mockWebsitePublic);
   vi.mocked(checkRateLimit).mockReturnValue(true);
   vi.mocked(mintToken).mockReturnValue({ token: "mock-token", expiresAt: 9_999_999_999_000 });
 });
@@ -70,12 +73,12 @@ describe("OPTIONS /api/[websiteId]/token", () => {
   });
 
   it("returns 401 when website is not found", async () => {
-    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(null);
+    vi.mocked(websiteService.getWebsiteById).mockResolvedValue(null);
     expect((await OPTIONS(makeOptions(), params())).status).toBe(401);
   });
 
   it("returns 401 when website is inactive", async () => {
-    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, isActive: false });
+    vi.mocked(websiteService.getWebsiteById).mockResolvedValue({ ...mockWebsitePublic, isActive: false });
     expect((await OPTIONS(makeOptions(), params())).status).toBe(401);
   });
 
@@ -102,6 +105,11 @@ describe("GET /api/[websiteId]/token", () => {
     const res = await GET(makeGet(), params());
     expect(res.headers.get("access-control-allow-origin")).toBe(WEBSITE_URL);
     expect(res.headers.get("access-control-allow-methods")).toContain("GET");
+  });
+
+  it("includes Cache-Control: no-store to prevent token caching", async () => {
+    const res = await GET(makeGet(), params());
+    expect(res.headers.get("cache-control")).toBe("no-store");
   });
 
   it("calls mintToken with (website.key, websiteId)", async () => {

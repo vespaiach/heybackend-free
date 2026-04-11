@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/domain", () => ({
   websiteService: {
     getWebsiteForSigning: vi.fn(),
+    getWebsiteById: vi.fn(),
   },
   subscriberService: {
     upsertSubscriber: vi.fn(),
@@ -60,6 +61,7 @@ beforeEach(() => {
   });
   vi.mocked(checkRateLimit).mockReturnValue(true);
   vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(mockWebsite);
+  vi.mocked(websiteService.getWebsiteById).mockResolvedValue(mockWebsitePublic);
   vi.mocked(subscriberService.upsertSubscriber).mockResolvedValue(mockSubscriber);
   vi.mocked(subscriberService.enrichSubscriber).mockResolvedValue(undefined);
 });
@@ -71,6 +73,7 @@ const WEBSITE_URL = "https://example.com";
 const WEBSITE_KEY = "test-signing-secret-32chars!!!!!";
 
 const mockWebsite = { id: WEBSITE_ID, url: WEBSITE_URL, isActive: true, key: WEBSITE_KEY };
+const mockWebsitePublic = { id: WEBSITE_ID, url: WEBSITE_URL, isActive: true };
 
 const mockSubscriber = { subscriber: {} as never, created: true };
 
@@ -115,12 +118,12 @@ describe("OPTIONS /api/[websiteId]/subscribe", () => {
   });
 
   it("returns 401 when website is not found", async () => {
-    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(null);
+    vi.mocked(websiteService.getWebsiteById).mockResolvedValue(null);
     expect((await OPTIONS(makeOptions(), params())).status).toBe(401);
   });
 
   it("returns 401 when website is inactive", async () => {
-    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, isActive: false });
+    vi.mocked(websiteService.getWebsiteById).mockResolvedValue({ ...mockWebsitePublic, isActive: false });
     expect((await OPTIONS(makeOptions(), params())).status).toBe(401);
   });
 

@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/domain", () => ({
   websiteService: {
-    getWebsiteForSigning: vi.fn(),
+    getWebsiteById: vi.fn(),
   },
 }));
 
@@ -17,7 +17,7 @@ import { GET } from "../route";
 
 const WEBSITE_ID = "site_abc123";
 const WEBSITE_KEY = "super-secret-key";
-const mockWebsite = { id: WEBSITE_ID, url: "https://example.com", isActive: true, key: WEBSITE_KEY };
+const mockWebsite = { id: WEBSITE_ID, url: "https://example.com", isActive: true };
 
 function params(id = WEBSITE_ID) {
   return { params: Promise.resolve({ websiteId: id }) };
@@ -25,7 +25,7 @@ function params(id = WEBSITE_ID) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(mockWebsite);
+  vi.mocked(websiteService.getWebsiteById).mockResolvedValue(mockWebsite);
 });
 
 describe("GET /api/[websiteId]/sdk.js", () => {
@@ -42,7 +42,7 @@ describe("GET /api/[websiteId]/sdk.js", () => {
     expect(text).not.toContain("__HB_WEBSITE_ID__");
   });
 
-  it("does NOT inject website.key into the script", async () => {
+  it("does NOT inject any secret key into the script", async () => {
     const res = await GET(new Request("http://localhost"), params());
     const text = await res.text();
     expect(text).not.toContain(WEBSITE_KEY);
@@ -54,7 +54,7 @@ describe("GET /api/[websiteId]/sdk.js", () => {
   });
 
   it("returns a stub JS warning when website is not found", async () => {
-    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(null);
+    vi.mocked(websiteService.getWebsiteById).mockResolvedValue(null);
     const res = await GET(new Request("http://localhost"), params());
     expect(res.status).toBe(200);
     const text = await res.text();
@@ -63,7 +63,7 @@ describe("GET /api/[websiteId]/sdk.js", () => {
   });
 
   it("returns a stub JS warning when website is inactive", async () => {
-    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, isActive: false });
+    vi.mocked(websiteService.getWebsiteById).mockResolvedValue({ ...mockWebsite, isActive: false });
     const res = await GET(new Request("http://localhost"), params());
     const text = await res.text();
     expect(text).toContain("console.warn");

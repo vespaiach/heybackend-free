@@ -20,7 +20,7 @@ export async function OPTIONS(
 ): Promise<Response> {
   try {
     const { websiteId } = await params;
-    const website = await websiteService.getWebsiteForSigning(websiteId);
+    const website = await websiteService.getWebsiteById(websiteId);
     if (!website || !website.isActive) return new Response(null, { status: 401 });
 
     const origin = request.headers.get("origin");
@@ -61,7 +61,7 @@ export async function GET(
     }
 
     const { token, expiresAt } = mintToken(website.key, websiteId);
-    return ok({ token, expiresAt }, corsHeaders);
+    return ok({ token, expiresAt }, { ...corsHeaders, "Cache-Control": "no-store" });
   } catch (e) {
     if (e instanceof RouteError) return e.response;
     return serverError();

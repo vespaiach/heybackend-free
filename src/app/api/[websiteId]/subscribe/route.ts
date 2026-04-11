@@ -29,7 +29,7 @@ export async function OPTIONS(
 ): Promise<Response> {
   try {
     const { websiteId } = await params;
-    const website = await websiteService.getWebsiteForSigning(websiteId);
+    const website = await websiteService.getWebsiteById(websiteId);
     if (!website || !website.isActive) return new Response(null, { status: 401 });
 
     const origin = request.headers.get("origin");

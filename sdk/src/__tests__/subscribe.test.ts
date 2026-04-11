@@ -72,6 +72,15 @@ describe("coreSubscribe()", () => {
     });
   });
 
+  it("joins message[] array from server validation errors into a single string", async () => {
+    mockFetch(400, { message: ["Email is required", "Invalid format"] });
+    await expect(coreSubscribe(CONFIG, DATA)).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      message: "Email is required; Invalid format",
+      status: 400,
+    });
+  });
+
   it("throws HbError SERVER_ERROR on 500", async () => {
     mockFetch(500, { message: "Internal server error" });
     await expect(coreSubscribe(CONFIG, DATA)).rejects.toMatchObject({

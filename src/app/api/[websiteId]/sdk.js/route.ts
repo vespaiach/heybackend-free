@@ -16,7 +16,7 @@ export async function GET(
 ): Promise<Response> {
   const { websiteId } = await params;
 
-  const website = await websiteService.getWebsiteForSigning(websiteId);
+  const website = await websiteService.getWebsiteById(websiteId);
   if (!website || !website.isActive) {
     return new Response(JS_STUB, { status: 200, headers: JS_HEADERS });
   }

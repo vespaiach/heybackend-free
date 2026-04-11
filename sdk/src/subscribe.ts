@@ -95,8 +95,9 @@ async function attempt(config: HbConfig, data: SubscribeData): Promise<{ status:
 
   let message = "Subscribe failed";
   try {
-    const body = (await res.json()) as { message?: string };
+    const body = (await res.json()) as { message?: string | string[] };
     if (typeof body.message === "string") message = body.message;
+    else if (Array.isArray(body.message)) message = body.message.join("; ");
   } catch {
     // ignore parse errors
   }

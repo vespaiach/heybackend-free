@@ -153,31 +153,49 @@ export class PrismaSubscriberService implements SubscriberService {
   ): Promise<{ subscriber: Subscriber; created: boolean }> {
     const { email, websiteId, firstName, lastName } = input;
 
-    const existing = await prisma.subscriber.findUnique({
+    // Atomic upsert avoids the race where two concurrent requests for the
+    // same (email, websiteId) both see "no row" and attempt to create,
+    // causing a unique constraint violation.
+    const before = await prisma.subscriber.findUnique({
       where: { email_websiteId: { email, websiteId } },
+      select: { id: true },
+    });
+
+    const row = await prisma.subscriber.upsert({
+      where: { email_websiteId: { email, websiteId } },
+      create: { email, websiteId, firstName: firstName ?? null, lastName: lastName ?? null },
+      update: {
+        // First-touch: only set name fields when the existing value is null.
+        // Prisma doesn't support conditional field updates, so we use raw
+        // SQL-like semantics via a nested approach: if the field is already
+        // set, keep it; otherwise use the new value.  We handle this by
+        // reading + merging after the upsert for the update case.
+        unsubscribedAt: null,
+      },
       include: subscriberInclude,
     });
 
-    if (existing) {
-      const updated = await prisma.subscriber.update({
-        where: { id: existing.id },
-        data: {
-          // First-touch: keep existing non-null values
-          firstName: existing.firstName ?? firstName,
-          lastName: existing.lastName ?? lastName,
-          // Always re-subscribe
-          unsubscribedAt: null,
-        },
-        include: subscriberInclude,
-      });
-      return { subscriber: toSubscriber(updated), created: false };
+    const created = before === null;
+
+    // For returning subscribers, apply first-touch name semantics:
+    // only fill in name fields that are currently null.
+    if (!created && (firstName || lastName)) {
+      const needsFirstName = row.firstName === null && firstName != null;
+      const needsLastName = row.lastName === null && lastName != null;
+      if (needsFirstName || needsLastName) {
+        const updated = await prisma.subscriber.update({
+          where: { id: row.id },
+          data: {
+            ...(needsFirstName ? { firstName } : {}),
+            ...(needsLastName ? { lastName } : {}),
+          },
+          include: subscriberInclude,
+        });
+        return { subscriber: toSubscriber(updated), created: false };
+      }
     }
 
-    const row = await prisma.subscriber.create({
-      data: { email, websiteId, firstName: firstName ?? null, lastName: lastName ?? null },
-      include: subscriberInclude,
-    });
-    return { subscriber: toSubscriber(row), created: true };
+    return { subscriber: toSubscriber(row), created };
   }
 
   async enrichSubscriber(email: string, websiteId: string, data: EnrichmentData): Promise<void> {

@@ -577,6 +577,7 @@ describe("SubscribersTable", () => {
       const header = screen.getAllByRole("row")[0]!;
       await userEvent.click(within(header).getByRole("checkbox"));
       await userEvent.click(screen.getByRole("button", { name: /^unsubscribe$/i }));
+      await userEvent.click(await screen.findByRole("button", { name: /^confirm$/i }));
       await waitFor(() => {
         expect(mockBulkUnsubscribe).toHaveBeenCalledWith(expect.arrayContaining(["1", "2"]));
         expect(mockRefresh).toHaveBeenCalled();
@@ -588,6 +589,7 @@ describe("SubscribersTable", () => {
       const header = screen.getAllByRole("row")[0]!;
       await userEvent.click(within(header).getByRole("checkbox"));
       await userEvent.click(screen.getByRole("button", { name: /^re-subscribe$/i }));
+      await userEvent.click(await screen.findByRole("button", { name: /^confirm$/i }));
       await waitFor(() => {
         expect(mockBulkResubscribe).toHaveBeenCalledWith(expect.arrayContaining(["1", "2"]));
         expect(mockRefresh).toHaveBeenCalled();

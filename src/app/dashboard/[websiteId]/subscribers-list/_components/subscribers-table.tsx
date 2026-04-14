@@ -10,6 +10,16 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ManageTagsDialog } from "@/components/manage-tags-dialog";
 import { type PageSizeOption, PaginationBar } from "@/components/pagination-bar";
 import { RelativeDate } from "@/components/relative-date";
@@ -102,6 +112,9 @@ export function SubscribersTable({
     () => new Set(COLUMNS.filter((c) => c.defaultVisible).map((c) => c.key)),
   );
   const [bulkTagDialogOpen, setBulkTagDialogOpen] = React.useState(false);
+  const [bulkConfirmAction, setBulkConfirmAction] = React.useState<"unsubscribe" | "resubscribe" | null>(
+    null,
+  );
 
   const hasActiveFilters = search.q !== "" || search.status !== "all" || selectedTagIds.length > 0;
 
@@ -256,19 +269,28 @@ export function SubscribersTable({
   }
 
   function handleBulkUnsubscribe() {
-    startBulkTransition(async () => {
-      await bulkUnsubscribeSubscribers([...selectedIds]);
-      clearSelection();
-      router.refresh();
-    });
+    setBulkConfirmAction("unsubscribe");
   }
 
   function handleBulkResubscribe() {
-    startBulkTransition(async () => {
-      await bulkResubscribeSubscribers([...selectedIds]);
-      clearSelection();
-      router.refresh();
-    });
+    setBulkConfirmAction("resubscribe");
+  }
+
+  function handleConfirmBulkAction() {
+    if (bulkConfirmAction === "unsubscribe") {
+      startBulkTransition(async () => {
+        await bulkUnsubscribeSubscribers([...selectedIds]);
+        clearSelection();
+        router.refresh();
+      });
+    } else if (bulkConfirmAction === "resubscribe") {
+      startBulkTransition(async () => {
+        await bulkResubscribeSubscribers([...selectedIds]);
+        clearSelection();
+        router.refresh();
+      });
+    }
+    setBulkConfirmAction(null);
   }
 
   const selectedCount = selectedIds.size;
@@ -539,6 +561,29 @@ export function SubscribersTable({
           });
         }}
       />
+
+      <AlertDialog
+        open={bulkConfirmAction !== null}
+        onOpenChange={(open) => {
+          if (!open) setBulkConfirmAction(null);
+        }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {bulkConfirmAction === "unsubscribe" ? "Unsubscribe subscribers?" : "Re-subscribe subscribers?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {bulkConfirmAction === "unsubscribe"
+                ? `This will unsubscribe ${selectedCount} subscriber${selectedCount === 1 ? "" : "s"}. They will stop receiving emails.`
+                : `This will re-subscribe ${selectedCount} subscriber${selectedCount === 1 ? "" : "s"}. They will start receiving emails again.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmBulkAction}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

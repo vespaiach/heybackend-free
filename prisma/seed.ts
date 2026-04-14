@@ -57,7 +57,21 @@ async function main() {
   // ── User + Tenant ────────────────────────────────────────────────────────
   const user = await prisma.user.upsert({
     where: { email: "seed@example.com" },
-    update: {},
+    update: {
+      name: "Seed User",
+      tenant: {
+        upsert: {
+          create: {
+            fullName: "Seed User",
+            email: "seed@example.com",
+          },
+          update: {
+            fullName: "Seed User",
+            email: "seed@example.com",
+          },
+        },
+      },
+    },
     create: {
       email: "seed@example.com",
       name: "Seed User",
@@ -86,7 +100,11 @@ async function main() {
     websiteData.map((data) =>
       prisma.website.upsert({
         where: { key: data.key },
-        update: {},
+        update: {
+          name: data.name,
+          url: data.url,
+          tenantId: tenant.id,
+        },
         create: { ...data, tenantId: tenant.id },
       }),
     ),

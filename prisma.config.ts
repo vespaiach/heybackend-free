@@ -1,5 +1,6 @@
-// Prisma CLI configuration: sets the schema path, migration directory,
-// seed command, and datasource URL for dev/CI tooling.
+// Prisma CLI configuration for this project.
+// This file defines the schema location, migration settings (including the seed command),
+// and the datasource URL from the DATABASE_URL environment variable.
 import "dotenv/config";
 import { defineConfig, env } from "prisma/config";
 

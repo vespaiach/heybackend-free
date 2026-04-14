@@ -33,6 +33,7 @@ function buildSubscribers(websiteId: string, offset: number) {
   return Array.from({ length: SUBSCRIBER_COUNT }, (_, i) => {
     const n = offset + i + 1;
     const isUnsubscribed = Math.random() < 0.1; // 10% unsubscribed
+    const createdAt = randomDate(oneYearAgo, now);
 
     return {
       email: `subscriber${n}@example.com`,
@@ -44,8 +45,8 @@ function buildSubscribers(websiteId: string, offset: number) {
       browser: randomItem(BROWSERS),
       os: randomItem(OS_LIST),
       deviceType: randomItem(DEVICE_TYPES),
-      createdAt: randomDate(oneYearAgo, now),
-      unsubscribedAt: isUnsubscribed ? randomDate(oneYearAgo, now) : null,
+      createdAt,
+      unsubscribedAt: isUnsubscribed ? randomDate(createdAt, now) : null,
     };
   });
 }
@@ -55,15 +56,15 @@ async function main() {
 
   // ── User + Tenant ────────────────────────────────────────────────────────
   const user = await prisma.user.upsert({
-    where: { email: "nta.toan@gmail.com" },
+    where: { email: "seed@example.com" },
     update: {},
     create: {
-      email: "nta.toan@gmail.com",
-      name: "Toan Nguyen",
+      email: "seed@example.com",
+      name: "Seed User",
       tenant: {
         create: {
-          fullName: "Toan Nguyen",
-          email: "nta.toan@gmail.com",
+          fullName: "Seed User",
+          email: "seed@example.com",
         },
       },
     },

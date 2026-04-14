@@ -342,18 +342,11 @@ export class PrismaSubscriberService implements SubscriberService {
       where: { id: { in: subscriberIds }, website: { tenantId } },
       select: { id: true },
     });
-    let count = 0;
-    for (const { id } of validSubs) {
-      try {
-        await prisma.subscriberTag.delete({
-          where: { subscriberId_tagId: { subscriberId: id, tagId } },
-        });
-        count++;
-      } catch {
-        // tag may not exist on this subscriber — skip silently
-      }
-    }
-    return { count };
+    const validIds = validSubs.map(({ id }) => id);
+    const result = await prisma.subscriberTag.deleteMany({
+      where: { subscriberId: { in: validIds }, tagId },
+    });
+    return { count: result.count };
   }
 
   async getTagsForWebsite(websiteId: string): Promise<Pick<Tag, "id" | "name" | "color" | "description">[]> {

@@ -44,7 +44,7 @@ export function SubscribersBulkActionBar({
         </Button>
         <Button variant="outline" size="sm" disabled={isBulkPending} onClick={onManageTags}>
           <TagIcon className="mr-1 h-3 w-3" />
-          Manage tag
+          Manage tags
         </Button>
       </div>
     </div>

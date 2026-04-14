@@ -65,6 +65,7 @@ src/
 │   ├── api/
 │   │   ├── [websiteId]/
 │   │   │   ├── subscribe/route.ts  # Public subscriber POST endpoint (token-guarded, rate-limited, honeypot)
+│   │   │   ├── token/route.ts      # GET: mints HMAC token for SDK auth
 │   │   │   └── sdk.js/route.ts     # GET: reads hb.min.js, injects websiteId, returns JS
 │   │   └── auth/[...nextauth]/route.ts     # NextAuth handlers
 │   ├── login/               # Magic link + Google OAuth login
@@ -82,12 +83,17 @@ src/
 │   ├── utils.ts             # cn() helper (clsx + tailwind-merge)
 │   ├── prisma.ts            # Prisma client singleton
 │   ├── logger.ts            # Error logging
+│   ├── signing.ts           # Server-side HMAC signing utilities
+│   ├── rate-limiter.ts      # Rate limiter (in-memory)
+│   ├── rate-limiter-upstash.ts  # Rate limiter (Upstash Redis, production)
 │   ├── export-csv.ts        # CSV export utility
 │   ├── route-helpers.ts     # RSC/server helpers: getSession(), getLoggedInTenant()
 │   ├── schemas/             # Valibot schemas
 │   ├── api/
 │   │   └── route-helpers.ts # API response factories: ok(), created(), validationError(), etc.
 │   └── domain/              # Clean Architecture service layer
+│       ├── index.ts         # Domain exports
+│       ├── types.ts         # Shared domain types
 │       ├── subscriber/      # Subscriber service (CRUD, tags, analytics, export)
 │       ├── website/         # Website service (CRUD, fields)
 │       └── tenant/          # Tenant service (multi-tenancy)

@@ -13,7 +13,7 @@ vi.mock("@/lib/logger", () => ({ logger: { error: vi.fn() } }));
 vi.mock("fast-geoip", () => ({ default: { lookup: vi.fn().mockResolvedValue(null) } }));
 vi.mock("ua-parser-js", () => ({ UAParser: vi.fn() }));
 vi.mock("next/server", () => ({ after: vi.fn() }));
-vi.mock("@/lib/rate-limiter", () => ({ checkRateLimit: vi.fn().mockReturnValue(true) }));
+vi.mock("@/lib/rate-limiter", () => ({ checkRateLimit: vi.fn().mockResolvedValue(true) }));
 
 import { after } from "next/server";
 import { UAParser } from "ua-parser-js";
@@ -63,7 +63,7 @@ beforeEach(() => {
       getOS: () => ({ name: "Linux" }),
     } as never;
   });
-  vi.mocked(checkRateLimit).mockReturnValue(true);
+  vi.mocked(checkRateLimit).mockResolvedValue(true);
   vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(mockWebsite);
   vi.mocked(subscriberService.unsubscribeByEmail).mockResolvedValue(true);
   vi.mocked(subscriberService.logRequest).mockResolvedValue({ id: "req_1" } as never);
@@ -171,14 +171,38 @@ describe("GET — token guard", () => {
     expect((await GET(makeGet({ token, expiresAt: String(expiresAt) }), params())).status).toBe(401);
   });
 
+  it("logs REJECTED/INVALID_TOKEN when token is expired", async () => {
+    const { token, expiresAt } = mintToken(WEBSITE_KEY, WEBSITE_ID, Date.now() - 16 * 60 * 1000);
+    await GET(makeGet({ token, expiresAt: String(expiresAt) }), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "UNSUBSCRIBE", status: "REJECTED", rejectionReason: "INVALID_TOKEN" }),
+    );
+  });
+
   it("returns 401 when website is not found", async () => {
     vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(null);
     expect((await GET(makeGet(), params())).status).toBe(401);
   });
 
+  it("logs REJECTED/INVALID_TOKEN when website is not found", async () => {
+    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(null);
+    await GET(makeGet(), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "UNSUBSCRIBE", status: "REJECTED", rejectionReason: "INVALID_TOKEN" }),
+    );
+  });
+
   it("returns 403 when website is inactive", async () => {
     vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, isActive: false });
     expect((await GET(makeGet(), params())).status).toBe(403);
+  });
+
+  it("logs REJECTED/INVALID_TOKEN when website is inactive", async () => {
+    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, isActive: false });
+    await GET(makeGet(), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "UNSUBSCRIBE", status: "REJECTED", rejectionReason: "INVALID_TOKEN" }),
+    );
   });
 });
 
@@ -186,7 +210,7 @@ describe("GET — token guard", () => {
 
 describe("GET — rate limiting", () => {
   it("returns 429 with Retry-After when per-IP limit is exceeded", async () => {
-    vi.mocked(checkRateLimit).mockReturnValue(false);
+    vi.mocked(checkRateLimit).mockResolvedValue(false);
     const res = await GET(makeGet(), params());
     expect(res.status).toBe(429);
     expect(res.headers.get("retry-after")).toBe("60");
@@ -194,7 +218,7 @@ describe("GET — rate limiting", () => {
   });
 
   it("logs REJECTED/RATE_LIMIT_IP when per-IP limit exceeded", async () => {
-    vi.mocked(checkRateLimit).mockReturnValue(false);
+    vi.mocked(checkRateLimit).mockResolvedValue(false);
     await GET(makeGet(), params());
     expect(subscriberService.logRequest).toHaveBeenCalledWith(
       expect.objectContaining({ type: "UNSUBSCRIBE", status: "REJECTED", rejectionReason: "RATE_LIMIT_IP" }),
@@ -203,8 +227,8 @@ describe("GET — rate limiting", () => {
 
   it("logs REJECTED/RATE_LIMIT_WEBSITE when per-website limit exceeded", async () => {
     vi.mocked(checkRateLimit)
-      .mockReturnValueOnce(true) // per-IP passes
-      .mockReturnValue(false); // per-website fails
+      .mockResolvedValueOnce(true) // per-IP passes
+      .mockResolvedValue(false); // per-website fails
     const res = await GET(makeGet(), params());
     expect(res.status).toBe(429);
     expect(res.headers.get("Retry-After")).toBeTruthy();

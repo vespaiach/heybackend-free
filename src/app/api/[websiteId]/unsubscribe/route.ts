@@ -115,7 +115,7 @@ export async function GET(
   }
 
   // Rate limiting: per-IP and per-website buckets
-  const ipAllowed = checkRateLimit(`ip:${ip}:unsub`, 5, 60_000);
+  const ipAllowed = await checkRateLimit(`ip:${ip}:unsub`, 5, 60_000);
   if (!ipAllowed) {
     await logAndEnrich(normalizedEmail, "REJECTED", "RATE_LIMIT_IP", true);
     return new Response(JSON.stringify({ message: "Too many requests" }), {
@@ -124,7 +124,7 @@ export async function GET(
     });
   }
 
-  const siteAllowed = checkRateLimit(`site:${website.id}:unsub`, 200, 60_000);
+  const siteAllowed = await checkRateLimit(`site:${website.id}:unsub`, 200, 60_000);
   if (!siteAllowed) {
     await logAndEnrich(normalizedEmail, "REJECTED", "RATE_LIMIT_WEBSITE", true);
     return new Response(JSON.stringify({ message: "Too many requests" }), {

@@ -476,19 +476,21 @@ export class PrismaSubscriberService implements SubscriberService {
     const signupMap = new Map(signupRows.map((r) => [formatDate(r.date), Number(r.cnt)]));
     const unsubMap = new Map(unsubRows.map((r) => [formatDate(r.date), Number(r.cnt)]));
 
-    // Country breakdown
-    const countryRows = await prisma.subscriber.groupBy({
+    const acceptedFilter = { websiteId, type: "SUBSCRIBE" as const, status: "ACCEPTED" as const };
+
+    // Country breakdown (from SubscriptionRequest — all accepted subscribe requests)
+    const countryRows = await prisma.subscriptionRequest.groupBy({
       by: ["country"],
-      where: { websiteId, country: { not: null } },
+      where: { ...acceptedFilter, country: { not: null } },
       _count: { country: true },
       orderBy: { _count: { country: "desc" } },
       take: 10,
     });
 
-    // Device breakdown
-    const deviceRows = await prisma.subscriber.groupBy({
+    // Device breakdown (from SubscriptionRequest)
+    const deviceRows = await prisma.subscriptionRequest.groupBy({
       by: ["deviceType"],
-      where: { websiteId },
+      where: acceptedFilter,
       _count: { deviceType: true },
     });
 
@@ -498,10 +500,10 @@ export class PrismaSubscriberService implements SubscriberService {
       deviceBreakdown[bucket] += row._count.deviceType;
     }
 
-    // Timezone breakdown
-    const timezoneRows = await prisma.subscriber.groupBy({
+    // Timezone breakdown (from SubscriptionRequest)
+    const timezoneRows = await prisma.subscriptionRequest.groupBy({
       by: ["timezone"],
-      where: { websiteId, timezone: { not: null } },
+      where: { ...acceptedFilter, timezone: { not: null } },
       _count: { timezone: true },
       orderBy: { _count: { timezone: "desc" } },
       take: 10,

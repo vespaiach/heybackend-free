@@ -3,8 +3,10 @@ import type {
   EnrichmentData,
   ListSubscribersFilter,
   ListSubscribersResult,
+  LogRequestInput,
   Subscriber,
   SubscriberAnalytics,
+  SubscriptionRequest,
   Tag,
   UpdateSubscriberMetadataInput,
   UpsertSubscriberInput,
@@ -24,10 +26,16 @@ export interface SubscriberService {
   upsertSubscriber(input: UpsertSubscriberInput): Promise<{ subscriber: Subscriber; created: boolean }>;
 
   /**
-   * Update geo/UA fields only where currently null (first-touch semantics).
-   * Called post-response via after(). Safe to call concurrently.
+   * Log a subscribe/unsubscribe request (accepted or rejected).
+   * Called synchronously before sending the response so every request is audited.
    */
-  enrichSubscriber(email: string, websiteId: string, data: EnrichmentData): Promise<void>;
+  logRequest(input: LogRequestInput): Promise<SubscriptionRequest>;
+
+  /**
+   * Enrich a request log record with geo/device data.
+   * Called post-response via after() — zero latency impact.
+   */
+  enrichRequest(id: string, data: EnrichmentData): Promise<void>;
 
   /**
    * Set unsubscribedAt = now, verifying that the subscriber belongs to the tenant.
@@ -96,7 +104,8 @@ export interface SubscriberService {
   /**
    * Set unsubscribedAt = now for a subscriber identified by email + websiteId.
    * Used by the public unsubscribe endpoint (no tenantId needed).
-   * Returns false when subscriber not found. Idempotent: returns true even if already unsubscribed.
+   * Returns false only when the subscriber is not found. Idempotent: calling on
+   * an already-unsubscribed subscriber still returns true and updates the timestamp.
    */
   unsubscribeByEmail(email: string, websiteId: string): Promise<boolean>;
 

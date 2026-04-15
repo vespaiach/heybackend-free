@@ -5,9 +5,14 @@ import type {
   GrowthDataPoint,
   ListSubscribersFilter,
   ListSubscribersResult,
+  LogRequestInput,
   Subscriber,
   SubscriberAnalytics,
   SubscriberMetadata,
+  SubscriptionRejectionReason,
+  SubscriptionRequest,
+  SubscriptionRequestStatus,
+  SubscriptionRequestType,
   Tag,
   UpdateSubscriberMetadataInput,
   UpsertSubscriberInput,
@@ -190,46 +195,50 @@ export class PrismaSubscriberService implements SubscriberService {
     return { subscriber: toSubscriber(row), created };
   }
 
-  async enrichSubscriber(email: string, websiteId: string, data: EnrichmentData): Promise<void> {
-    // Each updateMany is atomic: WHERE field IS NULL ensures first-touch semantics without a prior read.
-    // Concurrent calls race at the DB level; only the first to find field=NULL wins.
-    const base = { email, websiteId };
-    const updates: Promise<unknown>[] = [];
+  async logRequest(input: LogRequestInput): Promise<SubscriptionRequest> {
+    const { email, websiteId, type, status, rejectionReason } = input;
+    const row = await prisma.subscriptionRequest.create({
+      data: {
+        email,
+        websiteId,
+        type,
+        status,
+        ...(rejectionReason != null ? { rejectionReason } : {}),
+      },
+    });
+    return {
+      id: row.id,
+      email: row.email,
+      websiteId: row.websiteId,
+      type: row.type as SubscriptionRequestType,
+      status: row.status as SubscriptionRequestStatus,
+      rejectionReason: row.rejectionReason as SubscriptionRejectionReason | null,
+      createdAt: row.createdAt,
+      country: row.country,
+      region: row.region,
+      city: row.city,
+      area: row.area,
+      timezone: row.timezone,
+      platform: row.platform,
+      browser: row.browser,
+      deviceType: row.deviceType,
+    };
+  }
 
-    if (data.country != null)
-      updates.push(
-        prisma.subscriber.updateMany({ where: { ...base, country: null }, data: { country: data.country } }),
-      );
-    if (data.region != null)
-      updates.push(
-        prisma.subscriber.updateMany({ where: { ...base, region: null }, data: { region: data.region } }),
-      );
-    if (data.city != null)
-      updates.push(
-        prisma.subscriber.updateMany({ where: { ...base, city: null }, data: { city: data.city } }),
-      );
-    if (data.timezone != null)
-      updates.push(
-        prisma.subscriber.updateMany({
-          where: { ...base, timezone: null },
-          data: { timezone: data.timezone },
-        }),
-      );
-    if (data.browser != null)
-      updates.push(
-        prisma.subscriber.updateMany({ where: { ...base, browser: null }, data: { browser: data.browser } }),
-      );
-    if (data.deviceType != null)
-      updates.push(
-        prisma.subscriber.updateMany({
-          where: { ...base, deviceType: null },
-          data: { deviceType: data.deviceType },
-        }),
-      );
-    if (data.os != null)
-      updates.push(prisma.subscriber.updateMany({ where: { ...base, os: null }, data: { os: data.os } }));
-
-    await Promise.all(updates);
+  async enrichRequest(id: string, data: EnrichmentData): Promise<void> {
+    await prisma.subscriptionRequest.update({
+      where: { id },
+      data: {
+        country: data.country,
+        region: data.region,
+        city: data.city,
+        area: data.area,
+        timezone: data.timezone,
+        browser: data.browser,
+        deviceType: data.deviceType,
+        platform: data.platform,
+      },
+    });
   }
 
   async unsubscribeSubscriber(subscriberId: string, tenantId: string): Promise<boolean> {
@@ -387,11 +396,16 @@ export class PrismaSubscriberService implements SubscriberService {
   }
 
   async unsubscribeByEmail(email: string, websiteId: string): Promise<boolean> {
-    const result = await prisma.subscriber.updateMany({
-      where: { email, websiteId, unsubscribedAt: null },
+    const subscriber = await prisma.subscriber.findUnique({
+      where: { email_websiteId: { email, websiteId } },
+      select: { id: true },
+    });
+    if (!subscriber) return false;
+    await prisma.subscriber.update({
+      where: { id: subscriber.id },
       data: { unsubscribedAt: new Date() },
     });
-    return result.count > 0;
+    return true;
   }
 
   async getAnalytics(websiteId: string, range: AnalyticsRange): Promise<SubscriberAnalytics> {

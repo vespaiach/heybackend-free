@@ -12,6 +12,7 @@ vi.mock("@/lib/domain", () => ({
     upsertSubscriber: vi.fn(),
     logRequest: vi.fn(),
     enrichRequest: vi.fn(),
+    unsubscribeByEmail: vi.fn(),
   },
 }));
 
@@ -29,7 +30,7 @@ vi.mock("ua-parser-js", () => ({
 
 // Run after() callbacks synchronously so enrichRequest assertions work.
 vi.mock("next/server", () => ({
-  after: vi.fn(),
+  after: vi.fn((task) => void (task as () => Promise<void>)()),
 }));
 
 vi.mock("@/lib/rate-limiter", () => ({
@@ -48,10 +49,7 @@ import { OPTIONS, POST } from "../route";
 // Reset all mocks and restore defaults before every test.
 beforeEach(() => {
   vi.clearAllMocks();
-  // biome-ignore lint/complexity/useArrowFunction: function keyword required — after() callback is awaited
-  vi.mocked(after).mockImplementation(function (task) {
-    void (task as () => Promise<void>)();
-  });
+  vi.mocked(after).mockImplementation((task) => void (task as () => Promise<void>)());
   // biome-ignore lint/complexity/useArrowFunction: function keyword required — UAParser is called with `new`
   vi.mocked(UAParser).mockImplementation(function () {
     return {
@@ -373,6 +371,8 @@ describe("POST — happy paths", () => {
         status: "ACCEPTED",
       }),
     );
+    const call = vi.mocked(subscriberService.logRequest).mock.calls[0][0];
+    expect(call).not.toHaveProperty("rejectionReason");
   });
 
   it("calls enrichRequest on the logged request id after upsert", async () => {

@@ -41,6 +41,17 @@ describe("LoginForm", () => {
     expect(mockSignIn).toHaveBeenCalledWith("google", { callbackUrl: "/dashboard/home" });
   });
 
+  it("renders GitHub button as enabled", () => {
+    render(<LoginForm />);
+    expect(screen.getByRole("button", { name: /login with github/i })).not.toBeDisabled();
+  });
+
+  it("calls signIn with github provider when GitHub button is clicked", async () => {
+    render(<LoginForm />);
+    await userEvent.click(screen.getByRole("button", { name: /login with github/i }));
+    expect(mockSignIn).toHaveBeenCalledWith("github", { callbackUrl: "/dashboard/home" });
+  });
+
   it("does not call signIn when Apple button is clicked", async () => {
     render(<LoginForm />);
     await userEvent.click(screen.getByRole("button", { name: /login with apple/i }));

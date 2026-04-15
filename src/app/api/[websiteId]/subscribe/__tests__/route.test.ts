@@ -10,7 +10,8 @@ vi.mock("@/lib/domain", () => ({
   },
   subscriberService: {
     upsertSubscriber: vi.fn(),
-    enrichSubscriber: vi.fn(),
+    logRequest: vi.fn(),
+    enrichRequest: vi.fn(),
   },
 }));
 
@@ -26,7 +27,7 @@ vi.mock("ua-parser-js", () => ({
   UAParser: vi.fn(),
 }));
 
-// Run after() callbacks synchronously so enrichSubscriber assertions work.
+// Run after() callbacks synchronously so enrichRequest assertions work.
 vi.mock("next/server", () => ({
   after: vi.fn(),
 }));
@@ -63,7 +64,8 @@ beforeEach(() => {
   vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(mockWebsite);
   vi.mocked(websiteService.getWebsiteById).mockResolvedValue(mockWebsitePublic);
   vi.mocked(subscriberService.upsertSubscriber).mockResolvedValue(mockSubscriber);
-  vi.mocked(subscriberService.enrichSubscriber).mockResolvedValue(undefined);
+  vi.mocked(subscriberService.logRequest).mockResolvedValue({ id: "req_1" } as never);
+  vi.mocked(subscriberService.enrichRequest).mockResolvedValue(undefined);
 });
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -183,6 +185,25 @@ describe("POST — request parsing & validation", () => {
     const { expiresAt: _e, ...body } = validBody();
     expect((await POST(makePost(body), params())).status).toBe(400);
   });
+
+  it("logs REJECTED/VALIDATION_ERROR for malformed JSON", async () => {
+    const req = new Request(`http://localhost/api/${WEBSITE_ID}/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Origin: WEBSITE_URL },
+      body: "not-json{{{",
+    });
+    await POST(req, params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SUBSCRIBE", status: "REJECTED", rejectionReason: "VALIDATION_ERROR" }),
+    );
+  });
+
+  it("logs REJECTED/VALIDATION_ERROR for invalid email", async () => {
+    await POST(makePost(validBody({ email: "not-an-email" })), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SUBSCRIBE", status: "REJECTED", rejectionReason: "VALIDATION_ERROR" }),
+    );
+  });
 });
 
 // ─── POST: token + origin guard ───────────────────────────────────────────────
@@ -217,12 +238,27 @@ describe("POST — token & origin guard", () => {
   it("returns 403 when origin header is absent", async () => {
     expect((await POST(makePost(validBody(), null), params())).status).toBe(403);
   });
+
+  it("logs REJECTED/INVALID_TOKEN for a tampered token", async () => {
+    await POST(makePost(validBody({ token: "tampered-token" })), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SUBSCRIBE", status: "REJECTED", rejectionReason: "INVALID_TOKEN" }),
+    );
+  });
+
+  it("logs REJECTED/INVALID_TOKEN for an expired token", async () => {
+    const { token, expiresAt } = mintToken(WEBSITE_KEY, WEBSITE_ID, Date.now() - 16 * 60 * 1000);
+    await POST(makePost(validBody({ token, expiresAt })), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SUBSCRIBE", status: "REJECTED", rejectionReason: "INVALID_TOKEN" }),
+    );
+  });
 });
 
 // ─── POST: rate limiting ──────────────────────────────────────────────────────
 
 describe("POST — rate limiting", () => {
-  it("returns 429 with Retry-After when rate limit is exceeded", async () => {
+  it("returns 429 with Retry-After when per-IP rate limit is exceeded", async () => {
     vi.mocked(checkRateLimit).mockReturnValue(false);
     const res = await POST(makePost(validBody()), params());
     expect(res.status).toBe(429);
@@ -234,15 +270,44 @@ describe("POST — rate limiting", () => {
     const res = await POST(makePost(validBody()), params());
     expect(res.headers.get("access-control-allow-origin")).toBe(WEBSITE_URL);
   });
+
+  it("logs REJECTED/RATE_LIMIT_IP when per-IP limit exceeded", async () => {
+    vi.mocked(checkRateLimit).mockReturnValue(false);
+    await POST(makePost(validBody()), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SUBSCRIBE", status: "REJECTED", rejectionReason: "RATE_LIMIT_IP" }),
+    );
+  });
+
+  it("logs REJECTED/RATE_LIMIT_WEBSITE when per-website limit exceeded", async () => {
+    vi.mocked(checkRateLimit)
+      .mockReturnValueOnce(true) // per-IP passes
+      .mockReturnValue(false); // per-website fails
+    await POST(makePost(validBody()), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "SUBSCRIBE",
+        status: "REJECTED",
+        rejectionReason: "RATE_LIMIT_WEBSITE",
+      }),
+    );
+  });
 });
 
 // ─── POST: honeypot ───────────────────────────────────────────────────────────
 
 describe("POST — honeypot", () => {
-  it("returns 201 silently without inserting when __hp is filled", async () => {
+  it("returns 201 silently without upserting when __hp is filled", async () => {
     const res = await POST(makePost(validBody({ __hp: "i-am-a-bot" })), params());
     expect(res.status).toBe(201);
     expect(subscriberService.upsertSubscriber).not.toHaveBeenCalled();
+  });
+
+  it("logs REJECTED/HONEYPOT when __hp is filled", async () => {
+    await POST(makePost(validBody({ __hp: "i-am-a-bot" })), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "SUBSCRIBE", status: "REJECTED", rejectionReason: "HONEYPOT" }),
+    );
   });
 });
 
@@ -298,15 +363,42 @@ describe("POST — happy paths", () => {
     expect(res.headers.get("access-control-allow-origin")).toBe(WEBSITE_URL);
   });
 
-  it("calls enrichSubscriber with websiteId and email after upsert", async () => {
+  it("logs ACCEPTED with the normalized email and websiteId", async () => {
+    await POST(makePost(validBody()), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "alice@example.com",
+        websiteId: WEBSITE_ID,
+        type: "SUBSCRIBE",
+        status: "ACCEPTED",
+      }),
+    );
+  });
+
+  it("calls enrichRequest on the logged request id after upsert", async () => {
+    vi.mocked(subscriberService.logRequest).mockResolvedValue({ id: "req_1" } as never);
     await POST(makePost(validBody()), params());
     await vi.waitFor(() =>
-      expect(subscriberService.enrichSubscriber).toHaveBeenCalledWith(
-        "alice@example.com",
-        WEBSITE_ID,
-        expect.objectContaining({ country: null }),
+      expect(subscriberService.enrichRequest).toHaveBeenCalledWith(
+        "req_1",
+        expect.objectContaining({ country: null, platform: "macOS" }),
       ),
     );
+  });
+
+  it("also calls enrichRequest for rate-limited (rejected) requests", async () => {
+    vi.mocked(checkRateLimit).mockReturnValue(false);
+    vi.mocked(subscriberService.logRequest).mockResolvedValue({ id: "req_rl" } as never);
+    await POST(makePost(validBody()), params());
+    await vi.waitFor(() =>
+      expect(subscriberService.enrichRequest).toHaveBeenCalledWith("req_rl", expect.any(Object)),
+    );
+  });
+
+  it("does NOT call enrichRequest for validation errors", async () => {
+    await POST(makePost(validBody({ email: "bad-email" })), params());
+    await new Promise<void>((r) => setTimeout(r, 0));
+    expect(subscriberService.enrichRequest).not.toHaveBeenCalled();
   });
 
   it("strips unknown keys from the body (unknown fields are ignored, not rejected)", async () => {

@@ -8,13 +8,11 @@ import type {
   LogRequestInput,
   Subscriber,
   SubscriberAnalytics,
-  SubscriberMetadata,
   SubscriptionRejectionReason,
   SubscriptionRequest,
   SubscriptionRequestStatus,
   SubscriptionRequestType,
   Tag,
-  UpdateSubscriberMetadataInput,
   UpsertSubscriberInput,
 } from "@/lib/domain/types";
 import { prisma } from "@/lib/prisma";
@@ -377,22 +375,6 @@ export class PrismaSubscriberService implements SubscriberService {
       include: subscriberInclude,
     });
     return rows.map(toSubscriber);
-  }
-
-  async updateSubscriberMetadata(
-    subscriberId: string,
-    tenantId: string,
-    input: UpdateSubscriberMetadataInput,
-  ): Promise<Subscriber | null> {
-    const sub = await prisma.subscriber.findFirst({ where: { id: subscriberId, website: { tenantId } } });
-    if (!sub) return null;
-
-    const updated = await prisma.subscriber.update({
-      where: { id: subscriberId },
-      data: { metadata: input.metadata as Prisma.InputJsonValue },
-      include: subscriberInclude,
-    });
-    return toSubscriber(updated);
   }
 
   async unsubscribeByEmail(email: string, websiteId: string): Promise<boolean> {

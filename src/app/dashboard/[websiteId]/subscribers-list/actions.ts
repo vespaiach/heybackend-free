@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { subscriberService, tenantService } from "@/lib/domain";
-import type { Subscriber, SubscriberMetadata } from "@/lib/domain/types";
+import type { Subscriber } from "@/lib/domain/types";
 import { logger } from "@/lib/logger";
 
 export async function unsubscribeSubscriber(id: string): Promise<{ error?: string }> {
@@ -159,23 +159,5 @@ export async function exportSubscribers(filter: {
   } catch (e) {
     logger.error("exportSubscribers", e);
     return { error: "Failed to export subscribers" };
-  }
-}
-
-export async function updateSubscriberMetadata(
-  subscriberId: string,
-  metadata: SubscriberMetadata,
-): Promise<{ error?: string }> {
-  const session = await auth();
-  if (!session?.user?.id) return { error: "Unauthorized" };
-
-  try {
-    const tenantId = await tenantService.getTenantIdByUserId(session.user.id);
-    const result = await subscriberService.updateSubscriberMetadata(subscriberId, tenantId, { metadata });
-    if (!result) return { error: "Subscriber not found" };
-    return {};
-  } catch (e) {
-    logger.error("updateSubscriberMetadata", e);
-    return { error: "Failed to update subscriber data" };
   }
 }

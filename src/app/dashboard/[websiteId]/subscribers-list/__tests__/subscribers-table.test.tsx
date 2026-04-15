@@ -497,19 +497,20 @@ describe("SubscribersTable", () => {
     it("clicking the expand button shows a detail panel for that subscriber", async () => {
       render(<SubscribersTable {...makeProps({ subscribers, total: 2 })} />);
       const [expandBtn] = screen.getAllByRole("button", { name: /expand details/i });
+      const initialChevron = expandBtn!.querySelector("svg")!;
+      expect(initialChevron).not.toHaveClass("rotate-180");
       await userEvent.click(expandBtn!);
-      // Panel shows "No enrichment data captured..." since the subscribers don't have enrichment fields
-      expect(await screen.findByText(/no enrichment data captured/i)).toBeInTheDocument();
+      expect(initialChevron).toHaveClass("rotate-180");
     });
 
     it("clicking the expand button again collapses the detail panel", async () => {
       render(<SubscribersTable {...makeProps()} />);
       const [expandBtn] = screen.getAllByRole("button", { name: /expand details/i });
+      const chevron = expandBtn!.querySelector("svg")!;
       await userEvent.click(expandBtn!);
-      // Panel shows "No enrichment data captured..."
-      expect(await screen.findByText(/no enrichment data captured/i)).toBeInTheDocument();
+      expect(chevron).toHaveClass("rotate-180");
       await userEvent.click(expandBtn!);
-      expect(screen.queryByText(/no enrichment data captured/i)).not.toBeInTheDocument();
+      expect(chevron).not.toHaveClass("rotate-180");
     });
   });
 

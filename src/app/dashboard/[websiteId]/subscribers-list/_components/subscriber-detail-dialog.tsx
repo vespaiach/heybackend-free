@@ -18,32 +18,8 @@ function DetailRow({ label, value }: { label: string; value: string | number | n
   );
 }
 
-export function SubscriberDetailPanel({ subscriber }: { subscriber: Subscriber }) {
-  const hasCapture =
-    subscriber.os || subscriber.deviceType || subscriber.browser || subscriber.timezone || subscriber.country;
-
-  if (!hasCapture) {
-    return (
-      <p className="px-2 text-xs text-muted-foreground">No enrichment data captured for this subscriber.</p>
-    );
-  }
-
-  const location = [subscriber.city, subscriber.region, subscriber.country].filter(Boolean).join(", ");
-
-  return (
-    <div className="space-y-4 px-2">
-      <div className="space-y-1">
-        <p className="pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase">
-          Capture context
-        </p>
-        <DetailRow label="OS" value={subscriber.os} />
-        <DetailRow label="Device" value={subscriber.deviceType} />
-        <DetailRow label="Browser" value={subscriber.browser} />
-        <DetailRow label="Timezone" value={subscriber.timezone} />
-        <DetailRow label="Location" value={location || null} />
-      </div>
-    </div>
-  );
+export function SubscriberDetailPanel(_: { subscriber: Subscriber }) {
+  return null;
 }
 
 export function SubscriberDetailDialog({

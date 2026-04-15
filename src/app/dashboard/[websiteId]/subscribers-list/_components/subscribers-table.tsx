@@ -253,13 +253,6 @@ export function SubscribersTable({
         firstName: s.firstName,
         lastName: s.lastName,
         status: s.unsubscribedAt ? "unsubscribed" : "active",
-        country: s.country,
-        region: s.region,
-        city: s.city,
-        timezone: s.timezone,
-        os: s.os,
-        deviceType: s.deviceType,
-        browser: s.browser,
         tags: s.tags.map((t) => t.name).join(";"),
         createdAt: s.createdAt,
       }));

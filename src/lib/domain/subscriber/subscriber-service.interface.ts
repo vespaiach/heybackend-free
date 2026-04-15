@@ -8,7 +8,6 @@ import type {
   SubscriberAnalytics,
   SubscriptionRequest,
   Tag,
-  UpdateSubscriberMetadataInput,
   UpsertSubscriberInput,
 } from "@/lib/domain/types";
 
@@ -108,14 +107,4 @@ export interface SubscriberService {
    * an already-unsubscribed subscriber still returns true and updates the timestamp.
    */
   unsubscribeByEmail(email: string, websiteId: string): Promise<boolean>;
-
-  /**
-   * Update the metadata (custom fields + free-form bag) for a subscriber.
-   * Verifies ownership via tenantId. Returns null on ownership failure.
-   */
-  updateSubscriberMetadata(
-    subscriberId: string,
-    tenantId: string,
-    input: UpdateSubscriberMetadataInput,
-  ): Promise<Subscriber | null>;
 }

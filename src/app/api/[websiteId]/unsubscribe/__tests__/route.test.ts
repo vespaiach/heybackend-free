@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 vi.mock("@/lib/domain", () => ({
-  websiteService: { getWebsiteForSigning: vi.fn() },
+  websiteService: { getWebsiteForSigning: vi.fn(), getWebsiteById: vi.fn() },
   subscriberService: {
     unsubscribeByEmail: vi.fn(),
     logRequest: vi.fn(),
@@ -54,10 +54,7 @@ function params(id = WEBSITE_ID) {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // biome-ignore lint/complexity/useArrowFunction: function keyword required — after() callback is awaited
-  vi.mocked(after).mockImplementation(function (task) {
-    void (task as () => Promise<void>)();
-  });
+  vi.mocked(after).mockImplementation((task) => void (task as () => Promise<void>)());
   // biome-ignore lint/complexity/useArrowFunction: function keyword required — UAParser is called with `new`
   vi.mocked(UAParser).mockImplementation(function () {
     return {
@@ -76,11 +73,11 @@ beforeEach(() => {
 // ─── Query param validation ───────────────────────────────────────────────────
 
 describe("GET — query param validation", () => {
-  it("returns 400 when email is missing", async () => {
+  it("returns 422 when email is missing", async () => {
     const { token, expiresAt } = mintToken(WEBSITE_KEY, WEBSITE_ID);
     const qs = new URLSearchParams({ token, expiresAt: String(expiresAt) });
     const req = new Request(`http://localhost/api/${WEBSITE_ID}/unsubscribe?${qs}`, { method: "GET" });
-    expect((await GET(req, params())).status).toBe(400);
+    expect((await GET(req, params())).status).toBe(422);
   });
 
   it("logs REJECTED/VALIDATION_ERROR when email is missing", async () => {
@@ -97,22 +94,61 @@ describe("GET — query param validation", () => {
     );
   });
 
-  it("returns 400 when email format is invalid", async () => {
-    expect((await GET(makeGet({ email: "not-an-email" }), params())).status).toBe(400);
+  it("logs REJECTED/VALIDATION_ERROR when email format is invalid", async () => {
+    await GET(makeGet({ email: "not-an-email" }), params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "UNSUBSCRIBE",
+        status: "REJECTED",
+        rejectionReason: "VALIDATION_ERROR",
+      }),
+    );
   });
 
-  it("returns 400 when token is missing", async () => {
+  it("returns 422 when email format is invalid", async () => {
+    expect((await GET(makeGet({ email: "not-an-email" }), params())).status).toBe(422);
+  });
+
+  it("returns 422 when token is missing", async () => {
     const { expiresAt } = mintToken(WEBSITE_KEY, WEBSITE_ID);
     const qs = new URLSearchParams({ email: "alice@example.com", expiresAt: String(expiresAt) });
     const req = new Request(`http://localhost/api/${WEBSITE_ID}/unsubscribe?${qs}`, { method: "GET" });
-    expect((await GET(req, params())).status).toBe(400);
+    expect((await GET(req, params())).status).toBe(422);
   });
 
-  it("returns 400 when expiresAt is missing", async () => {
+  it("logs REJECTED/VALIDATION_ERROR when token is missing", async () => {
+    const { expiresAt } = mintToken(WEBSITE_KEY, WEBSITE_ID);
+    const qs = new URLSearchParams({ email: "alice@example.com", expiresAt: String(expiresAt) });
+    const req = new Request(`http://localhost/api/${WEBSITE_ID}/unsubscribe?${qs}`, { method: "GET" });
+    await GET(req, params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "UNSUBSCRIBE",
+        status: "REJECTED",
+        rejectionReason: "VALIDATION_ERROR",
+      }),
+    );
+  });
+
+  it("returns 422 when expiresAt is missing", async () => {
     const { token } = mintToken(WEBSITE_KEY, WEBSITE_ID);
     const qs = new URLSearchParams({ email: "alice@example.com", token });
     const req = new Request(`http://localhost/api/${WEBSITE_ID}/unsubscribe?${qs}`, { method: "GET" });
-    expect((await GET(req, params())).status).toBe(400);
+    expect((await GET(req, params())).status).toBe(422);
+  });
+
+  it("logs REJECTED/VALIDATION_ERROR when expiresAt is missing", async () => {
+    const { token } = mintToken(WEBSITE_KEY, WEBSITE_ID);
+    const qs = new URLSearchParams({ email: "alice@example.com", token });
+    const req = new Request(`http://localhost/api/${WEBSITE_ID}/unsubscribe?${qs}`, { method: "GET" });
+    await GET(req, params());
+    expect(subscriberService.logRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: "UNSUBSCRIBE",
+        status: "REJECTED",
+        rejectionReason: "VALIDATION_ERROR",
+      }),
+    );
   });
 });
 
@@ -140,9 +176,9 @@ describe("GET — token guard", () => {
     expect((await GET(makeGet(), params())).status).toBe(401);
   });
 
-  it("returns 401 when website is inactive", async () => {
+  it("returns 403 when website is inactive", async () => {
     vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue({ ...mockWebsite, isActive: false });
-    expect((await GET(makeGet(), params())).status).toBe(401);
+    expect((await GET(makeGet(), params())).status).toBe(403);
   });
 });
 
@@ -154,6 +190,7 @@ describe("GET — rate limiting", () => {
     const res = await GET(makeGet(), params());
     expect(res.status).toBe(429);
     expect(res.headers.get("retry-after")).toBe("60");
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeTruthy();
   });
 
   it("logs REJECTED/RATE_LIMIT_IP when per-IP limit exceeded", async () => {
@@ -168,7 +205,10 @@ describe("GET — rate limiting", () => {
     vi.mocked(checkRateLimit)
       .mockReturnValueOnce(true) // per-IP passes
       .mockReturnValue(false); // per-website fails
-    await GET(makeGet(), params());
+    const res = await GET(makeGet(), params());
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBeTruthy();
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeTruthy();
     expect(subscriberService.logRequest).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "UNSUBSCRIBE",
@@ -207,6 +247,7 @@ describe("GET — happy path", () => {
     const res = await GET(makeGet(), params());
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ message: "Unsubscribed" });
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeTruthy();
   });
 
   it("calls unsubscribeByEmail with normalised email and websiteId", async () => {

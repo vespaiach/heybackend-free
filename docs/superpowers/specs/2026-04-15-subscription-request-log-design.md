@@ -164,15 +164,163 @@ Traffic analytics can include all statuses.
 
 ---
 
+## Tests
+
+Tests are written **before** implementation (TDD). All test files use Vitest globals (`describe`, `it`, `expect`, `vi`) — no imports needed. API route tests add `// @vitest-environment node` at the top.
+
+### Mocking conventions (consistent with existing tests)
+
+```typescript
+vi.mock("@/lib/domain", () => ({
+  websiteService: { getWebsiteForSigning: vi.fn(), getWebsiteById: vi.fn() },
+  subscriberService: {
+    upsertSubscriber: vi.fn(),
+    logRequest: vi.fn(),
+    enrichRequest: vi.fn(),
+    unsubscribeByEmail: vi.fn(),
+  },
+}));
+vi.mock("next/server", () => ({ after: vi.fn() }));
+vi.mock("fast-geoip", () => ({ default: { lookup: vi.fn().mockResolvedValue(null) } }));
+vi.mock("ua-parser-js", () => ({ UAParser: vi.fn() }));
+vi.mock("@/lib/rate-limiter", () => ({ checkRateLimit: vi.fn().mockReturnValue(true) }));
+```
+
+`after()` is mocked to execute synchronously so enrichment assertions don't need `setTimeout`:
+
+```typescript
+vi.mocked(after).mockImplementation((task) => void (task as () => Promise<void>)());
+```
+
+---
+
+### 1. Subscribe endpoint — updated tests
+
+**File:** `src/app/api/[websiteId]/subscribe/__tests__/route.test.ts`
+
+Update existing tests: replace all `enrichSubscriber` references with `logRequest` + `enrichRequest`. Add the following new cases:
+
+#### Logging — rejected requests
+
+| Test | Assertion |
+|---|---|
+| Malformed JSON body | `logRequest` called with `{ type: SUBSCRIBE, status: REJECTED, rejectionReason: VALIDATION_ERROR }` |
+| Missing/invalid email | same as above |
+| Invalid HMAC token | `logRequest` called with `{ type: SUBSCRIBE, status: REJECTED, rejectionReason: INVALID_TOKEN }` |
+| Expired token | same as above |
+| Per-IP rate limited | `logRequest` called with `{ type: SUBSCRIBE, status: REJECTED, rejectionReason: RATE_LIMIT_IP }` |
+| Per-website rate limited | `logRequest` called with `{ type: SUBSCRIBE, status: REJECTED, rejectionReason: RATE_LIMIT_WEBSITE }` |
+| Honeypot filled | `logRequest` called with `{ type: SUBSCRIBE, status: REJECTED, rejectionReason: HONEYPOT }`; `upsertSubscriber` NOT called |
+
+#### Logging — accepted requests
+
+| Test | Assertion |
+|---|---|
+| New subscriber (201) | `logRequest` called with `{ type: SUBSCRIBE, status: ACCEPTED, rejectionReason: undefined }` |
+| Returning subscriber (200) | same |
+
+#### Async enrichment
+
+| Test | Assertion |
+|---|---|
+| Accepted request triggers enrichment | `enrichRequest` called via `after()` with the request id returned by `logRequest`, and `{ country, region, city, timezone, browser, deviceType, platform }` |
+| Rejected request (rate limit) also triggers enrichment | `enrichRequest` also called for rejected requests |
+| Validation error does NOT trigger enrichment | `enrichRequest` NOT called when body is invalid (no request id to enrich at that stage) |
+
+> **Note:** For validation errors, `logRequest` is called without email (or with the raw email string), and enrichment is still attempted. If email is unavailable at validation stage, log with `email: ""` and still enrich.
+
+---
+
+### 2. Unsubscribe endpoint — new tests
+
+**File:** `src/app/api/[websiteId]/unsubscribe/__tests__/route.test.ts`
+
+Full test suite modelled after the subscribe route test. Helpers `validBody()`, `makePost()`, `params()` use the same pattern.
+
+#### OPTIONS preflight
+
+| Test | Expected |
+|---|---|
+| Website not found | 404 |
+| Website inactive | 403 |
+| Origin mismatch | 403 |
+| Valid preflight | 204 with CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`) |
+
+#### Body validation
+
+| Test | Expected | `logRequest` called? |
+|---|---|---|
+| Malformed JSON | 400 | Yes — REJECTED / VALIDATION_ERROR |
+| Missing `email` | 422 | Yes — REJECTED / VALIDATION_ERROR |
+| Invalid email format | 422 | Yes — REJECTED / VALIDATION_ERROR |
+| Missing `token` | 422 | Yes — REJECTED / VALIDATION_ERROR |
+| Missing `expiresAt` | 422 | Yes — REJECTED / VALIDATION_ERROR |
+
+#### Token guard
+
+| Test | Expected | `logRequest` called? |
+|---|---|---|
+| Token signed with wrong key | 401 | Yes — REJECTED / INVALID_TOKEN |
+| Expired token | 401 | Yes — REJECTED / INVALID_TOKEN |
+| Website inactive | 403 | Yes — REJECTED / INVALID_TOKEN |
+
+#### Rate limiting
+
+| Test | Expected | `logRequest` called? |
+|---|---|---|
+| Per-IP limit exceeded | 429 with `Retry-After` header + CORS headers | Yes — REJECTED / RATE_LIMIT_IP |
+| Per-website limit exceeded | 429 with `Retry-After` header + CORS headers | Yes — REJECTED / RATE_LIMIT_WEBSITE |
+
+#### Subscriber not found
+
+| Test | Expected | `logRequest` called? |
+|---|---|---|
+| Email not subscribed to this website | 404 | Yes — REJECTED / VALIDATION_ERROR |
+
+#### Happy path
+
+| Test | Expected |
+|---|---|
+| Valid request for subscribed email | 200, `unsubscribeByEmail` called with `(email, websiteId)` |
+| `logRequest` called | `{ type: UNSUBSCRIBE, status: ACCEPTED, email, websiteId }` |
+| Async enrichment | `enrichRequest` called via `after()` with request id + enrichment data |
+| CORS headers present on 200 | `Access-Control-Allow-Origin` set correctly |
+
+#### Error handling
+
+| Test | Expected |
+|---|---|
+| `unsubscribeByEmail` throws | 500, error message not leaked in response body |
+
+---
+
+### 3. Domain service — unit tests
+
+**File:** `src/lib/domain/subscriber/__tests__/subscriber-service.test.ts`
+
+Prisma client is mocked via `vi.mock("@/lib/prisma", ...)`.
+
+#### `logRequest()`
+
+| Test | Assertion |
+|---|---|
+| Creates record with correct fields | `prisma.subscriptionRequest.create` called with `{ data: { email, websiteId, type, status, rejectionReason } }` |
+| Returns created record | resolves to the Prisma return value |
+| `rejectionReason` omitted when undefined | field not present in `data` |
+
+#### `enrichRequest()`
+
+| Test | Assertion |
+|---|---|
+| Updates only provided fields | `prisma.subscriptionRequest.update` called with `{ where: { id }, data: enrichmentData }` |
+| Null values written as-is | null fields are passed through (not filtered out) |
+
+---
+
 ## Verification
 
-1. **Unit tests** — update/add tests in `src/lib/domain/subscriber/__tests__/` for `logRequest()` and `enrichRequest()`
-2. **API tests** — add tests in `sdk/src/__tests__/` or co-located `__tests__/` for the new unsubscribe route
-3. **Manual flow**:
-   - POST to `/api/[websiteId]/subscribe` with valid payload → check `SubscriptionRequest` row created with `ACCEPTED`
-   - POST with invalid token → check `REJECTED / INVALID_TOKEN` row
-   - POST with rate-limit exceeded → check `REJECTED / RATE_LIMIT_*` row
-   - POST to `/api/[websiteId]/unsubscribe` → check `Subscriber.unsubscribedAt` set + `SubscriptionRequest` row created
-   - Confirm `Subscriber` rows no longer have enrichment fields
-4. **Build** — `npm run build` must pass with no type errors
-5. **Lint** — `npm run lint` must pass
+1. **Tests first**: write all test files above before touching implementation.
+2. **Run tests red**: `npm test` — all new tests should fail (expected at this stage).
+3. **Implement**: make all tests green.
+4. **Build**: `npm run build` — no type errors.
+5. **Lint**: `npm run lint` — no issues.

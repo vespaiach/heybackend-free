@@ -15,6 +15,7 @@ import {
   validationError,
 } from "@/lib/api/route-helpers";
 import { subscriberService, websiteService } from "@/lib/domain";
+import type { EnrichmentData } from "@/lib/domain/types";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { SubscribeRequestSchema } from "@/lib/schemas/subscribe-request";
@@ -54,17 +55,74 @@ export async function POST(
   const corsHeaders = buildCorsHeaders(website.url);
   if (!website.isActive) return unauthorized(corsHeaders);
 
+  const ip = getClientIp(request);
+  const ua = request.headers.get("user-agent") ?? "";
+
+  /** Build enrichment data from geo/UA — runs post-response via after(). */
+  async function buildEnrichmentData(): Promise<EnrichmentData> {
+    const geo = ip !== "unknown" ? await geoip.lookup(ip) : null;
+    const parser = new UAParser(ua);
+    return {
+      country: geo?.country ?? null,
+      region: geo?.region || null,
+      city: geo?.city || null,
+      area: null,
+      timezone: geo?.timezone || null,
+      browser: parser.getBrowser().name ?? null,
+      deviceType: parser.getDevice().type ?? null,
+      platform: parser.getOS().name ?? null,
+    };
+  }
+
+  /** Log the request and schedule async enrichment post-response. */
+  async function logAndEnrich(
+    email: string,
+    status: "ACCEPTED" | "REJECTED",
+    rejectionReason?:
+      | "VALIDATION_ERROR"
+      | "INVALID_TOKEN"
+      | "RATE_LIMIT_IP"
+      | "RATE_LIMIT_WEBSITE"
+      | "HONEYPOT",
+    skipEnrich = false,
+  ): Promise<void> {
+    const logged = await subscriberService.logRequest({
+      email,
+      websiteId: website.id,
+      type: "SUBSCRIBE",
+      status,
+      ...(rejectionReason !== undefined ? { rejectionReason } : {}),
+    });
+    if (!skipEnrich) {
+      after(async () => {
+        try {
+          const enrichmentData = await buildEnrichmentData();
+          await subscriberService.enrichRequest(logged.id, enrichmentData);
+        } catch (err) {
+          logger.error("enrichRequest after()", err);
+        }
+      });
+    }
+  }
+
   // Parse body — token + expiresAt are validated before HMAC verification.
   let body: unknown;
   try {
     body = await request.json();
   } catch {
+    await logAndEnrich("", "REJECTED", "VALIDATION_ERROR", true);
     return validationError("Invalid JSON body", corsHeaders);
   }
 
   // Validate with Valibot (includes token + expiresAt fields).
   const result = v.safeParse(SubscribeRequestSchema, body);
   if (!result.success) {
+    // Extract email best-effort for logging; may be absent/invalid.
+    const rawEmail =
+      typeof (body as Record<string, unknown>)?.email === "string"
+        ? ((body as Record<string, unknown>).email as string)
+        : "";
+    await logAndEnrich(rawEmail, "REJECTED", "VALIDATION_ERROR", true);
     return validationError(
       result.issues.map((i) => i.message),
       corsHeaders,
@@ -72,10 +130,12 @@ export async function POST(
   }
 
   const { email, firstName, lastName, __hp, token, expiresAt } = result.output;
+  const normalizedEmail = email.toLowerCase().trim();
 
   try {
     // Token verification.
     if (!verifyToken(website.key, websiteId, token, expiresAt)) {
+      await logAndEnrich(normalizedEmail, "REJECTED", "INVALID_TOKEN");
       return unauthorized(corsHeaders);
     }
 
@@ -85,13 +145,20 @@ export async function POST(
       return forbidden(corsHeaders);
     }
 
-    // Rate limiting: per-IP and per-website buckets.
-    const ip = getClientIp(request);
-    const withinLimit =
-      (await checkRateLimit(`ip:${ip}:sub`, 5, 60_000)) &&
-      (await checkRateLimit(`site:${website.id}:sub`, 200, 60_000));
+    // Rate limiting: per-IP and per-website buckets (checked independently to
+    // distinguish which limit was exceeded for accurate rejection reason logging).
+    const ipAllowed = await checkRateLimit(`ip:${ip}:sub`, 5, 60_000);
+    if (!ipAllowed) {
+      await logAndEnrich(normalizedEmail, "REJECTED", "RATE_LIMIT_IP");
+      return new Response(JSON.stringify({ message: "Too many requests" }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "60", ...corsHeaders },
+      });
+    }
 
-    if (!withinLimit) {
+    const siteAllowed = await checkRateLimit(`site:${website.id}:sub`, 200, 60_000);
+    if (!siteAllowed) {
+      await logAndEnrich(normalizedEmail, "REJECTED", "RATE_LIMIT_WEBSITE");
       return new Response(JSON.stringify({ message: "Too many requests" }), {
         status: 429,
         headers: { "Content-Type": "application/json", "Retry-After": "60", ...corsHeaders },
@@ -100,10 +167,10 @@ export async function POST(
 
     // Honeypot: real users leave this blank; bots fill it in.
     // Silently accept so bots don't learn they were detected.
-    if (__hp) return created({ message: "Subscribed" }, corsHeaders);
-
-    const normalizedEmail = email.toLowerCase();
-    const ua = request.headers.get("user-agent") ?? "";
+    if (__hp) {
+      await logAndEnrich(normalizedEmail, "REJECTED", "HONEYPOT");
+      return created({ message: "Subscribed" }, corsHeaders);
+    }
 
     // Upsert subscriber. Geo/UA are enriched post-response to avoid blocking.
     const { created: isNew } = await subscriberService.upsertSubscriber({
@@ -113,25 +180,7 @@ export async function POST(
       websiteId: website.id,
     });
 
-    // Geo + UA enrichment runs after the response is sent — zero latency impact.
-    after(async () => {
-      try {
-        const geo = ip !== "unknown" ? await geoip.lookup(ip) : null;
-        const parser = new UAParser(ua);
-
-        await subscriberService.enrichSubscriber(normalizedEmail, website.id, {
-          country: geo?.country ?? null,
-          region: geo?.region || null,
-          city: geo?.city || null,
-          timezone: geo?.timezone || null,
-          browser: parser.getBrowser().name ?? null,
-          deviceType: parser.getDevice().type ?? null,
-          os: parser.getOS().name ?? null,
-        });
-      } catch (err) {
-        logger.error("enrichSubscriber after()", err);
-      }
-    });
+    await logAndEnrich(normalizedEmail, "ACCEPTED");
 
     return isNew
       ? created({ message: "Subscribed" }, corsHeaders)

@@ -97,12 +97,15 @@ After logging, the `after()` async enrichment call updates `SubscriptionRequest`
 
 ### New unsubscribe endpoint — `src/app/api/[websiteId]/unsubscribe/route.ts`
 
-Same guard stack as subscribe: CORS preflight, HMAC token verification, shared rate limits. No honeypot needed.
+**Method: GET** — users click an unsubscribe link from an email, e.g.:
+`https://app.heybackend.com/api/[websiteId]/unsubscribe?email=alice%40example.com&token=...&expiresAt=...`
 
-Request body: `{ email, token, expiresAt }`
+No OPTIONS preflight needed (browser GET from email client does not trigger CORS preflight). No honeypot needed.
+
+Query params: `email`, `token`, `expiresAt`
 
 Flow:
-1. Validate body (Valibot schema)
+1. Validate query params (Valibot schema)
 2. Verify HMAC token
 3. Check rate limits (per-IP + per-website, same limits as subscribe)
 4. Look up subscriber by `(email, websiteId)` — not found → log `REJECTED / VALIDATION_ERROR`, return 404
@@ -235,22 +238,23 @@ Update existing tests: replace all `enrichSubscriber` references with `logReques
 
 **File:** `src/app/api/[websiteId]/unsubscribe/__tests__/route.test.ts`
 
-Full test suite modelled after the subscribe route test. Helpers `validBody()`, `makePost()`, `params()` use the same pattern.
+GET-based test suite. Request helpers use query string params instead of a body:
 
-#### OPTIONS preflight
+```typescript
+function makeGet(query: Record<string, string>, ip = "1.2.3.4"): Request {
+  const { token, expiresAt } = mintToken(WEBSITE_KEY, WEBSITE_ID);
+  const qs = new URLSearchParams({ email: "alice@example.com", token, expiresAt, ...query });
+  return new Request(`http://localhost/api/${WEBSITE_ID}/unsubscribe?${qs}`, {
+    method: "GET",
+    headers: { "x-forwarded-for": ip },
+  });
+}
+```
 
-| Test | Expected |
-|---|---|
-| Website not found | 404 |
-| Website inactive | 403 |
-| Origin mismatch | 403 |
-| Valid preflight | 204 with CORS headers (`Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, `Access-Control-Allow-Headers`) |
-
-#### Body validation
+#### Query param validation (no OPTIONS preflight — GET from email link)
 
 | Test | Expected | `logRequest` called? |
 |---|---|---|
-| Malformed JSON | 400 | Yes — REJECTED / VALIDATION_ERROR |
 | Missing `email` | 422 | Yes — REJECTED / VALIDATION_ERROR |
 | Invalid email format | 422 | Yes — REJECTED / VALIDATION_ERROR |
 | Missing `token` | 422 | Yes — REJECTED / VALIDATION_ERROR |

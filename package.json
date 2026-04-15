@@ -12,7 +12,7 @@
     "poststart": "node scripts/poststart.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "biome check",
+    "lint": "biome check --diagnostic-level=error",
     "lint:fix": "biome lint --write --diagnostic-level=error",
     "format": "biome format --write",
     "db:generate": "prisma generate",

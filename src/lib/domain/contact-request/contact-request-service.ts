@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/prisma";
 import type {
   ContactRequest,
   ContactRequestEnrichment,
@@ -6,6 +5,7 @@ import type {
   ListContactRequestsFilter,
   ListContactRequestsResult,
 } from "@/lib/domain/types";
+import { prisma } from "@/lib/prisma";
 import type { ContactRequestService } from "./contact-request-service.interface";
 
 export class PrismaContactRequestService implements ContactRequestService {

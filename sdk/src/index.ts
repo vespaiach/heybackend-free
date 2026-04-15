@@ -1,4 +1,3 @@
-import type { ContactSubmitData } from "./contact";
 import { bindContactForm as _bindContactForm, bindForm as _bindForm, type BindFormCallbacks } from "./form";
 import { coreSubscribe, type HbConfig, type SubscribeData } from "./subscribe";
 

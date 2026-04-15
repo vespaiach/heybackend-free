@@ -21,7 +21,7 @@ describe("coreContactSubmit", () => {
   beforeEach(() => {
     __resetTokenCache();
     vi.clearAllMocks();
-    (signing.fetchToken as any).mockResolvedValue({
+    vi.mocked(signing.fetchToken).mockResolvedValue({
       token: "mock_token_abc",
       expiresAt: Date.now() + 900_000, // 15 min
     });
@@ -62,8 +62,9 @@ describe("coreContactSubmit", () => {
 
     await coreContactSubmit(mockConfig, testData);
 
-    const callArg = (global.fetch as any).mock.calls[0][1];
-    const body = JSON.parse(callArg.body);
+    const fetchMock = vi.mocked(global.fetch);
+    const callArg = fetchMock.mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(callArg.body as string);
 
     expect(body.name).toBe("John Doe");
     expect(body.email).toBe("john@example.com");
@@ -91,8 +92,9 @@ describe("coreContactSubmit", () => {
 
     await coreContactSubmit(mockConfig, minimalData);
 
-    const callArg = (global.fetch as any).mock.calls[0][1];
-    const body = JSON.parse(callArg.body);
+    const fetchMock = vi.mocked(global.fetch);
+    const callArg = fetchMock.mock.calls[0][1] as RequestInit;
+    const body = JSON.parse(callArg.body as string);
 
     expect(body.name).toBe("Jane");
     expect(body.email).toBe("jane@example.com");
@@ -255,7 +257,7 @@ describe("coreContactSubmit", () => {
   });
 
   it("throws TOKEN_ERROR when fetchToken fails", async () => {
-    (signing.fetchToken as any).mockRejectedValue(new Error("Token fetch failed"));
+    vi.mocked(signing.fetchToken).mockRejectedValue(new Error("Token fetch failed"));
 
     try {
       await coreContactSubmit(mockConfig, testData);

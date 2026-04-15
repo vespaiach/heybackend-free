@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { POST, OPTIONS } from "../route";
+
+import type { ContactRequest, Website } from "@/lib/domain/types";
 import { mintToken } from "@/lib/signing";
+import { OPTIONS, POST } from "../route";
 
 vi.mock("@/lib/domain", () => ({
   websiteService: {
@@ -29,8 +31,8 @@ vi.mock("next/server", () => ({
   after: vi.fn(),
 }));
 
-import { websiteService, contactRequestService } from "@/lib/domain";
 import { after } from "next/server";
+import { contactRequestService, websiteService } from "@/lib/domain";
 
 describe("POST /api/[websiteId]/contact", () => {
   const testWebsiteId = "website_123";
@@ -44,20 +46,20 @@ describe("POST /api/[websiteId]/contact", () => {
     vi.mocked(after).mockImplementation(function (task) {
       void (task as () => Promise<void>)();
     });
-    const websiteData = {
+    const websiteData: Website = {
       id: testWebsiteId,
       url: testWebsiteUrl,
       isActive: true,
       key: testWebsiteKey,
       createdAt: new Date(),
-      updatedAt: new Date(),
+      name: "Test Website",
       tenantId: "tenant_123",
     };
     vi.mocked(websiteService.getWebsiteById).mockImplementation(async (id: string) => {
-      return id === testWebsiteId ? (websiteData as any) : null;
+      return id === testWebsiteId ? websiteData : null;
     });
-    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(websiteData as any);
-    vi.mocked(contactRequestService.createContactRequest).mockResolvedValue({
+    vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(websiteData);
+    const contactData: ContactRequest = {
       id: "contact_123",
       websiteId: testWebsiteId,
       email: "test@example.com",
@@ -74,7 +76,8 @@ describe("POST /api/[websiteId]/contact", () => {
       deviceType: null,
       browser: null,
       createdAt: new Date(),
-    } as any);
+    };
+    vi.mocked(contactRequestService.createContactRequest).mockResolvedValue(contactData);
   });
 
   describe("OPTIONS preflight", () => {

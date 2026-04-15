@@ -22,7 +22,11 @@ function makeForm(html: string): HTMLFormElement {
   const div = document.createElement("div");
   div.innerHTML = html;
   document.body.appendChild(div);
-  return div.querySelector("form")!;
+  const form = div.querySelector("form");
+  if (!form) {
+    throw new Error("Form not found in test HTML");
+  }
+  return form;
 }
 
 beforeEach(() => {
@@ -101,7 +105,8 @@ describe("bindForm()", () => {
     const form = makeForm(`
       <form><input name="email" value="a@b.com" /><button type="submit">Go</button></form>
     `);
-    const btn = form.querySelector<HTMLButtonElement>('[type="submit"]')!;
+    const btn = form.querySelector<HTMLButtonElement>('[type="submit"]');
+    if (!btn) throw new Error("Button not found");
 
     bindForm(form, CONFIG, {});
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
@@ -309,7 +314,8 @@ describe("bindContactForm()", () => {
         <button type="submit">Send</button>
       </form>
     `);
-    const btn = form.querySelector<HTMLButtonElement>('[type="submit"]')!;
+    const btn = form.querySelector<HTMLButtonElement>('[type="submit"]');
+    if (!btn) throw new Error("Button not found");
 
     bindContactForm(form, CONFIG, {});
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));

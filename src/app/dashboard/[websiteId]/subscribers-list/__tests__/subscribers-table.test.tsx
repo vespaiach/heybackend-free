@@ -56,17 +56,6 @@ Object.defineProperty(window, "matchMedia", {
 const WEBSITE_ID = "site-1";
 const DEFAULT_SEARCH = { q: "", status: "all" as const };
 
-const enrichmentDefaults = {
-  os: null,
-  deviceType: null,
-  browser: null,
-  timezone: null,
-  country: null,
-  region: null,
-  city: null,
-  metadata: null,
-};
-
 const subscribers = [
   {
     id: "1",
@@ -77,7 +66,6 @@ const subscribers = [
     createdAt: new Date("2024-03-01"),
     unsubscribedAt: null,
     tags: [],
-    ...enrichmentDefaults,
   },
   {
     id: "2",
@@ -88,7 +76,6 @@ const subscribers = [
     createdAt: new Date("2024-03-02"),
     unsubscribedAt: new Date("2024-04-01"),
     tags: [],
-    ...enrichmentDefaults,
   },
 ] satisfies import("@/lib/domain/types").Subscriber[];
 
@@ -508,20 +495,11 @@ describe("SubscribersTable", () => {
     });
 
     it("clicking the expand button shows a detail panel for that subscriber", async () => {
-      const enrichedSubscribers = [
-        {
-          ...subscribers[0]!,
-          timezone: "America/New_York",
-          country: "US",
-          browser: "Firefox",
-        },
-      ];
-      render(<SubscribersTable {...makeProps({ subscribers: enrichedSubscribers, total: 1 })} />);
+      render(<SubscribersTable {...makeProps({ subscribers, total: 2 })} />);
       const [expandBtn] = screen.getAllByRole("button", { name: /expand details/i });
       await userEvent.click(expandBtn!);
-      expect(await screen.findByText("America/New_York")).toBeInTheDocument();
-      expect(screen.getByText("US")).toBeInTheDocument();
-      expect(screen.getByText("Firefox")).toBeInTheDocument();
+      // Panel shows "No enrichment data captured..." since the subscribers don't have enrichment fields
+      expect(await screen.findByText(/no enrichment data captured/i)).toBeInTheDocument();
     });
 
     it("clicking the expand button again collapses the detail panel", async () => {

@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "next dev",
     "sdk:build": "node sdk/build.mjs",
-    "prebuild": "npm run sdk:build",
     "db_prod:migrate": "node scripts/db-migrate.mjs",
     "build": "next build",
     "prestart": "npm run db_prod:migrate",

@@ -84,12 +84,60 @@ model Website {
   tenantId  String
   createdAt DateTime @default(now())
 
-  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  subscribers Subscriber[]
-  tags        Tag[]
-  fields      WebsiteField[]
+  tenant               Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscribers          Subscriber[]
+  tags                 Tag[]
+  fields               WebsiteField[]
+  subscriptionRequests SubscriptionRequest[]
 
   @@index([tenantId])
+}
+
+enum SubscriptionRequestType {
+  SUBSCRIBE
+  UNSUBSCRIBE
+}
+
+enum SubscriptionRequestStatus {
+  ACCEPTED
+  REJECTED
+}
+
+enum SubscriptionRejectionReason {
+  VALIDATION_ERROR
+  INVALID_TOKEN
+  RATE_LIMIT_IP
+  RATE_LIMIT_WEBSITE
+  HONEYPOT
+}
+
+model SubscriptionRequest {
+  id              String                       @id @default(cuid())
+  email           String
+  websiteId       String
+  type            SubscriptionRequestType
+  status          SubscriptionRequestStatus
+  rejectionReason SubscriptionRejectionReason?
+  createdAt       DateTime                     @default(now())
+
+  // Location (async-enriched post-response via fast-geoip)
+  country  String?
+  region   String?
+  city     String?
+  area     String?
+  timezone String?
+
+  // Device (async-enriched post-response via ua-parser-js)
+  platform   String?
+  browser    String?
+  deviceType String?
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
+  @@index([email, websiteId])
+  @@index([createdAt])
+  @@index([type, status, websiteId])
 }
 
 model Subscriber {
@@ -98,14 +146,6 @@ model Subscriber {
   firstName      String?
   lastName       String?
   websiteId      String
-  timezone       String?
-  country        String?
-  region         String?
-  city           String?
-  os             String?
-  deviceType     String?
-  browser        String?
-  metadata       Json?
   unsubscribedAt DateTime?
   createdAt      DateTime  @default(now())
 

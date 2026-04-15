@@ -30,6 +30,43 @@ export interface TenantWithWebsites extends Tenant {
   websites: Website[];
 }
 
+// ─── Subscription request log ─────────────────────────────────────────────────
+
+export type SubscriptionRequestType = "SUBSCRIBE" | "UNSUBSCRIBE";
+export type SubscriptionRequestStatus = "ACCEPTED" | "REJECTED";
+export type SubscriptionRejectionReason =
+  | "VALIDATION_ERROR"
+  | "INVALID_TOKEN"
+  | "RATE_LIMIT_IP"
+  | "RATE_LIMIT_WEBSITE"
+  | "HONEYPOT";
+
+export interface SubscriptionRequest {
+  id: string;
+  email: string;
+  websiteId: string;
+  type: SubscriptionRequestType;
+  status: SubscriptionRequestStatus;
+  rejectionReason: SubscriptionRejectionReason | null;
+  createdAt: Date;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  area: string | null;
+  timezone: string | null;
+  platform: string | null;
+  browser: string | null;
+  deviceType: string | null;
+}
+
+export interface LogRequestInput {
+  email: string;
+  websiteId: string;
+  type: SubscriptionRequestType;
+  status: SubscriptionRequestStatus;
+  rejectionReason?: SubscriptionRejectionReason;
+}
+
 export type SubscriberMetadata = Record<string, string | number | boolean | null>;
 
 export type ContactMetadata = Record<string, string | number | boolean | null>;
@@ -102,14 +139,6 @@ export interface Subscriber {
   websiteId: string;
   createdAt: Date;
   unsubscribedAt: Date | null;
-  timezone: string | null;
-  country: string | null;
-  region: string | null;
-  city: string | null;
-  os: string | null;
-  deviceType: string | null;
-  browser: string | null;
-  metadata: SubscriberMetadata | null;
   tags: Pick<Tag, "id" | "name" | "color" | "description">[];
 }
 
@@ -163,10 +192,11 @@ export interface EnrichmentData {
   country: string | null;
   region: string | null;
   city: string | null;
+  area: string | null;
   timezone: string | null;
   browser: string | null;
   deviceType: string | null;
-  os: string | null;
+  platform: string | null;
 }
 
 export interface UpdateSubscriberMetadataInput {

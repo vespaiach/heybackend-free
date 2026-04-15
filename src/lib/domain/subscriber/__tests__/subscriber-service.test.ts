@@ -3,12 +3,18 @@
 // Hoist mock variables before vi.mock() calls
 const mockCreate = vi.hoisted(() => vi.fn());
 const mockUpdate = vi.hoisted(() => vi.fn());
+const mockSubscriberFindUnique = vi.hoisted(() => vi.fn());
+const mockSubscriberUpdate = vi.hoisted(() => vi.fn());
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     subscriptionRequest: {
       create: mockCreate,
       update: mockUpdate,
+    },
+    subscriber: {
+      findUnique: mockSubscriberFindUnique,
+      update: mockSubscriberUpdate,
     },
   },
 }));
@@ -191,5 +197,51 @@ describe("enrichRequest()", () => {
         platform: null,
       },
     });
+  });
+});
+
+// ─── unsubscribeByEmail() ─────────────────────────────────────────────────────
+
+describe("unsubscribeByEmail()", () => {
+  it("returns false when the subscriber is not found", async () => {
+    mockSubscriberFindUnique.mockResolvedValue(null);
+
+    const result = await service.unsubscribeByEmail("nobody@example.com", "site_1");
+
+    expect(result).toBe(false);
+    expect(mockSubscriberUpdate).not.toHaveBeenCalled();
+  });
+
+  it("returns true and updates unsubscribedAt when subscriber exists", async () => {
+    mockSubscriberFindUnique.mockResolvedValue({ id: "sub_1" });
+    mockSubscriberUpdate.mockResolvedValue({});
+
+    const before = new Date();
+    const result = await service.unsubscribeByEmail("alice@example.com", "site_1");
+    const after = new Date();
+
+    expect(result).toBe(true);
+    expect(mockSubscriberFindUnique).toHaveBeenCalledWith({
+      where: { email_websiteId: { email: "alice@example.com", websiteId: "site_1" } },
+      select: { id: true },
+    });
+    expect(mockSubscriberUpdate).toHaveBeenCalledWith({
+      where: { id: "sub_1" },
+      data: { unsubscribedAt: expect.any(Date) },
+    });
+    const updatedAt: Date = mockSubscriberUpdate.mock.calls[0]![0].data.unsubscribedAt;
+    expect(updatedAt.getTime()).toBeGreaterThanOrEqual(before.getTime());
+    expect(updatedAt.getTime()).toBeLessThanOrEqual(after.getTime());
+  });
+
+  it("returns true (idempotent) when subscriber is already unsubscribed", async () => {
+    // findUnique returns the subscriber regardless of its unsubscribedAt state
+    mockSubscriberFindUnique.mockResolvedValue({ id: "sub_1" });
+    mockSubscriberUpdate.mockResolvedValue({});
+
+    const result = await service.unsubscribeByEmail("alice@example.com", "site_1");
+
+    expect(result).toBe(true);
+    expect(mockSubscriberUpdate).toHaveBeenCalledTimes(1);
   });
 });

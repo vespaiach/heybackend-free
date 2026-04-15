@@ -1,4 +1,5 @@
-import { bindForm as _bindForm, type BindFormCallbacks } from "./form";
+import type { ContactSubmitData } from "./contact";
+import { bindContactForm as _bindContactForm, bindForm as _bindForm, type BindFormCallbacks } from "./form";
 import { coreSubscribe, type HbConfig, type SubscribeData } from "./subscribe";
 
 // ─── Embedded config ──────────────────────────────────────────────────────────
@@ -37,12 +38,16 @@ function bindForm(selector: string | HTMLFormElement, callbacks: BindFormCallbac
   return _bindForm(selector, config, callbacks);
 }
 
+function bindContactForm(selector: string | HTMLFormElement, callbacks: BindFormCallbacks): () => void {
+  return _bindContactForm(selector, config, callbacks);
+}
+
 // ─── Global export ────────────────────────────────────────────────────────────
 
-const __HB = { subscribe, bindForm };
+const __HB = { subscribe, bindForm, bindContactForm };
 
 if (typeof window !== "undefined") {
   (window as unknown as Record<string, unknown>).__HB = __HB;
 }
 
-export { subscribe, bindForm };
+export { subscribe, bindForm, bindContactForm };

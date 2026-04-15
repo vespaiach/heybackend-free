@@ -32,66 +32,46 @@ export interface TenantWithWebsites extends Tenant {
 
 export type SubscriberMetadata = Record<string, string | number | boolean | null>;
 
-export type ContactMetadata = Record<string, string | number | boolean | null>;
+export type ContactRequestMetadata = Record<string, string | number | boolean | null>;
 
-export interface Contact {
+export interface ContactRequest {
   id: string;
   websiteId: string;
   email: string;
-  name: string | null;
+  name: string;
+  company: string | null;
   phone: string | null;
   message: string;
-  metadata: ContactMetadata | null;
-  tags: Pick<Tag, "id" | "name" | "color" | "description">[];
-  // Device / context
-  userAgent: string | null;
-  referrer: string | null;
+  metadata: ContactRequestMetadata | null;
   timezone: string | null;
-  locale: string | null;
-  screenWidth: number | null;
-  screenHeight: number | null;
-  viewportWidth: number | null;
-  viewportHeight: number | null;
-  // Location (derived from IP, raw IP never stored)
   country: string | null;
   region: string | null;
   city: string | null;
-  // UTM attribution
-  utmSource: string | null;
-  utmMedium: string | null;
-  utmCampaign: string | null;
-  utmTerm: string | null;
-  utmContent: string | null;
+  os: string | null;
+  deviceType: string | null;
+  browser: string | null;
   createdAt: Date;
 }
 
-export interface ContactEnrichment {
-  userAgent?: string | null;
-  referrer?: string | null;
+export interface ContactRequestEnrichment {
   timezone?: string | null;
-  locale?: string | null;
-  screenWidth?: number | null;
-  screenHeight?: number | null;
-  viewportWidth?: number | null;
-  viewportHeight?: number | null;
   country?: string | null;
   region?: string | null;
   city?: string | null;
-  utmSource?: string | null;
-  utmMedium?: string | null;
-  utmCampaign?: string | null;
-  utmTerm?: string | null;
-  utmContent?: string | null;
+  os?: string | null;
+  deviceType?: string | null;
+  browser?: string | null;
 }
 
-export interface CreateContactInput {
+export interface CreateContactRequestInput {
   websiteId: string;
   email: string;
   name: string;
+  company?: string | null;
   phone?: string | null;
   message: string;
-  enrichment?: ContactEnrichment;
-  metadata?: ContactMetadata;
+  enrichment?: ContactRequestEnrichment;
+  metadata?: ContactRequestMetadata;
 }
 
 export interface Subscriber {
@@ -205,7 +185,7 @@ export interface ListSubscribersResult {
   total: number;
 }
 
-export interface ListContactsFilter {
+export interface ListContactRequestsFilter {
   websiteId: string;
   q?: string;
   fromDate?: string;
@@ -215,11 +195,10 @@ export interface ListContactsFilter {
   sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;
-  tags?: string[];
 }
 
-export interface ListContactsResult {
-  contacts: Contact[];
+export interface ListContactRequestsResult {
+  contactRequests: ContactRequest[];
   total: number;
 }
 

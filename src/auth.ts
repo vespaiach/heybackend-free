@@ -40,32 +40,34 @@ export async function sendVerificationRequest({
       <p style="color:#999;font-size:12px">This link expires in 24 hours and can only be used once. If you did not request this email, you can safely ignore it.</p>
     `.trim(),
   });
+
+  console.log(`Sent magic link to ${email}: ${url}`);
 }
 
 const emailProvider =
   process.env.ENV === "development"
     ? Nodemailer({
-        from: "noreply@localhost",
-        server: "smtp://localhost:25?ignoreTLS=true",
-        sendVerificationRequest({ url, identifier: email }) {
-          console.log(
-            `\n┌─ Magic Link ─────────────────────────────\n│  To:  ${email}\n│  URL: ${url}\n└──────────────────────────────────────────\n`,
-          );
-        },
-      })
+      from: "noreply@localhost",
+      server: "smtp://localhost:25?ignoreTLS=true",
+      sendVerificationRequest({ url, identifier: email }) {
+        console.log(
+          `\n┌─ Magic Link ─────────────────────────────\n│  To:  ${email}\n│  URL: ${url}\n└──────────────────────────────────────────\n`,
+        );
+      },
+    })
     : Nodemailer({
-        from: process.env.EMAIL_FROM,
-        server: {
-          host: process.env.EMAIL_SERVER_HOST,
-          port: Number(process.env.EMAIL_SERVER_PORT ?? 465),
-          secure: process.env.EMAIL_SERVER_SECURE === "true",
-          auth: {
-            user: process.env.EMAIL_SERVER_USER,
-            pass: process.env.EMAIL_SERVER_PASSWORD,
-          },
+      from: process.env.EMAIL_FROM,
+      server: {
+        host: process.env.EMAIL_SERVER_HOST,
+        port: Number(process.env.EMAIL_SERVER_PORT ?? 465),
+        secure: process.env.EMAIL_SERVER_SECURE === "true",
+        auth: {
+          user: process.env.EMAIL_SERVER_USER,
+          pass: process.env.EMAIL_SERVER_PASSWORD,
         },
-        sendVerificationRequest,
-      });
+      },
+      sendVerificationRequest,
+    });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),

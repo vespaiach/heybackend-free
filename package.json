@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "sdk:build": "node sdk/build.mjs",
-    "prebuild": "npm run sdk:build && npm run db_prod:migrate",
+    "prebuild": "npm run sdk:build",
     "db_prod:migrate": "node scripts/db-migrate.mjs",
     "build": "next build",
+    "prestart": "npm run db_prod:migrate",
     "start": "next start",
     "poststart": "node scripts/poststart.mjs",
     "test": "vitest run",

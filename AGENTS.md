@@ -28,7 +28,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ```bash
 npm run dev          # start dev server
-npm run build        # production build — NOTE: automatically runs sdk:build then db_prod:migrate via prebuild hook
+npm run build        # production build — NOTE: automatically runs sdk:build via prebuild hook
 npm start            # start production server — NOTE: runs scripts/poststart.mjs via poststart hook
 npm test             # run tests (vitest)
 npm run test:watch   # run tests in watch mode

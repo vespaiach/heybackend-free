@@ -34,7 +34,7 @@ vi.mock("next/server", () => ({
 }));
 
 vi.mock("@/lib/rate-limiter", () => ({
-  checkRateLimit: vi.fn().mockReturnValue(true),
+  checkRateLimit: vi.fn().mockResolvedValue(true),
 }));
 
 // ─── Imports (after mocks) ────────────────────────────────────────────────────
@@ -42,6 +42,7 @@ vi.mock("@/lib/rate-limiter", () => ({
 import { after } from "next/server";
 import { UAParser } from "ua-parser-js";
 import { subscriberService, websiteService } from "@/lib/domain";
+import type { Subscriber, SubscriptionRequest } from "@/lib/domain/types";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { mintToken } from "@/lib/signing";
 import { OPTIONS, POST } from "../route";
@@ -56,13 +57,15 @@ beforeEach(() => {
       getBrowser: () => ({ name: "Chrome" }),
       getDevice: () => ({ type: undefined }),
       getOS: () => ({ name: "macOS" }),
-    } as never;
+    } as unknown as InstanceType<typeof UAParser>;
   });
-  vi.mocked(checkRateLimit).mockReturnValue(true);
+  vi.mocked(checkRateLimit).mockResolvedValue(true);
   vi.mocked(websiteService.getWebsiteForSigning).mockResolvedValue(mockWebsite);
   vi.mocked(websiteService.getWebsiteById).mockResolvedValue(mockWebsitePublic);
   vi.mocked(subscriberService.upsertSubscriber).mockResolvedValue(mockSubscriber);
-  vi.mocked(subscriberService.logRequest).mockResolvedValue({ id: "req_1" } as never);
+  vi.mocked(subscriberService.logRequest).mockResolvedValue({
+    id: "req_1",
+  } as unknown as SubscriptionRequest);
   vi.mocked(subscriberService.enrichRequest).mockResolvedValue(undefined);
 });
 
@@ -75,7 +78,7 @@ const WEBSITE_KEY = "test-signing-secret-32chars!!!!!";
 const mockWebsite = { id: WEBSITE_ID, url: WEBSITE_URL, isActive: true, key: WEBSITE_KEY };
 const mockWebsitePublic = { id: WEBSITE_ID, url: WEBSITE_URL, isActive: true };
 
-const mockSubscriber = { subscriber: {} as never, created: true };
+const mockSubscriber = { subscriber: {} as unknown as Subscriber, created: true };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -251,26 +254,31 @@ describe("POST — token & origin guard", () => {
       expect.objectContaining({ type: "SUBSCRIBE", status: "REJECTED", rejectionReason: "INVALID_TOKEN" }),
     );
   });
+
+  it("does NOT log when origin does not match", async () => {
+    await POST(makePost(validBody(), "https://evil.com"), params());
+    expect(subscriberService.logRequest).not.toHaveBeenCalled();
+  });
 });
 
 // ─── POST: rate limiting ──────────────────────────────────────────────────────
 
 describe("POST — rate limiting", () => {
   it("returns 429 with Retry-After when per-IP rate limit is exceeded", async () => {
-    vi.mocked(checkRateLimit).mockReturnValue(false);
+    vi.mocked(checkRateLimit).mockResolvedValue(false);
     const res = await POST(makePost(validBody()), params());
     expect(res.status).toBe(429);
     expect(res.headers.get("retry-after")).toBe("60");
   });
 
   it("includes CORS headers in the 429 response", async () => {
-    vi.mocked(checkRateLimit).mockReturnValue(false);
+    vi.mocked(checkRateLimit).mockResolvedValue(false);
     const res = await POST(makePost(validBody()), params());
     expect(res.headers.get("access-control-allow-origin")).toBe(WEBSITE_URL);
   });
 
   it("logs REJECTED/RATE_LIMIT_IP when per-IP limit exceeded", async () => {
-    vi.mocked(checkRateLimit).mockReturnValue(false);
+    vi.mocked(checkRateLimit).mockResolvedValue(false);
     await POST(makePost(validBody()), params());
     expect(subscriberService.logRequest).toHaveBeenCalledWith(
       expect.objectContaining({ type: "SUBSCRIBE", status: "REJECTED", rejectionReason: "RATE_LIMIT_IP" }),
@@ -279,8 +287,8 @@ describe("POST — rate limiting", () => {
 
   it("logs REJECTED/RATE_LIMIT_WEBSITE when per-website limit exceeded", async () => {
     vi.mocked(checkRateLimit)
-      .mockReturnValueOnce(true) // per-IP passes
-      .mockReturnValue(false); // per-website fails
+      .mockResolvedValueOnce(true) // per-IP passes
+      .mockResolvedValue(false); // per-website fails
     await POST(makePost(validBody()), params());
     expect(subscriberService.logRequest).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -376,7 +384,9 @@ describe("POST — happy paths", () => {
   });
 
   it("calls enrichRequest on the logged request id after upsert", async () => {
-    vi.mocked(subscriberService.logRequest).mockResolvedValue({ id: "req_1" } as never);
+    vi.mocked(subscriberService.logRequest).mockResolvedValue({
+      id: "req_1",
+    } as unknown as SubscriptionRequest);
     await POST(makePost(validBody()), params());
     await vi.waitFor(() =>
       expect(subscriberService.enrichRequest).toHaveBeenCalledWith(
@@ -387,8 +397,10 @@ describe("POST — happy paths", () => {
   });
 
   it("also calls enrichRequest for rate-limited (rejected) requests", async () => {
-    vi.mocked(checkRateLimit).mockReturnValue(false);
-    vi.mocked(subscriberService.logRequest).mockResolvedValue({ id: "req_rl" } as never);
+    vi.mocked(checkRateLimit).mockResolvedValue(false);
+    vi.mocked(subscriberService.logRequest).mockResolvedValue({
+      id: "req_rl",
+    } as unknown as SubscriptionRequest);
     await POST(makePost(validBody()), params());
     await vi.waitFor(() =>
       expect(subscriberService.enrichRequest).toHaveBeenCalledWith("req_rl", expect.any(Object)),

@@ -15,7 +15,7 @@ import {
   validationError,
 } from "@/lib/api/route-helpers";
 import { subscriberService, websiteService } from "@/lib/domain";
-import type { EnrichmentData } from "@/lib/domain/types";
+import type { EnrichmentData, SubscriptionRejectionReason } from "@/lib/domain/types";
 import { logger } from "@/lib/logger";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { SubscribeRequestSchema } from "@/lib/schemas/subscribe-request";
@@ -52,8 +52,9 @@ export async function POST(
   const { websiteId } = await params;
   const website = await websiteService.getWebsiteForSigning(websiteId);
   if (!website) return unauthorized();
-  const corsHeaders = buildCorsHeaders(website.url);
-  if (!website.isActive) return unauthorized(corsHeaders);
+  const activeWebsite = website; // narrowed const — TypeScript can see closures won't get null
+  const corsHeaders = buildCorsHeaders(activeWebsite.url);
+  if (!activeWebsite.isActive) return unauthorized(corsHeaders);
 
   const ip = getClientIp(request);
   const ua = request.headers.get("user-agent") ?? "";
@@ -64,10 +65,10 @@ export async function POST(
     const parser = new UAParser(ua);
     return {
       country: geo?.country ?? null,
-      region: geo?.region || null,
-      city: geo?.city || null,
+      region: geo?.region ?? null,
+      city: geo?.city ?? null,
       area: null,
-      timezone: geo?.timezone || null,
+      timezone: geo?.timezone ?? null,
       browser: parser.getBrowser().name ?? null,
       deviceType: parser.getDevice().type ?? null,
       platform: parser.getOS().name ?? null,
@@ -78,17 +79,12 @@ export async function POST(
   async function logAndEnrich(
     email: string,
     status: "ACCEPTED" | "REJECTED",
-    rejectionReason?:
-      | "VALIDATION_ERROR"
-      | "INVALID_TOKEN"
-      | "RATE_LIMIT_IP"
-      | "RATE_LIMIT_WEBSITE"
-      | "HONEYPOT",
+    rejectionReason?: SubscriptionRejectionReason,
     skipEnrich = false,
   ): Promise<void> {
     const logged = await subscriberService.logRequest({
       email,
-      websiteId: website.id,
+      websiteId: activeWebsite.id,
       type: "SUBSCRIBE",
       status,
       ...(rejectionReason !== undefined ? { rejectionReason } : {}),
@@ -134,14 +130,14 @@ export async function POST(
 
   try {
     // Token verification.
-    if (!verifyToken(website.key, websiteId, token, expiresAt)) {
+    if (!verifyToken(activeWebsite.key, websiteId, token, expiresAt)) {
       await logAndEnrich(normalizedEmail, "REJECTED", "INVALID_TOKEN");
       return unauthorized(corsHeaders);
     }
 
     // Origin check.
     const origin = request.headers.get("origin");
-    if (!validateOrigin(origin, website.url)) {
+    if (!validateOrigin(origin, activeWebsite.url)) {
       return forbidden(corsHeaders);
     }
 
@@ -156,7 +152,7 @@ export async function POST(
       });
     }
 
-    const siteAllowed = await checkRateLimit(`site:${website.id}:sub`, 200, 60_000);
+    const siteAllowed = await checkRateLimit(`site:${activeWebsite.id}:sub`, 200, 60_000);
     if (!siteAllowed) {
       await logAndEnrich(normalizedEmail, "REJECTED", "RATE_LIMIT_WEBSITE");
       return new Response(JSON.stringify({ message: "Too many requests" }), {
@@ -177,7 +173,7 @@ export async function POST(
       email: normalizedEmail,
       firstName: firstName ?? null,
       lastName: lastName ?? null,
-      websiteId: website.id,
+      websiteId: activeWebsite.id,
     });
 
     await logAndEnrich(normalizedEmail, "ACCEPTED");

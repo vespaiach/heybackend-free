@@ -119,6 +119,7 @@ model SubscriptionRequest {
   status          SubscriptionRequestStatus
   rejectionReason SubscriptionRejectionReason?
   createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @updatedAt
 
   // Location (async-enriched post-response via fast-geoip)
   country  String?
@@ -136,7 +137,7 @@ model SubscriptionRequest {
 
   @@index([websiteId])
   @@index([email, websiteId])
-  @@index([createdAt])
+  @@index([websiteId, createdAt])
   @@index([type, status, websiteId])
 }
 

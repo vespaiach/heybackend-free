@@ -337,6 +337,18 @@ export class PrismaSubscriberService implements SubscriberService {
     return { count };
   }
 
+  async bulkRemoveTag(subscriberIds: string[], tagId: string, tenantId: string): Promise<{ count: number }> {
+    const validSubs = await prisma.subscriber.findMany({
+      where: { id: { in: subscriberIds }, website: { tenantId } },
+      select: { id: true },
+    });
+    const validIds = validSubs.map(({ id }) => id);
+    const result = await prisma.subscriberTag.deleteMany({
+      where: { subscriberId: { in: validIds }, tagId },
+    });
+    return { count: result.count };
+  }
+
   async getTagsForWebsite(websiteId: string): Promise<Pick<Tag, "id" | "name" | "color" | "description">[]> {
     return prisma.tag.findMany({
       where: { websiteId },

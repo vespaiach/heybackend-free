@@ -2,7 +2,7 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type React from "react";
 import { formatDate } from "@/lib/utils";
-import { SubscribersTable } from "../subscribers-table";
+import { SubscribersTable } from "../_components/subscribers-table";
 
 const { mockPush, mockRefresh } = vi.hoisted(() => ({
   mockPush: vi.fn(),
@@ -19,14 +19,14 @@ const {
   mockBulkUnsubscribe,
   mockBulkResubscribe,
   mockBulkAddTag,
-  mockUpdateMetadata,
+  mockBulkRemoveTag,
 } = vi.hoisted(() => ({
   mockAddTag: vi.fn().mockResolvedValue({ tag: { id: "t-new", name: "VIP" } }),
   mockRemoveTag: vi.fn().mockResolvedValue({}),
   mockBulkUnsubscribe: vi.fn().mockResolvedValue({ count: 1 }),
   mockBulkResubscribe: vi.fn().mockResolvedValue({ count: 1 }),
   mockBulkAddTag: vi.fn().mockResolvedValue({ count: 1 }),
-  mockUpdateMetadata: vi.fn().mockResolvedValue({}),
+  mockBulkRemoveTag: vi.fn().mockResolvedValue({ count: 1 }),
 }));
 
 vi.mock("../actions", () => ({
@@ -35,7 +35,7 @@ vi.mock("../actions", () => ({
   bulkUnsubscribeSubscribers: mockBulkUnsubscribe,
   bulkResubscribeSubscribers: mockBulkResubscribe,
   bulkAddTag: mockBulkAddTag,
-  updateSubscriberMetadata: mockUpdateMetadata,
+  bulkRemoveTag: mockBulkRemoveTag,
 }));
 
 // jsdom does not implement matchMedia
@@ -104,7 +104,6 @@ function makeProps(overrides: Partial<React.ComponentProps<typeof SubscribersTab
     sortDir: "desc" as const,
     availableTags: [],
     selectedTagIds: [] as string[],
-    websiteFields: [],
     ...overrides,
   };
 }
@@ -118,7 +117,7 @@ describe("SubscribersTable", () => {
     mockBulkUnsubscribe.mockClear();
     mockBulkResubscribe.mockClear();
     mockBulkAddTag.mockClear();
-    mockUpdateMetadata.mockClear();
+    mockBulkRemoveTag.mockClear();
   });
 
   it("renders a row for each subscriber", () => {
@@ -154,9 +153,9 @@ describe("SubscribersTable", () => {
       expect(mockPush).toHaveBeenCalledOnce();
       const url = mockPush.mock.calls[0]![0] as string;
       const params = new URLSearchParams(url.split("?")[1]);
+      expect(url).toContain(`/dashboard/${WEBSITE_ID}/subscribers-list`);
       expect(params.get("q")).toBe("jane");
       expect(params.get("page")).toBe("1");
-      expect(params.get("wid")).toBe(WEBSITE_ID);
     });
 
     it("selecting status=active and clicking Apply navigates with status param", async () => {
@@ -301,8 +300,8 @@ describe("SubscribersTable", () => {
       await userEvent.click(screen.getByRole("button", { name: /next page/i }));
       const url = mockPush.mock.calls[0]![0] as string;
       const params = new URLSearchParams(url.split("?")[1]);
+      expect(url).toContain(`/dashboard/${WEBSITE_ID}/subscribers-list`);
       expect(params.get("page")).toBe("2");
-      expect(params.get("wid")).toBe(WEBSITE_ID);
       expect(params.get("q")).toBe("J");
     });
 
@@ -418,7 +417,7 @@ describe("SubscribersTable", () => {
       expect(p.get("sortDir")).toBe("asc");
     });
 
-    it("sort params are preserved in wid and search when sorting", async () => {
+    it("sort params are preserved in search when sorting", async () => {
       render(
         <SubscribersTable
           {...makeProps({
@@ -429,8 +428,9 @@ describe("SubscribersTable", () => {
         />,
       );
       await userEvent.click(screen.getByRole("button", { name: /first name/i }));
+      const url = mockPush.mock.calls[0]![0] as string;
       const p = getSortParams();
-      expect(p.get("wid")).toBe(WEBSITE_ID);
+      expect(url).toContain(`/dashboard/${WEBSITE_ID}/subscribers-list`);
       expect(p.get("q")).toBe("A");
     });
   });
@@ -577,6 +577,7 @@ describe("SubscribersTable", () => {
       const header = screen.getAllByRole("row")[0]!;
       await userEvent.click(within(header).getByRole("checkbox"));
       await userEvent.click(screen.getByRole("button", { name: /^unsubscribe$/i }));
+      await userEvent.click(await screen.findByRole("button", { name: /^confirm$/i }));
       await waitFor(() => {
         expect(mockBulkUnsubscribe).toHaveBeenCalledWith(expect.arrayContaining(["1", "2"]));
         expect(mockRefresh).toHaveBeenCalled();
@@ -588,6 +589,7 @@ describe("SubscribersTable", () => {
       const header = screen.getAllByRole("row")[0]!;
       await userEvent.click(within(header).getByRole("checkbox"));
       await userEvent.click(screen.getByRole("button", { name: /^re-subscribe$/i }));
+      await userEvent.click(await screen.findByRole("button", { name: /^confirm$/i }));
       await waitFor(() => {
         expect(mockBulkResubscribe).toHaveBeenCalledWith(expect.arrayContaining(["1", "2"]));
         expect(mockRefresh).toHaveBeenCalled();
@@ -599,12 +601,31 @@ describe("SubscribersTable", () => {
       render(<SubscribersTable {...makeProps({ availableTags })} />);
       const header = screen.getAllByRole("row")[0]!;
       await userEvent.click(within(header).getByRole("checkbox"));
-      // Click the bulk toolbar "Add tag" button (has visible text, not just aria-label)
       const toolbar = screen.getByText(/2 selected/).closest("div")!;
-      await userEvent.click(within(toolbar).getByRole("button", { name: /add tag/i }));
+      await userEvent.click(within(toolbar).getByRole("button", { name: /manage tag/i }));
       await userEvent.click(await screen.findByRole("button", { name: /^vip$/i }));
       await waitFor(() => {
         expect(mockBulkAddTag).toHaveBeenCalledWith(expect.arrayContaining(["1", "2"]), "VIP");
+        expect(mockRefresh).toHaveBeenCalled();
+      });
+    });
+
+    it("bulk remove tag calls bulkRemoveTag with selected ids and tag id and refreshes", async () => {
+      const tag = { id: "t1", name: "VIP", color: null, description: null };
+      const subscribersWithTags = [
+        { ...subscribers[0]!, tags: [tag] },
+        { ...subscribers[1]!, tags: [tag] },
+      ];
+      render(<SubscribersTable {...makeProps({ subscribers: subscribersWithTags, availableTags: [tag] })} />);
+      const header = screen.getAllByRole("row")[0]!;
+      await userEvent.click(within(header).getByRole("checkbox"));
+      const toolbar = screen.getByText(/2 selected/).closest("div")!;
+      await userEvent.click(within(toolbar).getByRole("button", { name: /manage tag/i }));
+      // The dialog shows "VIP" as an applied tag with an × remove button
+      const removeBtn = await screen.findByRole("button", { name: /remove tag vip/i });
+      await userEvent.click(removeBtn);
+      await waitFor(() => {
+        expect(mockBulkRemoveTag).toHaveBeenCalledWith(expect.arrayContaining(["1", "2"]), "t1");
         expect(mockRefresh).toHaveBeenCalled();
       });
     });

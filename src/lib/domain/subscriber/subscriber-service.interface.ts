@@ -74,6 +74,11 @@ export interface SubscriberService {
   bulkAddTag(subscriberIds: string[], tagName: string, tenantId: string): Promise<{ count: number }>;
 
   /**
+   * Remove a tag by id from multiple subscribers (all under the tenant).
+   */
+  bulkRemoveTag(subscriberIds: string[], tagId: string, tenantId: string): Promise<{ count: number }>;
+
+  /**
    * Returns all tags for a website, sorted by name.
    */
   getTagsForWebsite(websiteId: string): Promise<Pick<Tag, "id" | "name" | "color" | "description">[]>;

@@ -121,6 +121,22 @@ export async function bulkAddTag(
   }
 }
 
+export async function bulkRemoveTag(
+  subscriberIds: string[],
+  tagId: string,
+): Promise<{ count: number } | { error: string }> {
+  const session = await auth();
+  if (!session?.user?.id) return { error: "Unauthorized" };
+
+  try {
+    const tenantId = await tenantService.getTenantIdByUserId(session.user.id);
+    return await subscriberService.bulkRemoveTag(subscriberIds, tagId, tenantId);
+  } catch (e) {
+    logger.error("bulkRemoveTag", e);
+    return { error: "Failed to bulk remove tag" };
+  }
+}
+
 export async function exportSubscribers(filter: {
   websiteId: string;
   q?: string;

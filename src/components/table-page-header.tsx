@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon, Columns2Icon, DownloadIcon, SlidersHorizontalIcon } from "lucide-react";
+import { CheckIcon, Columns2Icon, DownloadIcon } from "lucide-react";
 import type * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,12 +14,8 @@ interface TablePageHeaderProps {
   columns?: readonly { key: string; label: string }[];
   visibleColumns?: Set<string>;
   onToggleColumn?: (key: string) => void;
-  // Filters
-  hasActiveFilters?: boolean;
-  total?: number;
-  isFilterOpen?: boolean;
-  onFilterOpenChange?: (open: boolean) => void;
-  filtersContent: React.ReactNode;
+  // Filter slot — caller renders its own filter trigger/popover here
+  filterSlot?: React.ReactNode;
   activeFiltersContent?: React.ReactNode;
   // Export
   onExport: () => void;
@@ -32,11 +28,7 @@ export function TablePageHeader({
   columns,
   visibleColumns,
   onToggleColumn,
-  hasActiveFilters = false,
-  total,
-  isFilterOpen,
-  onFilterOpenChange,
-  filtersContent,
+  filterSlot,
   activeFiltersContent,
   onExport,
   isExportPending = false,
@@ -97,20 +89,7 @@ export function TablePageHeader({
           </Popover>
         )}
 
-        <Popover open={isFilterOpen} onOpenChange={onFilterOpenChange}>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="relative gap-2">
-              <SlidersHorizontalIcon className="h-4 w-4" />
-              {hasActiveFilters ? `Filters (${total})` : "Filters"}
-              {hasActiveFilters && (
-                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />
-              )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent align="start" className="w-72 p-0">
-            {filtersContent}
-          </PopoverContent>
-        </Popover>
+        {filterSlot}
 
         {activeFiltersContent}
 

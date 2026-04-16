@@ -5,6 +5,7 @@ import type {
   ListContactRequestsFilter,
   ListContactRequestsResult,
 } from "@/lib/domain/types";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ContactRequestService } from "./contact-request-service.interface";
 
@@ -45,7 +46,7 @@ export class PrismaContactRequestService implements ContactRequestService {
     const page = filter.page ?? 1;
     const skip = (page - 1) * pageSize;
 
-    const where: Record<string, unknown> = {
+    const where: Prisma.ContactRequestWhereInput = {
       websiteId: filter.websiteId,
     };
 
@@ -61,19 +62,32 @@ export class PrismaContactRequestService implements ContactRequestService {
 
     // Filter by date range
     if (filter.fromDate || filter.toDate) {
-      where.createdAt = {};
+      const createdAt: Prisma.DateTimeFilter = {};
+
       if (filter.fromDate) {
-        (where.createdAt as Record<string, unknown>).gte = new Date(filter.fromDate);
+        createdAt.gte = new Date(filter.fromDate);
       }
+
       if (filter.toDate) {
-        (where.createdAt as Record<string, unknown>).lte = new Date(filter.toDate);
+        createdAt.lte = new Date(filter.toDate);
       }
+
+      where.createdAt = createdAt;
     }
 
-    const orderBy: Record<string, unknown> = {};
-    const sortField = filter.sortField ?? "createdAt";
-    const sortDir = filter.sortDir ?? "desc";
-    orderBy[sortField] = sortDir;
+    const sortableFields = {
+      createdAt: "createdAt",
+      email: "email",
+      name: "name",
+      country: "country",
+    } satisfies Record<string, keyof Prisma.ContactRequestOrderByWithRelationInput>;
+
+    const sortField =
+      sortableFields[filter.sortField ?? "createdAt"] ?? sortableFields.createdAt;
+    const sortDir: Prisma.SortOrder = filter.sortDir === "asc" ? "asc" : "desc";
+    const orderBy: Prisma.ContactRequestOrderByWithRelationInput = {
+      [sortField]: sortDir,
+    };
 
     const [contactRequests, total] = await Promise.all([
       prisma.contactRequest.findMany({

@@ -19,6 +19,10 @@ export function ContactsFilterPopover({ availableCountries, onFilterChange }: Co
   const [country, setCountry] = useState("__all__");
   const [readStatus, setReadStatus] = useState("all");
 
+  const searchInputId = "search-input";
+  const countrySelectId = "country-select";
+  const readStatusSelectId = "read-status-select";
+
   const handleApply = () => {
     const params = new URLSearchParams();
     if (search) params.set("q", search);
@@ -49,8 +53,11 @@ export function ContactsFilterPopover({ availableCountries, onFilterChange }: Co
       <PopoverContent className="w-72">
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Search</label>
+            <label htmlFor={searchInputId} className="text-sm font-medium">
+              Search
+            </label>
             <Input
+              id={searchInputId}
               placeholder="Name or email..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -59,9 +66,11 @@ export function ContactsFilterPopover({ availableCountries, onFilterChange }: Co
           </div>
 
           <div>
-            <label className="text-sm font-medium">Country</label>
+            <label htmlFor={countrySelectId} className="text-sm font-medium">
+              Country
+            </label>
             <Select value={country} onValueChange={setCountry}>
-              <SelectTrigger className="mt-1">
+              <SelectTrigger id={countrySelectId} className="mt-1">
                 <SelectValue placeholder="Select country" />
               </SelectTrigger>
               <SelectContent>
@@ -76,9 +85,11 @@ export function ContactsFilterPopover({ availableCountries, onFilterChange }: Co
           </div>
 
           <div>
-            <label className="text-sm font-medium">Read Status</label>
+            <label htmlFor={readStatusSelectId} className="text-sm font-medium">
+              Read Status
+            </label>
             <Select value={readStatus} onValueChange={setReadStatus}>
-              <SelectTrigger className="mt-1">
+              <SelectTrigger id={readStatusSelectId} className="mt-1">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

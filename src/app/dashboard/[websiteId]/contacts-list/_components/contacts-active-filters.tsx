@@ -36,7 +36,7 @@ export function ContactsActiveFilters({ search, country, onRemoveFilter }: Conta
       {filters.map((filter) => (
         <Badge key={filter.key} variant="outline" className="gap-1">
           {filter.label}
-          <button onClick={() => handleRemove(filter.key)} className="ml-1 hover:opacity-70">
+          <button type="button" onClick={() => handleRemove(filter.key)} className="ml-1 hover:opacity-70">
             <X className="h-3 w-3" />
           </button>
         </Badge>

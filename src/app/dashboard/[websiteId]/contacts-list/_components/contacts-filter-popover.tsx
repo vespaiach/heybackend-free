@@ -1,6 +1,7 @@
 "use client";
 
 import { SlidersHorizontalIcon } from "lucide-react";
+import { Select as RSelect } from "radix-ui";
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,12 @@ export type ContactReadStatus = "all" | "read" | "unread";
 
 export interface ContactFilterValues {
   query: string;
-  country: string; // "__all__" means no filter
+  company: string; // "__all__" means no filter
   readStatus: ContactReadStatus;
 }
 
 interface ContactsFilterPopoverProps {
-  availableCountries: string[];
+  availableCompanies: string[];
   currentFilters: ContactFilterValues;
   total: number;
   hasActiveFilters: boolean;
@@ -28,7 +29,7 @@ interface ContactsFilterPopoverProps {
 }
 
 export function ContactsFilterPopover({
-  availableCountries,
+  availableCompanies,
   currentFilters,
   total,
   hasActiveFilters,
@@ -56,7 +57,7 @@ export function ContactsFilterPopover({
   };
 
   const searchInputId = "contacts-search-input";
-  const countrySelectId = "contacts-country-select";
+  const companySelectId = "contacts-company-select";
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -87,18 +88,18 @@ export function ContactsFilterPopover({
           </div>
 
           <div>
-            <label htmlFor={countrySelectId} className="text-sm font-medium">
-              Country
+            <label htmlFor={companySelectId} className="text-sm font-medium">
+              Company
             </label>
             <Select
-              value={draft.country}
-              onValueChange={(value) => setDraft((prev) => ({ ...prev, country: value }))}>
-              <SelectTrigger id={countrySelectId} className="mt-1">
-                <SelectValue placeholder="Select country" />
+              value={draft.company}
+              onValueChange={(value) => setDraft((prev) => ({ ...prev, company: value }))}>
+              <SelectTrigger id={companySelectId} className="mt-1">
+                <SelectValue placeholder="Select company" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Countries</SelectItem>
-                {availableCountries.map((c) => (
+                <SelectItem value="__all__">All Companies</SelectItem>
+                {availableCompanies.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
                   </SelectItem>

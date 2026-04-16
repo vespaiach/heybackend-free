@@ -507,4 +507,62 @@ describe("ContactRequestService", () => {
       expect(result).toBeNull();
     });
   });
+
+  describe("markContactAsRead", () => {
+    it("sets readAt to current timestamp", async () => {
+      const testDate = new Date();
+      vi.mocked(prisma.contactRequest.findUnique).mockResolvedValue({
+        id: "contact_123",
+        websiteId: testWebsiteId,
+        email: "test@example.com",
+        name: "John Doe",
+        message: "Hello",
+        company: null,
+        phone: null,
+        metadata: null,
+        country: null,
+        region: null,
+        city: null,
+        timezone: null,
+        os: null,
+        deviceType: null,
+        browser: null,
+        createdAt: new Date(),
+        readAt: null,
+        website: {
+          id: testWebsiteId,
+          tenant: {
+            id: testTenantId,
+          },
+        },
+      } as any);
+
+      vi.mocked(prisma.contactRequest.update).mockResolvedValue({
+        id: "contact_123",
+        websiteId: testWebsiteId,
+        email: "test@example.com",
+        name: "John Doe",
+        message: "Hello",
+        company: null,
+        phone: null,
+        metadata: null,
+        country: null,
+        region: null,
+        city: null,
+        timezone: null,
+        os: null,
+        deviceType: null,
+        browser: null,
+        createdAt: new Date(),
+        readAt: testDate,
+      } as any);
+
+      await contactRequestService.markContactAsRead("contact_123", testTenantId);
+
+      expect(prisma.contactRequest.update).toHaveBeenCalled();
+      const updateCall = vi.mocked(prisma.contactRequest.update).mock.calls[0]?.[0];
+      expect(updateCall?.where.id).toBe("contact_123");
+      expect(updateCall?.data.readAt).not.toBeNull();
+    });
+  });
 });

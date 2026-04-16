@@ -70,7 +70,6 @@ export interface CreateContactRequestInput {
   company?: string | null;
   phone?: string | null;
   message: string;
-  enrichment?: ContactRequestEnrichment;
   metadata?: ContactRequestMetadata;
 }
 

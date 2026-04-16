@@ -9,6 +9,8 @@ import { TablePageHeader } from "@/components/table-page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ContactRequest } from "@/lib/domain/types";
+import { downloadCsv } from "@/lib/export-csv";
+import { exportContacts } from "../actions";
 import { ContactDetailModal } from "./contact-detail-modal";
 import { ContactsActiveFilters } from "./contacts-active-filters";
 import { type ContactFilterValues, ContactsFilterPopover } from "./contacts-filter-popover";
@@ -72,6 +74,7 @@ export function ContactsTable({
   const router = useRouter();
   const [selectedContact, setSelectedContact] = React.useState<ContactRequest | null>(null);
   const [isPagePending, startPageTransition] = React.useTransition();
+  const [isExportPending, startExportTransition] = React.useTransition();
   const [visibleColumns, setVisibleColumns] = React.useState<Set<ColumnKey>>(() => {
     const visible = new Set<ColumnKey>();
     COLUMNS.forEach((col) => {
@@ -94,6 +97,40 @@ export function ContactsTable({
         next.add(key as ColumnKey);
       }
       return next;
+    });
+  }
+
+  function handleExport() {
+    startExportTransition(async () => {
+      const result = await exportContacts({
+        websiteId: selectedWebsiteId,
+        q: search.q || undefined,
+        country: country || undefined,
+        readStatus: search.readStatus,
+        sortField,
+        sortDir,
+      });
+      if ("error" in result) return;
+      const rows = result.contacts.map((c) => ({
+        id: c.id,
+        name: c.name,
+        email: c.email,
+        company: c.company,
+        phone: c.phone,
+        message: c.message,
+        country: c.country,
+        region: c.region,
+        city: c.city,
+        timezone: c.timezone,
+        os: c.os,
+        deviceType: c.deviceType,
+        browser: c.browser,
+        readStatus: c.readAt ? "read" : "unread",
+        readAt: c.readAt,
+        createdAt: c.createdAt,
+      }));
+      const date = new Date().toISOString().slice(0, 10);
+      downloadCsv(rows, `contacts-${selectedWebsiteId}-${date}.csv`);
     });
   }
 
@@ -198,6 +235,8 @@ export function ContactsTable({
             />
           ) : undefined
         }
+        onExport={handleExport}
+        isExportPending={isExportPending}
       />
 
       <Table>

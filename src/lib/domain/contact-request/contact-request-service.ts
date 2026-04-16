@@ -55,9 +55,9 @@ export class PrismaContactRequestService implements ContactRequestService {
       where.OR = [{ name: { contains: filter.q } }, { email: { contains: filter.q } }];
     }
 
-    // Filter by country
-    if (filter.country) {
-      where.country = filter.country;
+    // Filter by company
+    if (filter.company) {
+      where.company = filter.company;
     }
 
     // Filter by read status

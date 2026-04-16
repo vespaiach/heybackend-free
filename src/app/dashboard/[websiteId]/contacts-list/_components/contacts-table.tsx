@@ -1,13 +1,14 @@
 "use client";
 
-import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from "lucide-react";
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, SearchXIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { type PageSizeOption, PaginationBar } from "@/components/pagination-bar";
 import { RelativeDate } from "@/components/relative-date";
 import { TablePageHeader } from "@/components/table-page-header";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getCountryFlag } from "@/lib/country-flags";
 import type { ContactRequest } from "@/lib/domain/types";
 import { downloadCsv } from "@/lib/export-csv";
 import { exportContacts } from "../actions";
@@ -25,10 +26,10 @@ interface ContactsTableProps {
   page: number;
   pageSize: number;
   search: { q: string; readStatus: "all" | "read" | "unread" };
-  country: string;
+  company: string;
   sortField: ContactSortField;
   sortDir: ContactSortDir;
-  availableCountries: string[];
+  availableCompanies: string[];
 }
 
 type ColumnKey = "name" | "email" | "company" | "country" | "createdAt" | "readStatus";
@@ -66,10 +67,10 @@ export function ContactsTable({
   page,
   pageSize,
   search,
-  country,
+  company,
   sortField,
   sortDir,
-  availableCountries,
+  availableCompanies,
 }: ContactsTableProps) {
   const router = useRouter();
   const [selectedContact, setSelectedContact] = React.useState<ContactRequest | null>(null);
@@ -86,7 +87,7 @@ export function ContactsTable({
   });
 
   const baseUrl = `/dashboard/${selectedWebsiteId}/contacts-list`;
-  const hasActiveFilters = search.q !== "" || search.readStatus !== "all" || country !== "";
+  const hasActiveFilters = search.q !== "" || search.readStatus !== "all" || company !== "";
 
   function handleToggleColumn(key: string) {
     setVisibleColumns((prev) => {
@@ -105,7 +106,7 @@ export function ContactsTable({
       const result = await exportContacts({
         websiteId: selectedWebsiteId,
         q: search.q || undefined,
-        country: country || undefined,
+        company: company || undefined,
         readStatus: search.readStatus,
         sortField,
         sortDir,
@@ -140,7 +141,7 @@ export function ContactsTable({
     params.set("pageSize", String(pageSize));
     if (search.q) params.set("q", search.q);
     if (search.readStatus !== "all") params.set("readStatus", search.readStatus);
-    if (country) params.set("country", country);
+    if (company) params.set("company", company);
     params.set("sortField", sortField);
     params.set("sortDir", sortDir);
     for (const [k, v] of Object.entries(overrides)) {
@@ -176,7 +177,7 @@ export function ContactsTable({
     params.set("sortField", sortField);
     params.set("sortDir", sortDir);
     if (filters.query) params.set("q", filters.query);
-    if (filters.country && filters.country !== "__all__") params.set("country", filters.country);
+    if (filters.company && filters.company !== "__all__") params.set("company", filters.company);
     if (filters.readStatus !== "all") params.set("readStatus", filters.readStatus);
     router.push(`${baseUrl}?${params.toString()}`);
   }
@@ -187,18 +188,18 @@ export function ContactsTable({
         page: "1",
         q: "",
         readStatus: "",
-        country: "",
+        company: "",
       })}`,
     );
   }
 
-  function handleRemoveFilter(type: "query" | "readStatus" | "country") {
+  function handleRemoveFilter(type: "query" | "readStatus" | "company") {
     router.push(
       `${baseUrl}?${buildParams({
         page: "1",
         q: type === "query" ? "" : search.q,
         readStatus: type === "readStatus" ? "" : search.readStatus === "all" ? "" : search.readStatus,
-        country: type === "country" ? "" : country,
+        company: type === "company" ? "" : company,
       })}`,
     );
   }
@@ -213,10 +214,10 @@ export function ContactsTable({
         onToggleColumn={handleToggleColumn}
         filterSlot={
           <ContactsFilterPopover
-            availableCountries={availableCountries}
+            availableCompanies={availableCompanies}
             currentFilters={{
               query: search.q,
-              country: country || "__all__",
+              company: company || "__all__",
               readStatus: search.readStatus,
             }}
             total={total}
@@ -229,7 +230,7 @@ export function ContactsTable({
           hasActiveFilters ? (
             <ContactsActiveFilters
               search={search}
-              country={country}
+              company={company}
               onRemoveFilter={handleRemoveFilter}
               onResetAll={handleResetAllFilters}
             />
@@ -238,92 +239,99 @@ export function ContactsTable({
         onExport={handleExport}
         isExportPending={isExportPending}
       />
-
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {visibleColumns.has("name") && (
-              <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center font-medium hover:text-foreground"
-                  onClick={() => toggleSort("name")}>
-                  Name <SortIcon field="name" sortField={sortField} sortDir={sortDir} />
-                </button>
-              </TableHead>
-            )}
-            {visibleColumns.has("email") && (
-              <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center font-medium hover:text-foreground"
-                  onClick={() => toggleSort("email")}>
-                  Email <SortIcon field="email" sortField={sortField} sortDir={sortDir} />
-                </button>
-              </TableHead>
-            )}
-            {visibleColumns.has("company") && <TableHead>Company</TableHead>}
-            {visibleColumns.has("country") && (
-              <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center font-medium hover:text-foreground"
-                  onClick={() => toggleSort("country")}>
-                  Country <SortIcon field="country" sortField={sortField} sortDir={sortDir} />
-                </button>
-              </TableHead>
-            )}
-            {visibleColumns.has("createdAt") && (
-              <TableHead>
-                <button
-                  type="button"
-                  className="flex items-center font-medium hover:text-foreground"
-                  onClick={() => toggleSort("createdAt")}>
-                  Created Date <SortIcon field="createdAt" sortField={sortField} sortDir={sortDir} />
-                </button>
-              </TableHead>
-            )}
-            {visibleColumns.has("readStatus") && <TableHead>Read Status</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {contacts.map((contact) => (
-            <TableRow
-              key={contact.id}
-              onClick={() => setSelectedContact(contact)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  setSelectedContact(contact);
-                }
-              }}
-              tabIndex={0}
-              aria-label={`Contact from ${contact.name}`}
-              className="cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
-              {visibleColumns.has("name") && <TableCell>{contact.name}</TableCell>}
-              {visibleColumns.has("email") && <TableCell>{contact.email}</TableCell>}
-              {visibleColumns.has("company") && <TableCell>{contact.company || "-"}</TableCell>}
-              {visibleColumns.has("country") && <TableCell>{contact.country || "-"}</TableCell>}
-              {visibleColumns.has("createdAt") && (
-                <TableCell>
-                  <RelativeDate date={contact.createdAt} />
-                </TableCell>
-              )}
-              {visibleColumns.has("readStatus") && (
-                <TableCell>
-                  {contact.readAt ? (
-                    <Badge variant="secondary">
-                      Read on <RelativeDate date={contact.readAt} />
-                    </Badge>
-                  ) : (
-                    <Badge variant="destructive">Unread</Badge>
+      {contacts.length === 0 && hasActiveFilters ? (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <SearchXIcon className="mb-4 h-12 w-12 text-muted-foreground/40" />
+          <h3 className="mb-1 text-base font-medium">No contacts found</h3>
+          <p className="mb-4 text-sm text-muted-foreground">No results match your current filters.</p>
+          <Button variant="outline" size="sm" onClick={handleResetAllFilters}>
+            Clear Filters
+          </Button>
+        </div>
+      ) : (
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {visibleColumns.has("name") && (
+                  <TableHead>
+                    <button
+                      type="button"
+                      className="flex items-center font-medium hover:text-foreground"
+                      onClick={() => toggleSort("name")}>
+                      Name <SortIcon field="name" sortField={sortField} sortDir={sortDir} />
+                    </button>
+                  </TableHead>
+                )}
+                {visibleColumns.has("email") && (
+                  <TableHead>
+                    <button
+                      type="button"
+                      className="flex items-center font-medium hover:text-foreground"
+                      onClick={() => toggleSort("email")}>
+                      Email <SortIcon field="email" sortField={sortField} sortDir={sortDir} />
+                    </button>
+                  </TableHead>
+                )}
+                {visibleColumns.has("company") && <TableHead>Company</TableHead>}
+                {visibleColumns.has("country") && <TableHead>Country</TableHead>}
+                {visibleColumns.has("createdAt") && (
+                  <TableHead>
+                    <button
+                      type="button"
+                      className="flex items-center font-medium hover:text-foreground"
+                      onClick={() => toggleSort("createdAt")}>
+                      Created At <SortIcon field="createdAt" sortField={sortField} sortDir={sortDir} />
+                    </button>
+                  </TableHead>
+                )}
+                {visibleColumns.has("readStatus") && <TableHead>Read At</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {contacts.map((contact) => (
+                <TableRow
+                  key={contact.id}
+                  onClick={() => setSelectedContact(contact)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelectedContact(contact);
+                    }
+                  }}
+                  tabIndex={0}
+                  aria-label={`Contact from ${contact.name}`}
+                  className="cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
+                  {visibleColumns.has("name") && <TableCell>{contact.name}</TableCell>}
+                  {visibleColumns.has("email") && <TableCell>{contact.email}</TableCell>}
+                  {visibleColumns.has("company") && <TableCell>{contact.company || "-"}</TableCell>}
+                  {visibleColumns.has("country") && (
+                    <TableCell>
+                      {contact.country ? (
+                        <span>
+                          {getCountryFlag(contact.country)} {contact.country}
+                        </span>
+                      ) : (
+                        "-"
+                      )}
+                    </TableCell>
                   )}
-                </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+                  {visibleColumns.has("createdAt") && (
+                    <TableCell>
+                      <RelativeDate date={contact.createdAt} />
+                    </TableCell>
+                  )}
+                  {visibleColumns.has("readStatus") && (
+                    <TableCell>
+                      {contact.readAt ? <ReadIcon readAt={contact.readAt} /> : "-- Unread --"}
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {/* Detail Modal */}
       {selectedContact && (
@@ -344,6 +352,21 @@ export function ContactsTable({
         onPageSizeChange={handlePageSizeChange}
         isLoading={isPagePending}
       />
+    </div>
+  );
+}
+
+function ReadIcon({ readAt }: { readAt: Date }) {
+  return (
+    <div className="flex items-center gap-2">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15 15" fill="none" width="14" height="14">
+        <title>Read At</title>
+        <path
+          fill="currentColor"
+          d="M7.16016 0.118583C7.41609 0.026115 7.70086 0.0422529 7.94727 0.165458L14.4473 3.41546L14.5684 3.48675C14.8359 3.67163 14.9999 3.97791 15 4.30901V12.0004C14.9998 12.5525 14.5521 13.0004 14 13.0004H1C0.447856 13.0004 0.00022869 12.5525 0 12.0004V4.30901C0.00015935 3.93055 0.214303 3.58486 0.552734 3.41546L7.05273 0.165458L7.16016 0.118583ZM7.70996 8.19866C7.57876 8.26772 7.42124 8.26772 7.29004 8.19866L1 4.88421V12.0004H14V4.88421L7.70996 8.19866ZM1.43066 4.09319L7.5 7.29143L13.5684 4.09319L7.5 1.05901L1.43066 4.09319Z"
+        />
+      </svg>
+      <RelativeDate date={readAt} />
     </div>
   );
 }

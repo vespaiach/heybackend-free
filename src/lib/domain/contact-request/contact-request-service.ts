@@ -60,6 +60,14 @@ export class PrismaContactRequestService implements ContactRequestService {
       where.country = filter.country;
     }
 
+    // Filter by read status
+    if (filter.readStatus === "read") {
+      where.readAt = { not: null };
+    } else if (filter.readStatus === "unread") {
+      where.readAt = null;
+    }
+    // 'all' or undefined: no filter
+
     // Filter by date range
     if (filter.fromDate || filter.toDate) {
       const createdAt: Prisma.DateTimeFilter = {};
@@ -171,6 +179,7 @@ export class PrismaContactRequestService implements ContactRequestService {
       os: dbContactRequest.os,
       deviceType: dbContactRequest.deviceType,
       browser: dbContactRequest.browser,
+      readAt: dbContactRequest.readAt,
       createdAt: dbContactRequest.createdAt,
     };
   }

@@ -610,4 +610,126 @@ describe("ContactRequestService", () => {
       );
     });
   });
+
+  describe("listContactRequests", () => {
+    it("returns only unread contacts when readStatus=unread", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        {
+          id: "unread_1",
+          websiteId: testWebsiteId,
+          email: "unread@example.com",
+          name: "Unread Contact",
+          message: "Message",
+          company: null,
+          phone: null,
+          metadata: null,
+          country: null,
+          region: null,
+          city: null,
+          timezone: null,
+          os: null,
+          deviceType: null,
+          browser: null,
+          readAt: null,
+          createdAt: new Date(),
+        },
+      ] as any);
+
+      vi.mocked(prisma.contactRequest.count).mockResolvedValue(1 as any);
+
+      const result = await contactRequestService.listContactRequests({
+        websiteId: testWebsiteId,
+        readStatus: "unread",
+      });
+
+      expect(result.contactRequests).toHaveLength(1);
+      expect(result.contactRequests[0].email).toBe("unread@example.com");
+    });
+
+    it("returns only read contacts when readStatus=read", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        {
+          id: "read_1",
+          websiteId: testWebsiteId,
+          email: "read@example.com",
+          name: "Read Contact",
+          message: "Message",
+          company: null,
+          phone: null,
+          metadata: null,
+          country: null,
+          region: null,
+          city: null,
+          timezone: null,
+          os: null,
+          deviceType: null,
+          browser: null,
+          readAt: new Date("2026-04-15"),
+          createdAt: new Date(),
+        },
+      ] as any);
+
+      vi.mocked(prisma.contactRequest.count).mockResolvedValue(1 as any);
+
+      const result = await contactRequestService.listContactRequests({
+        websiteId: testWebsiteId,
+        readStatus: "read",
+      });
+
+      expect(result.contactRequests).toHaveLength(1);
+      expect(result.contactRequests[0].email).toBe("read@example.com");
+    });
+
+    it("returns all contacts when readStatus=all", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        {
+          id: "unread_1",
+          websiteId: testWebsiteId,
+          email: "unread@example.com",
+          name: "Unread Contact",
+          message: "Message",
+          company: null,
+          phone: null,
+          metadata: null,
+          country: null,
+          region: null,
+          city: null,
+          timezone: null,
+          os: null,
+          deviceType: null,
+          browser: null,
+          readAt: null,
+          createdAt: new Date(),
+        },
+        {
+          id: "read_1",
+          websiteId: testWebsiteId,
+          email: "read@example.com",
+          name: "Read Contact",
+          message: "Message",
+          company: null,
+          phone: null,
+          metadata: null,
+          country: null,
+          region: null,
+          city: null,
+          timezone: null,
+          os: null,
+          deviceType: null,
+          browser: null,
+          readAt: new Date("2026-04-15"),
+          createdAt: new Date(),
+        },
+      ] as any);
+
+      vi.mocked(prisma.contactRequest.count).mockResolvedValue(2 as any);
+
+      const result = await contactRequestService.listContactRequests({
+        websiteId: testWebsiteId,
+        readStatus: "all",
+      });
+
+      expect(result.contactRequests).toHaveLength(2);
+    });
+  });
 });

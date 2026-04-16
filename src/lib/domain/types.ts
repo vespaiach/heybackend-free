@@ -50,6 +50,7 @@ export interface ContactRequest {
   os: string | null;
   deviceType: string | null;
   browser: string | null;
+  readAt: Date | null;
   createdAt: Date;
 }
 
@@ -189,6 +190,7 @@ export interface ListContactRequestsFilter {
   q?: string;
   fromDate?: string;
   toDate?: string;
+  readStatus?: "all" | "read" | "unread";
   country?: string;
   sortField?: "name" | "createdAt";
   sortDir?: "asc" | "desc";

@@ -27,6 +27,7 @@ export function ContactsActiveFilters({ search, country, onRemoveFilter }: Conta
     const params = new URLSearchParams(window.location.search);
     params.delete(key);
     if (key === "readStatus") params.set("readStatus", "all");
+    params.set("page", "1");
     router.push(`?${params.toString()}`);
     onRemoveFilter();
   };

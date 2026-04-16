@@ -29,6 +29,17 @@ interface ContactsTableProps {
   availableCountries: string[];
 }
 
+type ColumnKey = "name" | "email" | "company" | "country" | "createdAt" | "readStatus";
+
+const COLUMNS = [
+  { key: "name" as const, label: "Name", defaultVisible: true },
+  { key: "email" as const, label: "Email", defaultVisible: true },
+  { key: "company" as const, label: "Company", defaultVisible: true },
+  { key: "country" as const, label: "Country", defaultVisible: false },
+  { key: "createdAt" as const, label: "Created Date", defaultVisible: true },
+  { key: "readStatus" as const, label: "Read Status", defaultVisible: true },
+] as const;
+
 function SortIcon({
   field,
   sortField,
@@ -61,9 +72,30 @@ export function ContactsTable({
   const router = useRouter();
   const [selectedContact, setSelectedContact] = React.useState<ContactRequest | null>(null);
   const [isPagePending, startPageTransition] = React.useTransition();
+  const [visibleColumns, setVisibleColumns] = React.useState<Set<ColumnKey>>(() => {
+    const visible = new Set<ColumnKey>();
+    COLUMNS.forEach((col) => {
+      if (col.defaultVisible) {
+        visible.add(col.key);
+      }
+    });
+    return visible;
+  });
 
   const baseUrl = `/dashboard/${selectedWebsiteId}/contacts-list`;
   const hasActiveFilters = search.q !== "" || search.readStatus !== "all" || country !== "";
+
+  function handleToggleColumn(key: string) {
+    setVisibleColumns((prev) => {
+      const next = new Set(prev);
+      if (next.has(key as ColumnKey)) {
+        next.delete(key as ColumnKey);
+      } else {
+        next.add(key as ColumnKey);
+      }
+      return next;
+    });
+  }
 
   function buildParams(overrides: Record<string, string>) {
     const params = new URLSearchParams();
@@ -139,6 +171,9 @@ export function ContactsTable({
       <TablePageHeader
         title="Contacts"
         description="Contact requests submitted through your website."
+        columns={COLUMNS}
+        visibleColumns={visibleColumns}
+        onToggleColumn={handleToggleColumn}
         filterSlot={
           <ContactsFilterPopover
             availableCountries={availableCountries}
@@ -168,40 +203,48 @@ export function ContactsTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>
-              <button
-                type="button"
-                className="flex items-center font-medium hover:text-foreground"
-                onClick={() => toggleSort("name")}>
-                Name <SortIcon field="name" sortField={sortField} sortDir={sortDir} />
-              </button>
-            </TableHead>
-            <TableHead>
-              <button
-                type="button"
-                className="flex items-center font-medium hover:text-foreground"
-                onClick={() => toggleSort("email")}>
-                Email <SortIcon field="email" sortField={sortField} sortDir={sortDir} />
-              </button>
-            </TableHead>
-            <TableHead>Company</TableHead>
-            <TableHead>
-              <button
-                type="button"
-                className="flex items-center font-medium hover:text-foreground"
-                onClick={() => toggleSort("country")}>
-                Country <SortIcon field="country" sortField={sortField} sortDir={sortDir} />
-              </button>
-            </TableHead>
-            <TableHead>
-              <button
-                type="button"
-                className="flex items-center font-medium hover:text-foreground"
-                onClick={() => toggleSort("createdAt")}>
-                Created Date <SortIcon field="createdAt" sortField={sortField} sortDir={sortDir} />
-              </button>
-            </TableHead>
-            <TableHead>Read Status</TableHead>
+            {visibleColumns.has("name") && (
+              <TableHead>
+                <button
+                  type="button"
+                  className="flex items-center font-medium hover:text-foreground"
+                  onClick={() => toggleSort("name")}>
+                  Name <SortIcon field="name" sortField={sortField} sortDir={sortDir} />
+                </button>
+              </TableHead>
+            )}
+            {visibleColumns.has("email") && (
+              <TableHead>
+                <button
+                  type="button"
+                  className="flex items-center font-medium hover:text-foreground"
+                  onClick={() => toggleSort("email")}>
+                  Email <SortIcon field="email" sortField={sortField} sortDir={sortDir} />
+                </button>
+              </TableHead>
+            )}
+            {visibleColumns.has("company") && <TableHead>Company</TableHead>}
+            {visibleColumns.has("country") && (
+              <TableHead>
+                <button
+                  type="button"
+                  className="flex items-center font-medium hover:text-foreground"
+                  onClick={() => toggleSort("country")}>
+                  Country <SortIcon field="country" sortField={sortField} sortDir={sortDir} />
+                </button>
+              </TableHead>
+            )}
+            {visibleColumns.has("createdAt") && (
+              <TableHead>
+                <button
+                  type="button"
+                  className="flex items-center font-medium hover:text-foreground"
+                  onClick={() => toggleSort("createdAt")}>
+                  Created Date <SortIcon field="createdAt" sortField={sortField} sortDir={sortDir} />
+                </button>
+              </TableHead>
+            )}
+            {visibleColumns.has("readStatus") && <TableHead>Read Status</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -218,22 +261,26 @@ export function ContactsTable({
               tabIndex={0}
               aria-label={`Contact from ${contact.name}`}
               className="cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
-              <TableCell>{contact.name}</TableCell>
-              <TableCell>{contact.email}</TableCell>
-              <TableCell>{contact.company || "-"}</TableCell>
-              <TableCell>{contact.country || "-"}</TableCell>
-              <TableCell>
-                <RelativeDate date={contact.createdAt} />
-              </TableCell>
-              <TableCell>
-                {contact.readAt ? (
-                  <Badge variant="secondary">
-                    Read on <RelativeDate date={contact.readAt} />
-                  </Badge>
-                ) : (
-                  <Badge variant="destructive">Unread</Badge>
-                )}
-              </TableCell>
+              {visibleColumns.has("name") && <TableCell>{contact.name}</TableCell>}
+              {visibleColumns.has("email") && <TableCell>{contact.email}</TableCell>}
+              {visibleColumns.has("company") && <TableCell>{contact.company || "-"}</TableCell>}
+              {visibleColumns.has("country") && <TableCell>{contact.country || "-"}</TableCell>}
+              {visibleColumns.has("createdAt") && (
+                <TableCell>
+                  <RelativeDate date={contact.createdAt} />
+                </TableCell>
+              )}
+              {visibleColumns.has("readStatus") && (
+                <TableCell>
+                  {contact.readAt ? (
+                    <Badge variant="secondary">
+                      Read on <RelativeDate date={contact.readAt} />
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive">Unread</Badge>
+                  )}
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>

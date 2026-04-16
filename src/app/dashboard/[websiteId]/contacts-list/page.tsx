@@ -1,5 +1,11 @@
 import { Suspense } from "react";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { contactRequestService } from "@/lib/domain";
@@ -81,7 +87,7 @@ export default async function ContactsPage({
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
-          <BreadcrumbItem>{(await getWebsite(websiteId)).name}</BreadcrumbItem>
+            <BreadcrumbItem>{(await getWebsite(websiteId)).name}</BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>Contacts</BreadcrumbPage>

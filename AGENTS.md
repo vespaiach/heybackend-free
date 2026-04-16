@@ -218,6 +218,17 @@ src/
 - `git add` paths containing brackets must be quoted: `git add 'src/app/api/[websiteId]/route.ts'`
 - `.env.local.example` is gitignored — edit locally but do not attempt to commit
 
+### RTK — Token-Optimized CLI
+
+Always prefix shell commands with `rtk`:
+
+```bash
+# Instead of:              Use:
+git status                 rtk git status
+cargo test                 rtk cargo test
+docker ps                  rtk docker ps
+```
+
 ## Pull Requests & CI
 - Before opening a PR, verify all of the following pass locally:
   1. `npm test` — all tests green

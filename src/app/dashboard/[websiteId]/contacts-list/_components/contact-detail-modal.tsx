@@ -98,6 +98,23 @@ export function ContactDetailModal({ contact, open, onOpenChange }: ContactDetai
               )}
             </div>
           </div>
+
+          {/* Mark as Read */}
+          <div className="border-t pt-4">
+            {contact.readAt ? (
+              <p className="text-sm text-gray-600">
+                Read on {contact.readAt.toLocaleDateString()} at {contact.readAt.toLocaleTimeString()}
+              </p>
+            ) : (
+              <button
+                onClick={() => {
+                  /* will be implemented in next task */
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
+                Mark as Read
+              </button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

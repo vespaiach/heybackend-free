@@ -41,4 +41,10 @@ describe("ContactDetailModal", () => {
     expect(screen.getByText("Windows")).toBeInTheDocument();
     expect(screen.getByText("Chrome")).toBeInTheDocument();
   });
+
+  it('shows "Mark as Read" button when contact is unread', () => {
+    render(<ContactDetailModal contact={mockContact} open={true} onOpenChange={() => {}} />);
+
+    expect(screen.getByRole("button", { name: /mark as read/i })).toBeInTheDocument();
+  });
 });

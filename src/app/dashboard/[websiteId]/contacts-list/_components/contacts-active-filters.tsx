@@ -4,18 +4,18 @@ import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-type RemoveFilterType = "query" | "readStatus" | "country";
+type RemoveFilterType = "query" | "readStatus" | "company";
 
 interface ContactsActiveFiltersProps {
   search: { q: string; readStatus: string };
-  country: string;
+  company: string;
   onRemoveFilter: (type: RemoveFilterType) => void;
   onResetAll: () => void;
 }
 
 export function ContactsActiveFilters({
   search,
-  country,
+  company,
   onRemoveFilter,
   onResetAll,
 }: ContactsActiveFiltersProps) {
@@ -24,7 +24,7 @@ export function ContactsActiveFilters({
     ...(search.readStatus && search.readStatus !== "all"
       ? [{ key: "readStatus", label: `Status: ${search.readStatus}` }]
       : []),
-    ...(country ? [{ key: "country", label: `Country: ${country}` }] : []),
+    ...(company ? [{ key: "company", label: `Company: ${company}` }] : []),
   ];
 
   if (filters.length === 0) return null;

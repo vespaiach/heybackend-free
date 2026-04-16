@@ -42,10 +42,10 @@ describe("ContactsTable", () => {
     page: 1,
     pageSize: 20,
     search: { q: "", readStatus: "all" as const },
-    country: "",
+    company: "",
     sortField: "createdAt" as const,
     sortDir: "desc" as const,
-    availableCountries: ["US"],
+    availableCompanies: ["Acme"],
   };
 
   it("displays contacts with visible columns", () => {
@@ -54,7 +54,7 @@ describe("ContactsTable", () => {
     expect(screen.getByText("John Doe")).toBeInTheDocument();
     expect(screen.getByText("john@example.com")).toBeInTheDocument();
 
-    // Country is hidden by default
+    // Country column is hidden by default
     expect(screen.queryByText("US")).not.toBeInTheDocument();
   });
 
@@ -89,7 +89,7 @@ describe("ContactsTable", () => {
     expect(screen.getByRole("button", { name: /email/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /created date/i })).toBeInTheDocument();
 
-    // Country is hidden by default
+    // Country column is hidden by default (not sortable)
     expect(screen.queryByRole("button", { name: /country/i })).not.toBeInTheDocument();
   });
 

@@ -191,7 +191,7 @@ export interface ListContactRequestsFilter {
   fromDate?: string;
   toDate?: string;
   readStatus?: "all" | "read" | "unread";
-  country?: string;
+  company?: string;
   sortField?: "name" | "email" | "country" | "createdAt";
   sortDir?: "asc" | "desc";
   page?: number;

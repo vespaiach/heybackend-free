@@ -76,5 +76,13 @@ describe("Contact List Actions", () => {
       });
       expect(updated?.readAt).not.toBeNull();
     });
+
+    it("returns error if user not authenticated", async () => {
+      vi.mocked(mockAuth).mockResolvedValue(null);
+
+      const result = await markContactAsRead("any-id");
+
+      expect(result.error).toBe("Unauthorized");
+    });
   });
 });

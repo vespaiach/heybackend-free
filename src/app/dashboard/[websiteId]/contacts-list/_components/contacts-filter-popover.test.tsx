@@ -5,8 +5,8 @@ import { type ContactFilterValues, ContactsFilterPopover } from "./contacts-filt
 
 describe("ContactsFilterPopover", () => {
   const defaultProps = {
-    availableCountries: ["US", "UK", "CA"],
-    currentFilters: { query: "", country: "__all__", readStatus: "all" as const },
+    availableCompanies: ["ACME", "TechCorp", "DevCo"],
+    currentFilters: { query: "", company: "__all__", readStatus: "all" as const },
     total: 25,
     hasActiveFilters: false,
     onApply: vi.fn(),
@@ -33,18 +33,18 @@ describe("ContactsFilterPopover", () => {
     await user.click(filterButton);
 
     expect(screen.getByPlaceholderText(/name or email/i)).toBeInTheDocument();
-    expect(screen.getByText("Country")).toBeInTheDocument();
+    expect(screen.getByText("Company")).toBeInTheDocument();
     expect(screen.getByText("Read Status")).toBeInTheDocument();
   });
 
-  it("renders country label in the popover", async () => {
+  it("renders company label in the popover", async () => {
     const user = userEvent.setup();
     render(<ContactsFilterPopover {...defaultProps} />);
 
     const filterButton = screen.getByRole("button", { name: /filters/i });
     await user.click(filterButton);
 
-    expect(screen.getByText("Country")).toBeInTheDocument();
+    expect(screen.getByText("Company")).toBeInTheDocument();
   });
 
   it("calls onApply with filter values when Apply is clicked", async () => {
@@ -64,7 +64,7 @@ describe("ContactsFilterPopover", () => {
 
     expect(onApply).toHaveBeenCalledWith({
       query: "john",
-      country: "__all__",
+      company: "__all__",
       readStatus: "all",
     });
   });
@@ -76,7 +76,7 @@ describe("ContactsFilterPopover", () => {
     render(
       <ContactsFilterPopover
         {...defaultProps}
-        currentFilters={{ query: "test", country: "US", readStatus: "unread" }}
+        currentFilters={{ query: "test", company: "ACME", readStatus: "unread" }}
         hasActiveFilters
         onReset={onReset}
       />,
@@ -107,7 +107,7 @@ describe("ContactsFilterPopover", () => {
     const { rerender } = render(
       <ContactsFilterPopover
         {...defaultProps}
-        currentFilters={{ query: "initial", country: "US", readStatus: "read" }}
+        currentFilters={{ query: "initial", company: "ACME", readStatus: "read" }}
       />,
     );
 
@@ -123,7 +123,7 @@ describe("ContactsFilterPopover", () => {
     rerender(
       <ContactsFilterPopover
         {...defaultProps}
-        currentFilters={{ query: "updated", country: "UK", readStatus: "unread" }}
+        currentFilters={{ query: "updated", company: "TechCorp", readStatus: "unread" }}
       />,
     );
 

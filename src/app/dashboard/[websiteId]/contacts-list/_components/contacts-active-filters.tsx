@@ -30,7 +30,7 @@ export function ContactsActiveFilters({
   if (filters.length === 0) return null;
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {filters.map((filter) => (
         <Badge key={filter.key} variant="outline" className="gap-1">
           {filter.label}

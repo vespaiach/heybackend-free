@@ -62,7 +62,7 @@ export function ContactsFilterPopover({
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" size="sm" className="gap-2 relative">
           <SlidersHorizontalIcon className="h-4 w-4" />
           Filters
           {hasActiveFilters && (
@@ -70,6 +70,7 @@ export function ContactsFilterPopover({
               {total}
             </Badge>
           )}
+          {hasActiveFilters && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72">

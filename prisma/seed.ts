@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const SUBSCRIBER_COUNT = 1000;
+const CONTACT_REQUEST_COUNT = 50;
 
 const COUNTRIES = ["US", "GB", "CA", "AU", "DE", "FR", "BR", "IN", "JP", "MX"];
 const BROWSERS = ["Chrome", "Firefox", "Safari", "Edge"];
@@ -15,6 +16,14 @@ const TIMEZONES = [
   "Europe/Paris",
   "Asia/Tokyo",
   "Australia/Sydney",
+];
+const COMPANIES = ["Acme Inc", "TechCorp", "StartupXYZ", "GlobalSoft", "InnovateLabs", "DataDrive"];
+const MESSAGES = [
+  "I'm interested in learning more about your services.",
+  "Can we schedule a demo? Looking forward to seeing what you offer.",
+  "Hi, we'd like to discuss partnership opportunities.",
+  "Please contact me with pricing information.",
+  "I have questions about your product features.",
 ];
 
 function randomItem<T>(arr: readonly T[]): T {
@@ -47,6 +56,34 @@ function buildSubscribers(websiteId: string, offset: number) {
       deviceType: randomItem(DEVICE_TYPES),
       createdAt,
       unsubscribedAt: isUnsubscribed ? randomDate(createdAt, now) : null,
+    };
+  });
+}
+
+function buildContactRequests(websiteId: string, offset: number) {
+  const now = new Date();
+  const threeMonthsAgo = new Date(now);
+  threeMonthsAgo.setMonth(now.getMonth() - 3);
+
+  return Array.from({ length: CONTACT_REQUEST_COUNT }, (_, i) => {
+    const n = offset + i + 1;
+    const createdAt = randomDate(threeMonthsAgo, now);
+    const isRead = Math.random() < 0.6; // 60% read
+
+    return {
+      websiteId,
+      email: `contact${n}@company.com`,
+      name: `Contact Person ${n}`,
+      company: randomItem(COMPANIES),
+      phone: `+1${Math.floor(Math.random() * 9000000000 + 1000000000)}`,
+      message: randomItem(MESSAGES),
+      timezone: randomItem(TIMEZONES),
+      country: randomItem(COUNTRIES),
+      browser: randomItem(BROWSERS),
+      os: randomItem(OS_LIST),
+      deviceType: randomItem(DEVICE_TYPES),
+      createdAt,
+      readAt: isRead ? randomDate(createdAt, now) : null,
     };
   });
 }
@@ -123,6 +160,19 @@ async function main() {
     });
 
     console.log(`  Website "${website.name}": inserted ${result.count} subscribers.`);
+  }
+
+  // ── Contact Requests (50 per website) ────────────────────────────────────
+  for (let i = 0; i < websites.length; i++) {
+    const website = websites[i]!;
+    const contactRequests = buildContactRequests(website.id, i * CONTACT_REQUEST_COUNT);
+
+    const result = await prisma.contactRequest.createMany({
+      data: contactRequests,
+      skipDuplicates: true,
+    });
+
+    console.log(`  Website "${website.name}": inserted ${result.count} contact requests.`);
   }
 
   console.log("Seeding complete.");

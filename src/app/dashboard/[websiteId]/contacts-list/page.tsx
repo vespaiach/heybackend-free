@@ -1,11 +1,10 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { auth } from "@/auth";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { contactRequestService, tenantService } from "@/lib/domain";
+import { contactRequestService } from "@/lib/domain";
 import type { ContactRequest } from "@/lib/domain/types";
+import { getWebsite } from "@/lib/route-helpers";
 import { ContactsTable } from "./_components/contacts-table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -17,9 +16,6 @@ export default async function ContactsPage({
   params: Promise<{ websiteId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-
   const { websiteId } = await params;
   const sp = await searchParams;
 
@@ -41,51 +37,42 @@ export default async function ContactsPage({
     : "createdAt";
   const sortDir = sp.sortDir === "asc" ? ("asc" as const) : ("desc" as const);
 
-  // Get tenant and verify website access
-  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
-
-  if (!tenant) redirect("/onboarding");
-
-  const resolvedId = tenant.websites.find((w) => w.id === websiteId)?.id;
-
   let contacts: ContactRequest[] = [];
   let total = 0;
   let availableCountries: string[] = [];
 
-  if (resolvedId) {
-    const [result, countries] = await Promise.all([
-      contactRequestService.listContactRequests({
-        websiteId: resolvedId,
-        q: q || undefined,
-        country: country || undefined,
-        readStatus,
-        sortField,
-        sortDir,
-        page,
-        pageSize,
-      }),
-      // Get unique countries from all contacts
-      contactRequestService
-        .listContactRequests({
-          websiteId: resolvedId,
-          pageSize: 1000,
-        })
-        .then(
-          (r) =>
-            [
-              ...new Set(
-                r.contactRequests
-                  .map((c) => c.country)
-                  .filter((country): country is string => country !== null),
-              ),
-            ] as string[],
-        ),
-    ]);
+  const [result, countries] = await Promise.all([
+    contactRequestService.listContactRequests({
+      websiteId: (await getWebsite(websiteId)).id,
+      q: q || undefined,
+      country: country || undefined,
+      readStatus,
+      sortField,
+      sortDir,
+      page,
+      pageSize,
+    }),
+    // Get unique countries from all contacts
+    contactRequestService
+      .listContactRequests({
+        websiteId: (await getWebsite(websiteId)).id,
+        pageSize: 1000,
+      })
+      .then(
+        (r) =>
+          [
+            ...new Set(
+              r.contactRequests
+                .map((c) => c.country)
+                .filter((country): country is string => country !== null),
+            ),
+          ] as string[],
+      ),
+  ]);
 
-    contacts = result.contactRequests;
-    total = result.total;
-    availableCountries = countries;
-  }
+  contacts = result.contactRequests;
+  total = result.total;
+  availableCountries = countries;
 
   return (
     <>
@@ -94,6 +81,8 @@ export default async function ContactsPage({
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
+          <BreadcrumbItem>{(await getWebsite(websiteId)).name}</BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>Contacts</BreadcrumbPage>
             </BreadcrumbItem>
@@ -104,7 +93,7 @@ export default async function ContactsPage({
       <main className="flex-1 p-4">
         <Suspense fallback={<div>Loading...</div>}>
           <ContactsTable
-            selectedWebsiteId={resolvedId ?? ""}
+            selectedWebsiteId={(await getWebsite(websiteId)).id}
             contacts={contacts}
             total={total}
             page={page}

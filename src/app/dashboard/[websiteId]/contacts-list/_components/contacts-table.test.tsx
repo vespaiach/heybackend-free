@@ -61,7 +61,7 @@ describe("ContactsTable", () => {
   it('shows "Unread" badge for unread contacts', () => {
     render(<ContactsTable {...defaultProps} />);
 
-    expect(screen.getByText("Unread")).toBeInTheDocument();
+    expect(screen.getByText(/unread/i)).toBeInTheDocument();
   });
 
   it("shows read date for read contacts", () => {

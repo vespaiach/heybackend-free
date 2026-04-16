@@ -24,7 +24,7 @@ export async function markContactAsRead(contactRequestId: string): Promise<{ err
 export async function exportContacts(filter: {
   websiteId: string;
   q?: string;
-  country?: string;
+  company?: string;
   readStatus?: "all" | "read" | "unread";
   sortField?: "name" | "email" | "country" | "createdAt";
   sortDir?: "asc" | "desc";

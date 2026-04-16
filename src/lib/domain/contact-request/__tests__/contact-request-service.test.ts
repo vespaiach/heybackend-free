@@ -7,6 +7,7 @@ vi.mock("@/lib/prisma", () => ({
     contactRequest: {
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
       count: vi.fn(),
@@ -505,6 +506,177 @@ describe("ContactRequestService", () => {
       const result = await contactRequestService.getContactRequest("contact_123", testTenantId);
 
       expect(result).toBeNull();
+    });
+  });
+
+  describe("markContactAsRead", () => {
+    it("sets readAt to current timestamp", async () => {
+      vi.mocked(prisma.contactRequest.updateMany).mockResolvedValue({ count: 1 });
+
+      await contactRequestService.markContactAsRead("contact_123", testTenantId);
+
+      expect(prisma.contactRequest.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: "contact_123" }),
+          data: expect.objectContaining({ readAt: expect.any(Date) }),
+        }),
+      );
+    });
+
+    it("throws if contact does not belong to tenant", async () => {
+      vi.mocked(prisma.contactRequest.updateMany).mockResolvedValue({ count: 0 });
+
+      await expect(contactRequestService.markContactAsRead("contact_123", testTenantId)).rejects.toThrow(
+        /Contact not found or access denied/,
+      );
+    });
+
+    it("throws if contact not found", async () => {
+      vi.mocked(prisma.contactRequest.updateMany).mockResolvedValue({ count: 0 });
+
+      await expect(contactRequestService.markContactAsRead("nonexistent-id", testTenantId)).rejects.toThrow(
+        /Contact not found or access denied/,
+      );
+    });
+  });
+
+  describe("listContactRequests", () => {
+    it("returns only unread contacts when readStatus=unread", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        {
+          id: "unread_1",
+          websiteId: testWebsiteId,
+          email: "unread@example.com",
+          name: "Unread Contact",
+          message: "Message",
+          company: null,
+          phone: null,
+          metadata: null,
+          country: null,
+          region: null,
+          city: null,
+          timezone: null,
+          os: null,
+          deviceType: null,
+          browser: null,
+          readAt: null,
+          createdAt: new Date(),
+        },
+      ] as any);
+
+      vi.mocked(prisma.contactRequest.count).mockResolvedValue(1 as any);
+
+      const result = await contactRequestService.listContactRequests({
+        websiteId: testWebsiteId,
+        readStatus: "unread",
+      });
+
+      expect(result.contactRequests).toHaveLength(1);
+      expect(result.contactRequests[0].email).toBe("unread@example.com");
+
+      const findManyCall = vi.mocked(prisma.contactRequest.findMany).mock.calls[0]?.[0];
+      expect(findManyCall?.where).toMatchObject({ readAt: null });
+
+      const countCall = vi.mocked(prisma.contactRequest.count).mock.calls[0]?.[0];
+      expect(countCall?.where).toMatchObject({ readAt: null });
+    });
+
+    it("returns only read contacts when readStatus=read", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        {
+          id: "read_1",
+          websiteId: testWebsiteId,
+          email: "read@example.com",
+          name: "Read Contact",
+          message: "Message",
+          company: null,
+          phone: null,
+          metadata: null,
+          country: null,
+          region: null,
+          city: null,
+          timezone: null,
+          os: null,
+          deviceType: null,
+          browser: null,
+          readAt: new Date("2026-04-15"),
+          createdAt: new Date(),
+        },
+      ] as any);
+
+      vi.mocked(prisma.contactRequest.count).mockResolvedValue(1 as any);
+
+      const result = await contactRequestService.listContactRequests({
+        websiteId: testWebsiteId,
+        readStatus: "read",
+      });
+
+      expect(result.contactRequests).toHaveLength(1);
+      expect(result.contactRequests[0].email).toBe("read@example.com");
+
+      const findManyCall = vi.mocked(prisma.contactRequest.findMany).mock.calls[0]?.[0];
+      expect(findManyCall?.where).toMatchObject({ readAt: { not: null } });
+
+      const countCall = vi.mocked(prisma.contactRequest.count).mock.calls[0]?.[0];
+      expect(countCall?.where).toMatchObject({ readAt: { not: null } });
+    });
+
+    it("returns all contacts when readStatus=all", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        {
+          id: "unread_1",
+          websiteId: testWebsiteId,
+          email: "unread@example.com",
+          name: "Unread Contact",
+          message: "Message",
+          company: null,
+          phone: null,
+          metadata: null,
+          country: null,
+          region: null,
+          city: null,
+          timezone: null,
+          os: null,
+          deviceType: null,
+          browser: null,
+          readAt: null,
+          createdAt: new Date(),
+        },
+        {
+          id: "read_1",
+          websiteId: testWebsiteId,
+          email: "read@example.com",
+          name: "Read Contact",
+          message: "Message",
+          company: null,
+          phone: null,
+          metadata: null,
+          country: null,
+          region: null,
+          city: null,
+          timezone: null,
+          os: null,
+          deviceType: null,
+          browser: null,
+          readAt: new Date("2026-04-15"),
+          createdAt: new Date(),
+        },
+      ] as any);
+
+      vi.mocked(prisma.contactRequest.count).mockResolvedValue(2 as any);
+
+      const result = await contactRequestService.listContactRequests({
+        websiteId: testWebsiteId,
+        readStatus: "all",
+      });
+
+      expect(result.contactRequests).toHaveLength(2);
+
+      const findManyCall = vi.mocked(prisma.contactRequest.findMany).mock.calls[0]?.[0];
+      expect(findManyCall?.where).not.toHaveProperty("readAt");
+
+      const countCall = vi.mocked(prisma.contactRequest.count).mock.calls[0]?.[0];
+      expect(countCall?.where).not.toHaveProperty("readAt");
     });
   });
 });

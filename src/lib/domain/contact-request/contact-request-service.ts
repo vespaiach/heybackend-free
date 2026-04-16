@@ -60,6 +60,14 @@ export class PrismaContactRequestService implements ContactRequestService {
       where.country = filter.country;
     }
 
+    // Filter by read status
+    if (filter.readStatus === "read") {
+      where.readAt = { not: null };
+    } else if (filter.readStatus === "unread") {
+      where.readAt = null;
+    }
+    // 'all' or undefined: no filter
+
     // Filter by date range
     if (filter.fromDate || filter.toDate) {
       const createdAt: Prisma.DateTimeFilter = {};
@@ -124,6 +132,30 @@ export class PrismaContactRequestService implements ContactRequestService {
     return this.mapToContactRequest(contactRequest);
   }
 
+  async markContactAsRead(contactRequestId: string, tenantId: string): Promise<void> {
+    const result = await prisma.contactRequest.updateMany({
+      where: {
+        id: contactRequestId,
+        website: {
+          is: {
+            tenant: {
+              is: {
+                id: tenantId,
+              },
+            },
+          },
+        },
+      },
+      data: {
+        readAt: new Date(),
+      },
+    });
+
+    if (result.count === 0) {
+      throw new Error("Contact not found or access denied");
+    }
+  }
+
   private mapToContactRequest(
     dbContactRequest: Awaited<ReturnType<typeof prisma.contactRequest.findUnique>>,
   ): ContactRequest {
@@ -146,6 +178,7 @@ export class PrismaContactRequestService implements ContactRequestService {
       os: dbContactRequest.os,
       deviceType: dbContactRequest.deviceType,
       browser: dbContactRequest.browser,
+      readAt: dbContactRequest.readAt,
       createdAt: dbContactRequest.createdAt,
     };
   }

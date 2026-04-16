@@ -28,4 +28,10 @@ export interface ContactRequestService {
    * Returns null if not found or ownership check fails.
    */
   getContactRequest(contactRequestId: string, tenantId: string): Promise<ContactRequest | null>;
+
+  /**
+   * Mark a contact as read by setting readAt to current timestamp.
+   * Verifies ownership via tenantId.
+   */
+  markContactAsRead(contactRequestId: string, tenantId: string): Promise<void>;
 }

@@ -182,6 +182,7 @@ model ContactRequest {
   os            String?
   deviceType    String?
   browser       String?
+  readAt        DateTime?                    // timestamp when contact was marked as read
   createdAt     DateTime  @default(now())
 
   website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)

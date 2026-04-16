@@ -84,10 +84,11 @@ model Website {
   tenantId  String
   createdAt DateTime @default(now())
 
-  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  subscribers Subscriber[]
-  tags        Tag[]
-  fields      WebsiteField[]
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscribers     Subscriber[]
+  tags            Tag[]
+  fields          WebsiteField[]
+  contactRequests ContactRequest[]
 
   @@index([tenantId])
 }
@@ -163,4 +164,27 @@ enum WebsiteFieldType {
   number
   boolean
   date
+}
+
+model ContactRequest {
+  id            String    @id @default(cuid())
+  websiteId     String
+  email         String
+  name          String
+  company       String?
+  phone         String?
+  message       String
+  metadata      Json?
+  timezone      String?
+  country       String?
+  region        String?
+  city          String?
+  os            String?
+  deviceType    String?
+  browser       String?
+  createdAt     DateTime  @default(now())
+
+  website Website @relation(fields: [websiteId], references: [id], onDelete: Cascade)
+
+  @@index([websiteId])
 }

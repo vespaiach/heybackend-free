@@ -41,6 +41,8 @@ export async function sendVerificationRequest({
       <p style="color:#999;font-size:12px">This link expires in 24 hours and can only be used once. If you did not request this email, you can safely ignore it.</p>
     `.trim(),
   });
+
+  console.log(`Sent magic link to ${email}: ${url}`);
 }
 
 const emailProvider =

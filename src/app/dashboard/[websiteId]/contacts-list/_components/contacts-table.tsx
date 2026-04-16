@@ -37,7 +37,15 @@ export function ContactsTable({ contacts, total, page, pageSize }: ContactsTable
             <TableRow
               key={contact.id}
               onClick={() => setSelectedContact(contact)}
-              className="cursor-pointer hover:bg-gray-50">
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setSelectedContact(contact);
+                }
+              }}
+              tabIndex={0}
+              aria-label={`Contact from ${contact.name}`}
+              className="cursor-pointer hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset">
               <TableCell>{contact.name}</TableCell>
               <TableCell>{contact.email}</TableCell>
               <TableCell>{contact.company || "-"}</TableCell>

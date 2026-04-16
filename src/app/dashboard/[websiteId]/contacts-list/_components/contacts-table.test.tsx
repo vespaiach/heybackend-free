@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { ContactRequest } from "@/lib/domain/types";
 import { ContactsTable } from "./contacts-table";
@@ -80,5 +81,63 @@ describe("ContactsTable", () => {
     );
 
     expect(screen.getByText(/read on/i)).toBeInTheDocument();
+  });
+
+  it("rows are keyboard focusable and have button role", () => {
+    render(
+      <ContactsTable
+        selectedWebsiteId="site1"
+        contacts={mockContacts}
+        total={1}
+        page={1}
+        pageSize={20}
+        availableCountries={["US"]}
+      />,
+    );
+
+    const row = screen.getByRole("row", { name: /john doe/i });
+    expect(row).toHaveAttribute("tabindex", "0");
+  });
+
+  it("opens modal when Enter key is pressed on a row", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ContactsTable
+        selectedWebsiteId="site1"
+        contacts={mockContacts}
+        total={1}
+        page={1}
+        pageSize={20}
+        availableCountries={["US"]}
+      />,
+    );
+
+    const row = screen.getByRole("row", { name: /john doe/i });
+    row.focus();
+    await user.keyboard("{Enter}");
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("opens modal when Space key is pressed on a row", async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ContactsTable
+        selectedWebsiteId="site1"
+        contacts={mockContacts}
+        total={1}
+        page={1}
+        pageSize={20}
+        availableCountries={["US"]}
+      />,
+    );
+
+    const row = screen.getByRole("row", { name: /john doe/i });
+    row.focus();
+    await user.keyboard(" ");
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

@@ -564,5 +564,42 @@ describe("ContactRequestService", () => {
       expect(updateCall?.where.id).toBe("contact_123");
       expect(updateCall?.data.readAt).not.toBeNull();
     });
+
+    it("throws if contact does not belong to tenant", async () => {
+      const otherTenantId = "tenant_other_123";
+
+      vi.mocked(prisma.contactRequest.findUnique).mockResolvedValue({
+        id: "contact_123",
+        websiteId: testWebsiteId,
+        email: "test@example.com",
+        name: "John",
+        message: "Hello",
+        company: null,
+        phone: null,
+        metadata: null,
+        country: null,
+        region: null,
+        city: null,
+        timezone: null,
+        os: null,
+        deviceType: null,
+        browser: null,
+        createdAt: new Date(),
+        readAt: null,
+        website: {
+          id: testWebsiteId,
+          tenant: {
+            id: otherTenantId,
+          },
+        },
+      } as any);
+
+      await expect(contactRequestService.markContactAsRead("contact_123", testTenantId)).rejects.toThrow(
+        /Contact not found or access denied/,
+      );
+
+      // Verify update was never called
+      expect(prisma.contactRequest.update).not.toHaveBeenCalled();
+    });
   });
 });

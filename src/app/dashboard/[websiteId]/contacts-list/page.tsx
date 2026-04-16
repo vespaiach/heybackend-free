@@ -23,6 +23,7 @@ export default async function ContactsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { websiteId } = await params;
+  const website = await getWebsite(websiteId);
   const sp = await searchParams;
 
   // Parse and validate search params
@@ -30,7 +31,7 @@ export default async function ContactsPage({
   const pageSizeRaw = parseInt(typeof sp.pageSize === "string" ? sp.pageSize : "20", 10);
   const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(pageSizeRaw) ? pageSizeRaw : 20;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  const country = typeof sp.country === "string" ? sp.country : "";
+  const company = typeof sp.company === "string" ? sp.company : "";
   const readStatusRaw = typeof sp.readStatus === "string" ? sp.readStatus : "all";
   const readStatus = (["all", "read", "unread"] as const).includes(readStatusRaw as "all" | "read" | "unread")
     ? (readStatusRaw as "all" | "read" | "unread")
@@ -45,20 +46,20 @@ export default async function ContactsPage({
 
   let contacts: ContactRequest[] = [];
   let total = 0;
-  let availableCountries: string[] = [];
+  let availableCompanies: string[] = [];
 
-  const [result, countries] = await Promise.all([
+  const [result, companies] = await Promise.all([
     contactRequestService.listContactRequests({
       websiteId: (await getWebsite(websiteId)).id,
       q: q || undefined,
-      country: country || undefined,
+      company: company || undefined,
       readStatus,
       sortField,
       sortDir,
       page,
       pageSize,
     }),
-    // Get unique countries from all contacts
+    // Get unique companies from all contacts
     contactRequestService
       .listContactRequests({
         websiteId: (await getWebsite(websiteId)).id,
@@ -69,8 +70,8 @@ export default async function ContactsPage({
           [
             ...new Set(
               r.contactRequests
-                .map((c) => c.country)
-                .filter((country): country is string => country !== null),
+                .map((c) => c.company)
+                .filter((company): company is string => company !== null),
             ),
           ] as string[],
       ),
@@ -78,7 +79,7 @@ export default async function ContactsPage({
 
   contacts = result.contactRequests;
   total = result.total;
-  availableCountries = countries;
+  availableCompanies = companies;
 
   return (
     <>
@@ -87,7 +88,7 @@ export default async function ContactsPage({
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
-            <BreadcrumbItem>{(await getWebsite(websiteId)).name}</BreadcrumbItem>
+            <BreadcrumbItem>{website.name}</BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>Contacts</BreadcrumbPage>
@@ -105,10 +106,10 @@ export default async function ContactsPage({
             page={page}
             pageSize={pageSize}
             search={{ q, readStatus }}
-            country={country}
+            company={company}
             sortField={sortField}
             sortDir={sortDir}
-            availableCountries={availableCountries}
+            availableCompanies={availableCompanies}
           />
         </Suspense>
       </main>

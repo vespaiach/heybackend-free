@@ -211,6 +211,7 @@ src/
 - Mocking constructors: use `vi.fn(function Ctor(this) { this.method = vi.fn(); })` — arrow functions cannot be `new`-ed and will throw
 - Mock variables used inside `vi.mock()` factories must be declared with `vi.hoisted()` to avoid temporal dead zone errors
 - Module-level singletons (caches, lazy clients) need an exported `_resetForTesting()` called in `beforeEach` to isolate tests
+- For tests requiring database access, mock the service layer (domain services, `tenantService`, `contactRequestService`, etc.) instead of making real Prisma calls. This allows tests to run in CI environments without a live database connection.
 - Run `npm test` before marking work as done.
 
 ### Shell / Git

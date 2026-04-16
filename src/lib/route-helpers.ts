@@ -10,12 +10,20 @@ export async function getSession() {
   return session as NonNullable<{ user: { id: string } }>;
 }
 
-export async function getLoggedInTenant(userId: string) {
-  const tenant = await tenantService.getTenantWithWebsitesByUserId(userId);
+export async function getLoggedInTenant() {
+  const session = await getSession();
+  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
 
   if (!tenant) {
     redirect("/onboarding");
   }
 
   return tenant;
+}
+
+export async function getWebsite(websiteId: string) {
+  const tenant = await getLoggedInTenant();
+  const website = tenant.websites.find((w) => w.id === websiteId);
+  if (!website) redirect("/onboarding");
+  return website;
 }

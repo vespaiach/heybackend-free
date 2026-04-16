@@ -18,7 +18,7 @@ interface TablePageHeaderProps {
   filterSlot?: React.ReactNode;
   activeFiltersContent?: React.ReactNode;
   // Export
-  onExport: () => void;
+  onExport?: () => void;
   isExportPending?: boolean;
 }
 
@@ -33,6 +33,7 @@ export function TablePageHeader({
   onExport,
   isExportPending = false,
 }: TablePageHeaderProps) {
+  const showExport = onExport !== undefined;
   const showColumns = columns !== undefined && visibleColumns !== undefined && onToggleColumn !== undefined;
   const hiddenCount = showColumns ? columns.filter((c) => !visibleColumns.has(c.key)).length : 0;
 
@@ -43,15 +44,17 @@ export function TablePageHeader({
           <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
           <p className="text-muted-foreground">{description}</p>
         </div>
-        <Button
-          variant="outline"
-          className="md:hidden"
-          size="sm"
-          onClick={onExport}
-          disabled={isExportPending}>
-          <DownloadIcon className="mr-1 h-4 w-4" />
-          Export CSV
-        </Button>
+        {showExport && (
+          <Button
+            variant="outline"
+            className="md:hidden"
+            size="sm"
+            onClick={onExport}
+            disabled={isExportPending}>
+            <DownloadIcon className="mr-1 h-4 w-4" />
+            Export CSV
+          </Button>
+        )}
       </div>
 
       <div className="mb-3 flex flex-col items-start gap-2 md:flex-row md:items-center md:gap-5">
@@ -93,15 +96,17 @@ export function TablePageHeader({
 
         {activeFiltersContent}
 
-        <Button
-          variant="outline"
-          className="ml-auto hidden md:flex"
-          size="sm"
-          onClick={onExport}
-          disabled={isExportPending}>
-          <DownloadIcon className="mr-1 h-4 w-4" />
-          Export CSV
-        </Button>
+        {showExport && (
+          <Button
+            variant="outline"
+            className="ml-auto hidden md:flex"
+            size="sm"
+            onClick={onExport}
+            disabled={isExportPending}>
+            <DownloadIcon className="mr-1 h-4 w-4" />
+            Export CSV
+          </Button>
+        )}
       </div>
     </>
   );

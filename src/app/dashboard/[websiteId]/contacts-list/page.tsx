@@ -6,8 +6,6 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { contactRequestService, tenantService } from "@/lib/domain";
 import type { ContactRequest } from "@/lib/domain/types";
-import { ContactsActiveFilters } from "./_components/contacts-active-filters";
-import { ContactsFilterPopover } from "./_components/contacts-filter-popover";
 import { ContactsTable } from "./_components/contacts-table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -104,13 +102,6 @@ export default async function ContactsPage({
       </header>
 
       <main className="flex-1 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Contacts</h1>
-          <ContactsFilterPopover availableCountries={availableCountries} onFilterChange={() => {}} />
-        </div>
-
-        <ContactsActiveFilters search={{ q, readStatus }} country={country} onRemoveFilter={() => {}} />
-
         <Suspense fallback={<div>Loading...</div>}>
           <ContactsTable
             selectedWebsiteId={resolvedId ?? ""}
@@ -118,6 +109,8 @@ export default async function ContactsPage({
             total={total}
             page={page}
             pageSize={pageSize}
+            search={{ q, readStatus }}
+            country={country}
             sortField={sortField}
             sortDir={sortDir}
             availableCountries={availableCountries}

@@ -2,13 +2,16 @@
 
 import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import * as React from "react";
 import { type PageSizeOption, PaginationBar } from "@/components/pagination-bar";
 import { RelativeDate } from "@/components/relative-date";
+import { TablePageHeader } from "@/components/table-page-header";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { ContactRequest } from "@/lib/domain/types";
 import { ContactDetailModal } from "./contact-detail-modal";
+import { ContactsActiveFilters } from "./contacts-active-filters";
+import { type ContactFilterValues, ContactsFilterPopover } from "./contacts-filter-popover";
 
 export type ContactSortField = "name" | "email" | "country" | "createdAt";
 export type ContactSortDir = "asc" | "desc";
@@ -19,6 +22,8 @@ interface ContactsTableProps {
   total: number;
   page: number;
   pageSize: number;
+  search: { q: string; readStatus: "all" | "read" | "unread" };
+  country: string;
   sortField: ContactSortField;
   sortDir: ContactSortDir;
   availableCountries: string[];
@@ -47,20 +52,26 @@ export function ContactsTable({
   total,
   page,
   pageSize,
+  search,
+  country,
   sortField,
   sortDir,
-  availableCountries: _availableCountries,
+  availableCountries,
 }: ContactsTableProps) {
   const router = useRouter();
-  const [selectedContact, setSelectedContact] = useState<ContactRequest | null>(null);
-  const [isPending, setIsPending] = useState(false);
+  const [selectedContact, setSelectedContact] = React.useState<ContactRequest | null>(null);
+  const [isPagePending, startPageTransition] = React.useTransition();
 
   const baseUrl = `/dashboard/${selectedWebsiteId}/contacts-list`;
+  const hasActiveFilters = search.q !== "" || search.readStatus !== "all" || country !== "";
 
   function buildParams(overrides: Record<string, string>) {
     const params = new URLSearchParams();
     params.set("page", String(page));
     params.set("pageSize", String(pageSize));
+    if (search.q) params.set("q", search.q);
+    if (search.readStatus !== "all") params.set("readStatus", search.readStatus);
+    if (country) params.set("country", country);
     params.set("sortField", sortField);
     params.set("sortDir", sortDir);
     for (const [k, v] of Object.entries(overrides)) {
@@ -72,21 +83,88 @@ export function ContactsTable({
 
   function toggleSort(field: ContactSortField) {
     const newDir = field === sortField && sortDir === "asc" ? "desc" : "asc";
-    router.push(`${baseUrl}?${buildParams({ sortField: field, sortDir: newDir, page: "1" })}`);
+    startPageTransition(() => {
+      router.push(`${baseUrl}?${buildParams({ sortField: field, sortDir: newDir, page: "1" })}`);
+    });
   }
 
   function handlePageChange(newPage: number) {
-    setIsPending(true);
-    router.push(`${baseUrl}?${buildParams({ page: String(newPage) })}`);
+    startPageTransition(() => {
+      router.push(`${baseUrl}?${buildParams({ page: String(newPage) })}`);
+    });
   }
 
   function handlePageSizeChange(newPageSize: PageSizeOption) {
-    setIsPending(true);
-    router.push(`${baseUrl}?${buildParams({ page: "1", pageSize: String(newPageSize) })}`);
+    startPageTransition(() => {
+      router.push(`${baseUrl}?${buildParams({ page: "1", pageSize: String(newPageSize) })}`);
+    });
+  }
+
+  function handleApplyFilters(filters: ContactFilterValues) {
+    const params = new URLSearchParams();
+    params.set("page", "1");
+    params.set("pageSize", String(pageSize));
+    params.set("sortField", sortField);
+    params.set("sortDir", sortDir);
+    if (filters.query) params.set("q", filters.query);
+    if (filters.country && filters.country !== "__all__") params.set("country", filters.country);
+    if (filters.readStatus !== "all") params.set("readStatus", filters.readStatus);
+    router.push(`${baseUrl}?${params.toString()}`);
+  }
+
+  function handleResetAllFilters() {
+    router.push(
+      `${baseUrl}?${buildParams({
+        page: "1",
+        q: "",
+        readStatus: "",
+        country: "",
+      })}`,
+    );
+  }
+
+  function handleRemoveFilter(type: "query" | "readStatus" | "country") {
+    router.push(
+      `${baseUrl}?${buildParams({
+        page: "1",
+        q: type === "query" ? "" : search.q,
+        readStatus: type === "readStatus" ? "" : search.readStatus === "all" ? "" : search.readStatus,
+        country: type === "country" ? "" : country,
+      })}`,
+    );
   }
 
   return (
     <div className="space-y-4">
+      <TablePageHeader
+        title="Contacts"
+        description="Contact requests submitted through your website."
+        filterSlot={
+          <ContactsFilterPopover
+            availableCountries={availableCountries}
+            currentFilters={{
+              query: search.q,
+              country: country || "__all__",
+              readStatus: search.readStatus,
+            }}
+            total={total}
+            hasActiveFilters={hasActiveFilters}
+            onApply={handleApplyFilters}
+            onReset={handleResetAllFilters}
+          />
+        }
+        activeFiltersContent={
+          hasActiveFilters ? (
+            <ContactsActiveFilters
+              search={search}
+              country={country}
+              onRemoveFilter={handleRemoveFilter}
+              onResetAll={handleResetAllFilters}
+            />
+          ) : undefined
+        }
+      />
+
       <Table>
         <TableHeader>
           <TableRow>
@@ -178,7 +256,7 @@ export function ContactsTable({
         total={total}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
-        isLoading={isPending}
+        isLoading={isPagePending}
       />
     </div>
   );

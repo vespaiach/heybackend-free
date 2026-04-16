@@ -41,6 +41,8 @@ describe("ContactsTable", () => {
     total: 1,
     page: 1,
     pageSize: 20,
+    search: { q: "", readStatus: "all" as const },
+    country: "",
     sortField: "createdAt" as const,
     sortDir: "desc" as const,
     availableCountries: ["US"],

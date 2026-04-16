@@ -133,28 +133,27 @@ export class PrismaContactRequestService implements ContactRequestService {
   }
 
   async markContactAsRead(contactRequestId: string, tenantId: string): Promise<void> {
-    const contactRequest = await prisma.contactRequest.findUnique({
-      where: { id: contactRequestId },
-      include: {
+    const result = await prisma.contactRequest.updateMany({
+      where: {
+        id: contactRequestId,
         website: {
-          include: {
-            tenant: true,
+          is: {
+            tenant: {
+              is: {
+                id: tenantId,
+              },
+            },
           },
         },
       },
-    });
-
-    // Check ownership: does the website belong to the tenant?
-    if (!contactRequest || contactRequest.website.tenant.id !== tenantId) {
-      throw new Error("Contact not found or access denied");
-    }
-
-    await prisma.contactRequest.update({
-      where: { id: contactRequestId },
       data: {
         readAt: new Date(),
       },
     });
+
+    if (result.count === 0) {
+      throw new Error("Contact not found or access denied");
+    }
   }
 
   private mapToContactRequest(

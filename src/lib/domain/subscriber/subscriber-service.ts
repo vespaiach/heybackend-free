@@ -512,13 +512,17 @@ export class PrismaSubscriberService implements SubscriberService {
 
     // Subscriber age cohorts (always all-time, range-independent)
     const ageNow = new Date();
-    const d30  = new Date(ageNow.getTime() - 30  * 86_400_000);
-    const d90  = new Date(ageNow.getTime() - 90  * 86_400_000);
+    const d30 = new Date(ageNow.getTime() - 30 * 86_400_000);
+    const d90 = new Date(ageNow.getTime() - 90 * 86_400_000);
     const d180 = new Date(ageNow.getTime() - 180 * 86_400_000);
     const [ageSeedlings, ageSprouts, ageSaplings, ageEvergreens] = await Promise.all([
       prisma.subscriber.count({ where: { websiteId, unsubscribedAt: null, createdAt: { gte: d30 } } }),
-      prisma.subscriber.count({ where: { websiteId, unsubscribedAt: null, createdAt: { gte: d90,  lt: d30  } } }),
-      prisma.subscriber.count({ where: { websiteId, unsubscribedAt: null, createdAt: { gte: d180, lt: d90  } } }),
+      prisma.subscriber.count({
+        where: { websiteId, unsubscribedAt: null, createdAt: { gte: d90, lt: d30 } },
+      }),
+      prisma.subscriber.count({
+        where: { websiteId, unsubscribedAt: null, createdAt: { gte: d180, lt: d90 } },
+      }),
       prisma.subscriber.count({ where: { websiteId, unsubscribedAt: null, createdAt: { lt: d180 } } }),
     ]);
 

@@ -45,8 +45,7 @@ export function CountriesCard({ countries }: CountriesCardProps) {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0"
-            >
+              className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 shrink-0">
               View All <span aria-hidden>›</span>
             </button>
           )}

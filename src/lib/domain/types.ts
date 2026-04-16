@@ -228,9 +228,9 @@ export interface SubscriberAnalytics {
   // Audience breakdown
   topOS: { os: string; count: number }[];
   subscriberAge: {
-    seedlings: number;   // active subscribers, createdAt within last 30 days
-    sprouts: number;     // active subscribers, createdAt 30–90 days ago
-    saplings: number;    // active subscribers, createdAt 90–180 days ago
-    evergreens: number;  // active subscribers, createdAt more than 180 days ago
+    seedlings: number; // active subscribers, createdAt within last 30 days
+    sprouts: number; // active subscribers, createdAt 30–90 days ago
+    saplings: number; // active subscribers, createdAt 90–180 days ago
+    evergreens: number; // active subscribers, createdAt more than 180 days ago
   };
 }

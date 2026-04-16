@@ -29,8 +29,6 @@ describe("RangeSelector", () => {
   it("calls router.push with new range on click", async () => {
     render(<RangeSelector />);
     await userEvent.click(screen.getByRole("button", { name: "7d" }));
-    expect(mockPush).toHaveBeenCalledWith(
-      expect.stringContaining("range=7d"),
-    );
+    expect(mockPush).toHaveBeenCalledWith(expect.stringContaining("range=7d"));
   });
 });

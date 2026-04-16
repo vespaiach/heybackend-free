@@ -1,8 +1,8 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { cn } from "@/lib/utils";
 import type { AnalyticsRange } from "@/lib/domain/types";
+import { cn } from "@/lib/utils";
 
 const RANGES: { label: string; value: AnalyticsRange }[] = [
   { label: "7d", value: "7d" },
@@ -36,8 +36,7 @@ export function RangeSelector() {
             current === value
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
-          )}
-        >
+          )}>
           {label}
         </button>
       ))}

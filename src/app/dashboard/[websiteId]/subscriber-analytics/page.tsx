@@ -85,14 +85,8 @@ export default async function SubscriberAnalyticsPage({
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           <CountriesCard countries={analytics.topCountries} />
-          <DevicesPlatformsCard
-            deviceBreakdown={analytics.deviceBreakdown}
-            topOS={analytics.topOS}
-          />
-          <SubscriberAgeCard
-            subscriberAge={analytics.subscriberAge}
-            totalActive={analytics.totalActive}
-          />
+          <DevicesPlatformsCard deviceBreakdown={analytics.deviceBreakdown} topOS={analytics.topOS} />
+          <SubscriberAgeCard subscriberAge={analytics.subscriberAge} totalActive={analytics.totalActive} />
         </div>
       </div>
     </>

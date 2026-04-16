@@ -29,7 +29,9 @@ describe("DevicesPlatformsCard", () => {
   });
 
   it("shows empty state for devices when all zero", () => {
-    render(<DevicesPlatformsCard deviceBreakdown={{ mobile: 0, tablet: 0, desktop: 0, unknown: 0 }} topOS={[]} />);
+    render(
+      <DevicesPlatformsCard deviceBreakdown={{ mobile: 0, tablet: 0, desktop: 0, unknown: 0 }} topOS={[]} />,
+    );
     expect(screen.getByText("No device data yet")).toBeInTheDocument();
   });
 });

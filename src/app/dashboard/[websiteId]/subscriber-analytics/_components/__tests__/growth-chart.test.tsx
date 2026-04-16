@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { GrowthChart } from "../growth-chart";
 import type { GrowthDataPoint } from "@/lib/domain/types";
+import { GrowthChart } from "../growth-chart";
 
 // Recharts uses ResizeObserver internally
 global.ResizeObserver = vi.fn(function ResizeObserverMock(this) {

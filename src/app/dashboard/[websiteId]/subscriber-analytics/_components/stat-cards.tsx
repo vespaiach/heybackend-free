@@ -13,7 +13,12 @@ function formatGrowthRate(rate: number | null): string {
   return rate >= 0 ? `+${rate}%` : `${rate}%`;
 }
 
-export function StatCards({ totalActive, newThisPeriod, unsubscribedThisPeriod, growthRate }: StatCardsProps) {
+export function StatCards({
+  totalActive,
+  newThisPeriod,
+  unsubscribedThisPeriod,
+  growthRate,
+}: StatCardsProps) {
   const GrowthIcon = growthRate !== null && growthRate < 0 ? TrendingDownIcon : TrendingUpIcon;
   const growthColor = growthRate !== null && growthRate < 0 ? "text-destructive" : "text-green-600";
 

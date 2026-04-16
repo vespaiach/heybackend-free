@@ -87,7 +87,7 @@ describe("ContactsTable", () => {
     // These are visible by default
     expect(screen.getByRole("button", { name: /name/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /email/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /created date/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /created at/i })).toBeInTheDocument();
 
     // Country column is hidden by default (not sortable)
     expect(screen.queryByRole("button", { name: /country/i })).not.toBeInTheDocument();

@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { ContactRequest } from "@/lib/domain/types";
+import { markContactAsRead } from "../actions";
 
 interface ContactDetailModalProps {
   contact: ContactRequest;
@@ -10,6 +12,20 @@ interface ContactDetailModalProps {
 }
 
 export function ContactDetailModal({ contact, open, onOpenChange }: ContactDetailModalProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleMarkAsRead = async () => {
+    setIsLoading(true);
+    try {
+      const result = await markContactAsRead(contact.id);
+      if (!result.error) {
+        onOpenChange(false);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -107,11 +123,10 @@ export function ContactDetailModal({ contact, open, onOpenChange }: ContactDetai
               </p>
             ) : (
               <button
-                onClick={() => {
-                  /* will be implemented in next task */
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700">
-                Mark as Read
+                onClick={handleMarkAsRead}
+                disabled={isLoading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                {isLoading ? "Marking..." : "Mark as Read"}
               </button>
             )}
           </div>

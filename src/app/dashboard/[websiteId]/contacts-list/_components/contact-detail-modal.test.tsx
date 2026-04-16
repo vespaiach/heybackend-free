@@ -1,7 +1,14 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import type { ContactRequest } from "@/lib/domain/types";
 import { ContactDetailModal } from "./contact-detail-modal";
+
+vi.mock("../actions", () => ({
+  markContactAsRead: vi.fn(),
+}));
+
+import { markContactAsRead as mockMarkContactAsRead } from "../actions";
 
 describe("ContactDetailModal", () => {
   const mockContact: ContactRequest = {
@@ -46,5 +53,18 @@ describe("ContactDetailModal", () => {
     render(<ContactDetailModal contact={mockContact} open={true} onOpenChange={() => {}} />);
 
     expect(screen.getByRole("button", { name: /mark as read/i })).toBeInTheDocument();
+  });
+
+  it("calls markContactAsRead on button click", async () => {
+    vi.mocked(mockMarkContactAsRead).mockResolvedValue({});
+
+    const mockOpenChange = vi.fn();
+    render(<ContactDetailModal contact={mockContact} open={true} onOpenChange={mockOpenChange} />);
+
+    const button = screen.getByRole("button", { name: /mark as read/i });
+    await userEvent.click(button);
+
+    expect(mockMarkContactAsRead).toHaveBeenCalledWith(mockContact.id);
+    expect(mockOpenChange).toHaveBeenCalledWith(false);
   });
 });

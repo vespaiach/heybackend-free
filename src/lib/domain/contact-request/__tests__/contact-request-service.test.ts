@@ -601,5 +601,13 @@ describe("ContactRequestService", () => {
       // Verify update was never called
       expect(prisma.contactRequest.update).not.toHaveBeenCalled();
     });
+
+    it("throws if contact not found", async () => {
+      vi.mocked(prisma.contactRequest.findUnique).mockResolvedValue(null);
+
+      await expect(contactRequestService.markContactAsRead("nonexistent-id", testTenantId)).rejects.toThrow(
+        /Contact not found/,
+      );
+    });
   });
 });

@@ -8,7 +8,7 @@ describe("ContactsActiveFilters", () => {
     const { container } = render(
       <ContactsActiveFilters
         search={{ q: "", readStatus: "all" }}
-        country=""
+        company=""
         onRemoveFilter={vi.fn()}
         onResetAll={vi.fn()}
       />,
@@ -21,7 +21,7 @@ describe("ContactsActiveFilters", () => {
     render(
       <ContactsActiveFilters
         search={{ q: "John", readStatus: "all" }}
-        country=""
+        company=""
         onRemoveFilter={vi.fn()}
         onResetAll={vi.fn()}
       />,
@@ -34,7 +34,7 @@ describe("ContactsActiveFilters", () => {
     render(
       <ContactsActiveFilters
         search={{ q: "", readStatus: "unread" }}
-        country=""
+        company=""
         onRemoveFilter={vi.fn()}
         onResetAll={vi.fn()}
       />,
@@ -43,17 +43,17 @@ describe("ContactsActiveFilters", () => {
     expect(screen.getByText(/status: unread/i)).toBeInTheDocument();
   });
 
-  it("displays country filter chip", () => {
+  it("displays company filter chip", () => {
     render(
       <ContactsActiveFilters
         search={{ q: "", readStatus: "all" }}
-        country="US"
+        company="ACME"
         onRemoveFilter={vi.fn()}
         onResetAll={vi.fn()}
       />,
     );
 
-    expect(screen.getByText(/country: us/i)).toBeInTheDocument();
+    expect(screen.getByText(/company: acme/i)).toBeInTheDocument();
   });
 
   it("calls onRemoveFilter with 'query' when search chip × is clicked", async () => {
@@ -63,7 +63,7 @@ describe("ContactsActiveFilters", () => {
     render(
       <ContactsActiveFilters
         search={{ q: "John", readStatus: "all" }}
-        country=""
+        company=""
         onRemoveFilter={onRemoveFilter}
         onResetAll={vi.fn()}
       />,
@@ -83,7 +83,7 @@ describe("ContactsActiveFilters", () => {
     render(
       <ContactsActiveFilters
         search={{ q: "", readStatus: "unread" }}
-        country=""
+        company=""
         onRemoveFilter={onRemoveFilter}
         onResetAll={vi.fn()}
       />,
@@ -96,24 +96,24 @@ describe("ContactsActiveFilters", () => {
     expect(onRemoveFilter).toHaveBeenCalledWith("readStatus");
   });
 
-  it("calls onRemoveFilter with 'country' when country chip × is clicked", async () => {
+  it("calls onRemoveFilter with 'company' when company chip × is clicked", async () => {
     const user = userEvent.setup();
     const onRemoveFilter = vi.fn();
 
     render(
       <ContactsActiveFilters
         search={{ q: "", readStatus: "all" }}
-        country="US"
+        company="ACME"
         onRemoveFilter={onRemoveFilter}
         onResetAll={vi.fn()}
       />,
     );
 
-    const countryChip = screen.getByText(/country: us/i).parentElement!;
-    const removeButton = countryChip.querySelector("button")!;
+    const companyChip = screen.getByText(/company: acme/i).parentElement!;
+    const removeButton = companyChip.querySelector("button")!;
     await user.click(removeButton);
 
-    expect(onRemoveFilter).toHaveBeenCalledWith("country");
+    expect(onRemoveFilter).toHaveBeenCalledWith("company");
   });
 
   it("calls onResetAll when 'Clear all' button is clicked", async () => {
@@ -123,7 +123,7 @@ describe("ContactsActiveFilters", () => {
     render(
       <ContactsActiveFilters
         search={{ q: "John", readStatus: "read" }}
-        country="UK"
+        company="TechCorp"
         onRemoveFilter={vi.fn()}
         onResetAll={onResetAll}
       />,
@@ -139,7 +139,7 @@ describe("ContactsActiveFilters", () => {
     render(
       <ContactsActiveFilters
         search={{ q: "John", readStatus: "unread" }}
-        country="US"
+        company="ACME"
         onRemoveFilter={vi.fn()}
         onResetAll={vi.fn()}
       />,
@@ -147,6 +147,6 @@ describe("ContactsActiveFilters", () => {
 
     expect(screen.getByText(/search: john/i)).toBeInTheDocument();
     expect(screen.getByText(/status: unread/i)).toBeInTheDocument();
-    expect(screen.getByText(/country: us/i)).toBeInTheDocument();
+    expect(screen.getByText(/company: acme/i)).toBeInTheDocument();
   });
 });

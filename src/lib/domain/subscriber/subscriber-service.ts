@@ -476,7 +476,7 @@ export class PrismaSubscriberService implements SubscriberService {
       where: { websiteId, country: { not: null } },
       _count: { country: true },
       orderBy: { _count: { country: "desc" } },
-      take: 10,
+      take: 20,
     });
 
     // Device breakdown
@@ -501,6 +501,27 @@ export class PrismaSubscriberService implements SubscriberService {
       take: 10,
     });
 
+    // OS breakdown
+    const osRows = await prisma.subscriber.groupBy({
+      by: ["os"],
+      where: { websiteId, os: { not: null } },
+      _count: { os: true },
+      orderBy: { _count: { os: "desc" } },
+      take: 10,
+    });
+
+    // Subscriber age cohorts (always all-time, range-independent)
+    const ageNow = new Date();
+    const d30  = new Date(ageNow.getTime() - 30  * 86_400_000);
+    const d90  = new Date(ageNow.getTime() - 90  * 86_400_000);
+    const d180 = new Date(ageNow.getTime() - 180 * 86_400_000);
+    const [ageSeedlings, ageSprouts, ageSaplings, ageEvergreens] = await Promise.all([
+      prisma.subscriber.count({ where: { websiteId, unsubscribedAt: null, createdAt: { gte: d30 } } }),
+      prisma.subscriber.count({ where: { websiteId, unsubscribedAt: null, createdAt: { gte: d90,  lt: d30  } } }),
+      prisma.subscriber.count({ where: { websiteId, unsubscribedAt: null, createdAt: { gte: d180, lt: d90  } } }),
+      prisma.subscriber.count({ where: { websiteId, unsubscribedAt: null, createdAt: { lt: d180 } } }),
+    ]);
+
     return {
       totalActive,
       newThisPeriod: newThisPeriodCount,
@@ -511,6 +532,13 @@ export class PrismaSubscriberService implements SubscriberService {
       topCountries: countryRows.map((r) => ({ country: r.country as string, count: r._count.country })),
       deviceBreakdown,
       topTimezones: timezoneRows.map((r) => ({ timezone: r.timezone as string, count: r._count.timezone })),
+      topOS: osRows.map((r) => ({ os: r.os as string, count: r._count.os })),
+      subscriberAge: {
+        seedlings: ageSeedlings,
+        sprouts: ageSprouts,
+        saplings: ageSaplings,
+        evergreens: ageEvergreens,
+      },
     };
   }
 }

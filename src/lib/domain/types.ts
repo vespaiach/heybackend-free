@@ -216,7 +216,7 @@ export interface SubscriberAnalytics {
   totalActive: number;
   newThisPeriod: number;
   unsubscribedThisPeriod: number;
-  growthRate: number | null; // % change vs previous equivalent period; null for "all"
+  growthRate: number | null;
 
   // Charts
   growth: GrowthDataPoint[];
@@ -224,4 +224,13 @@ export interface SubscriberAnalytics {
   topCountries: { country: string; count: number }[];
   deviceBreakdown: { mobile: number; tablet: number; desktop: number; unknown: number };
   topTimezones: { timezone: string; count: number }[];
+
+  // NEW
+  topOS: { os: string; count: number }[];
+  subscriberAge: {
+    seedlings: number;   // active subscribers, createdAt within last 30 days
+    sprouts: number;     // active subscribers, createdAt 30–90 days ago
+    saplings: number;    // active subscribers, createdAt 90–180 days ago
+    evergreens: number;  // active subscribers, createdAt more than 180 days ago
+  };
 }

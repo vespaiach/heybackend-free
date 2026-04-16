@@ -1,10 +1,15 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { auth } from "@/auth";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { subscriberService, tenantService } from "@/lib/domain";
+import { subscriberService } from "@/lib/domain";
+import { getWebsite } from "@/lib/route-helpers";
 import { SubscribersTable } from "./_components/subscribers-table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -16,10 +21,8 @@ export default async function SubscribersPage({
   params: Promise<{ websiteId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
+  const website = await getWebsite((await params).websiteId);
 
-  const { websiteId } = await params;
   const sp = await searchParams;
   const page = Math.max(1, parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
   const pageSizeRaw = parseInt(typeof sp.pageSize === "string" ? sp.pageSize : "20", 10);
@@ -44,35 +47,27 @@ export default async function SubscribersPage({
     .map((s) => s.trim())
     .filter(Boolean);
 
-  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
-
-  if (!tenant) redirect("/onboarding");
-
-  const resolvedId = tenant.websites.find((w) => w.id === websiteId)?.id;
-
   let subscribers: import("@/lib/domain/types").Subscriber[] = [];
   let total = 0;
   let availableTags: { id: string; name: string; color: string | null; description: string | null }[] = [];
 
-  if (resolvedId) {
-    const [result, tags] = await Promise.all([
-      subscriberService.listSubscribers({
-        websiteId: resolvedId,
-        q: q || undefined,
-        status,
-        sortField,
-        sortDir,
-        page,
-        pageSize,
-        tags: selectedTagIds.length > 0 ? selectedTagIds : undefined,
-      }),
-      subscriberService.getTagsForWebsite(resolvedId),
-    ]);
+  const [result, tags] = await Promise.all([
+    subscriberService.listSubscribers({
+      websiteId: website.id,
+      q: q || undefined,
+      status,
+      sortField,
+      sortDir,
+      page,
+      pageSize,
+      tags: selectedTagIds.length > 0 ? selectedTagIds : undefined,
+    }),
+    subscriberService.getTagsForWebsite(website.id),
+  ]);
 
-    subscribers = result.subscribers;
-    total = result.total;
-    availableTags = tags;
-  }
+  subscribers = result.subscribers;
+  total = result.total;
+  availableTags = tags;
 
   return (
     <>
@@ -81,6 +76,8 @@ export default async function SubscribersPage({
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
+            <BreadcrumbItem>{website.name}</BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>Subscribers</BreadcrumbPage>
             </BreadcrumbItem>
@@ -90,7 +87,7 @@ export default async function SubscribersPage({
       <main className="flex-1 p-4">
         <Suspense>
           <SubscribersTable
-            selectedWebsiteId={resolvedId ?? ""}
+            selectedWebsiteId={website.id}
             subscribers={subscribers}
             total={total}
             page={page}

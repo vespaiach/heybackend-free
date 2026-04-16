@@ -1,5 +1,3 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -9,8 +7,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { subscriberService, tenantService } from "@/lib/domain";
+import { subscriberService } from "@/lib/domain";
 import type { AnalyticsRange } from "@/lib/domain/types";
+import { getWebsite } from "@/lib/route-helpers";
 import { CountriesCard } from "./_components/countries-card";
 import { DevicesPlatformsCard } from "./_components/devices-platforms-card";
 import { GrowthChart } from "./_components/growth-chart";
@@ -33,15 +32,8 @@ export default async function SubscriberAnalyticsPage({
   params: Promise<{ websiteId: string }>;
   searchParams: Promise<{ range?: string }>;
 }) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-
-  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
-  if (!tenant) redirect("/onboarding");
-
   const { websiteId } = await params;
-  const website = tenant.websites.find((w) => w.id === websiteId);
-  if (!website) redirect(`/dashboard/${tenant.websites[0]?.id ?? ""}/subscriber-analytics`);
+  const website = await getWebsite(websiteId);
 
   const { range: rawRange } = await searchParams;
   const range: AnalyticsRange = VALID_RANGES.includes(rawRange as AnalyticsRange)
@@ -52,7 +44,7 @@ export default async function SubscriberAnalyticsPage({
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
+      <header className="border-b flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
         <div className="flex items-center gap-2 px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
@@ -68,27 +60,32 @@ export default async function SubscriberAnalyticsPage({
         </div>
       </header>
 
-      <div className="flex flex-col gap-6 p-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Analytics</h1>
+      <main className="flex-1 p-4">
+        <div className="flex flex-col md:flex-row items-start md:items-end md:justify-between gap-2 mb-5">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
+            <p className="text-muted-foreground">Monitor your audience growth and engagement trends.</p>
+          </div>
           <RangeSelector />
         </div>
 
-        <GrowthChart data={analytics.growth} rangeLabel={RANGE_LABELS[range]} />
+        <div className="flex flex-col gap-4">
+          <GrowthChart data={analytics.growth} rangeLabel={RANGE_LABELS[range]} />
 
-        <StatCards
-          totalActive={analytics.totalActive}
-          newThisPeriod={analytics.newThisPeriod}
-          unsubscribedThisPeriod={analytics.unsubscribedThisPeriod}
-          growthRate={analytics.growthRate}
-        />
+          <StatCards
+            totalActive={analytics.totalActive}
+            newThisPeriod={analytics.newThisPeriod}
+            unsubscribedThisPeriod={analytics.unsubscribedThisPeriod}
+            growthRate={analytics.growthRate}
+          />
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-          <CountriesCard countries={analytics.topCountries} />
-          <DevicesPlatformsCard deviceBreakdown={analytics.deviceBreakdown} topOS={analytics.topOS} />
-          <SubscriberAgeCard subscriberAge={analytics.subscriberAge} totalActive={analytics.totalActive} />
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <CountriesCard countries={analytics.topCountries} />
+            <DevicesPlatformsCard deviceBreakdown={analytics.deviceBreakdown} topOS={analytics.topOS} />
+            <SubscriberAgeCard subscriberAge={analytics.subscriberAge} totalActive={analytics.totalActive} />
+          </div>
         </div>
-      </div>
+      </main>
     </>
   );
 }

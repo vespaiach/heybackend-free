@@ -84,5 +84,15 @@ describe("Contact List Actions", () => {
 
       expect(result.error).toBe("Unauthorized");
     });
+
+    it("returns error if contact not found", async () => {
+      vi.mocked(mockAuth).mockResolvedValue({
+        user: { id: testUserId },
+      } as any);
+
+      const result = await markContactAsRead("nonexistent-id");
+
+      expect(result.error).toBeDefined();
+    });
   });
 });

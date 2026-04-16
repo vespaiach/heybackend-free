@@ -35,7 +35,8 @@ export interface ContactSubmitData {
 }
 
 // ─── In-memory token cache ────────────────────────────────────────────────────
-// Reuse the same cache as subscribe so multiple form types share tokens efficiently.
+// Keep a module-local cache keyed by websiteId to avoid re-fetching contact
+// tokens on repeated submissions from the same page load.
 // Refresh the token 60 s before it actually expires to avoid a race where the
 // token is valid at cache-read time but expires before the contact POST lands.
 

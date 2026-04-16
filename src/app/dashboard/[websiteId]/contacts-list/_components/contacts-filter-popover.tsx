@@ -1,62 +1,76 @@
 "use client";
 
-import { FilterIcon } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { SlidersHorizontalIcon } from "lucide-react";
+import { Select as RSelect } from "radix-ui";
+import * as React from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-interface ContactsFilterPopoverProps {
-  availableCountries: string[];
-  onFilterChange: () => void;
+export type ContactReadStatus = "all" | "read" | "unread";
+
+export interface ContactFilterValues {
+  query: string;
+  company: string; // "__all__" means no filter
+  readStatus: ContactReadStatus;
 }
 
-export function ContactsFilterPopover({ availableCountries, onFilterChange }: ContactsFilterPopoverProps) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
-  const [country, setCountry] = useState(searchParams.get("country") ?? "__all__");
-  const [readStatus, setReadStatus] = useState(searchParams.get("readStatus") ?? "all");
+interface ContactsFilterPopoverProps {
+  availableCompanies: string[];
+  currentFilters: ContactFilterValues;
+  total: number;
+  hasActiveFilters: boolean;
+  onApply: (filters: ContactFilterValues) => void;
+  onReset: () => void;
+}
 
-  const searchInputId = "search-input";
-  const countrySelectId = "country-select";
-  const readStatusSelectId = "read-status-select";
+export function ContactsFilterPopover({
+  availableCompanies,
+  currentFilters,
+  total,
+  hasActiveFilters,
+  onApply,
+  onReset,
+}: ContactsFilterPopoverProps) {
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [draft, setDraft] = React.useState<ContactFilterValues>(currentFilters);
+
+  // Re-sync draft when popover opens or currentFilters changes
+  React.useEffect(() => {
+    if (isOpen) {
+      setDraft(currentFilters);
+    }
+  }, [isOpen, currentFilters]);
 
   const handleApply = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (search) params.set("q", search);
-    else params.delete("q");
-    if (country && country !== "__all__") params.set("country", country);
-    else params.delete("country");
-    if (readStatus !== "all") params.set("readStatus", readStatus);
-    else params.delete("readStatus");
-    params.set("page", "1");
-
-    router.push(`?${params.toString()}`);
-    onFilterChange();
+    onApply(draft);
+    setIsOpen(false);
   };
 
-  const handleClear = () => {
-    setSearch("");
-    setCountry("__all__");
-    setReadStatus("all");
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("q");
-    params.delete("country");
-    params.delete("readStatus");
-    params.set("page", "1");
-    router.push(`?${params.toString()}`);
-    onFilterChange();
+  const handleReset = () => {
+    onReset();
+    setIsOpen(false);
   };
+
+  const searchInputId = "contacts-search-input";
+  const companySelectId = "contacts-company-select";
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
-          <FilterIcon className="mr-2 h-4 w-4" />
+        <Button variant="outline" size="sm" className="gap-2 relative">
+          <SlidersHorizontalIcon className="h-4 w-4" />
           Filters
+          {hasActiveFilters && (
+            <Badge variant="secondary" className="ml-0.5 rounded-full px-1.5 text-xs font-normal">
+              {total}
+            </Badge>
+          )}
+          {hasActiveFilters && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-primary" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72">
@@ -68,23 +82,25 @@ export function ContactsFilterPopover({ availableCountries, onFilterChange }: Co
             <Input
               id={searchInputId}
               placeholder="Name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              value={draft.query}
+              onChange={(e) => setDraft((prev) => ({ ...prev, query: e.target.value }))}
               className="mt-1"
             />
           </div>
 
           <div>
-            <label htmlFor={countrySelectId} className="text-sm font-medium">
-              Country
+            <label htmlFor={companySelectId} className="text-sm font-medium">
+              Company
             </label>
-            <Select value={country} onValueChange={setCountry}>
-              <SelectTrigger id={countrySelectId} className="mt-1">
-                <SelectValue placeholder="Select country" />
+            <Select
+              value={draft.company}
+              onValueChange={(value) => setDraft((prev) => ({ ...prev, company: value }))}>
+              <SelectTrigger id={companySelectId} className="mt-1">
+                <SelectValue placeholder="Select company" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All Countries</SelectItem>
-                {availableCountries.map((c) => (
+                <SelectItem value="__all__">All Companies</SelectItem>
+                {availableCompanies.map((c) => (
                   <SelectItem key={c} value={c}>
                     {c}
                   </SelectItem>
@@ -94,28 +110,43 @@ export function ContactsFilterPopover({ availableCountries, onFilterChange }: Co
           </div>
 
           <div>
-            <label htmlFor={readStatusSelectId} className="text-sm font-medium">
-              Read Status
-            </label>
-            <Select value={readStatus} onValueChange={setReadStatus}>
-              <SelectTrigger id={readStatusSelectId} className="mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="read">Read</SelectItem>
-                <SelectItem value="unread">Unread</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label className="text-sm font-medium">Read Status</Label>
+            <RadioGroup
+              value={draft.readStatus}
+              onValueChange={(value) =>
+                setDraft((prev) => ({ ...prev, readStatus: value as ContactReadStatus }))
+              }
+              className="mt-2 space-y-2">
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="all" id="status-all" />
+                <Label htmlFor="status-all" className="font-normal">
+                  All
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="read" id="status-read" />
+                <Label htmlFor="status-read" className="font-normal">
+                  Read
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="unread" id="status-unread" />
+                <Label htmlFor="status-unread" className="font-normal">
+                  Unread
+                </Label>
+              </div>
+            </RadioGroup>
           </div>
 
           <div className="flex gap-2">
             <Button size="sm" onClick={handleApply}>
               Apply
             </Button>
-            <Button size="sm" variant="outline" onClick={handleClear}>
-              Clear
-            </Button>
+            {hasActiveFilters && (
+              <Button size="sm" variant="outline" onClick={handleReset}>
+                Clear all ×
+              </Button>
+            )}
           </div>
         </div>
       </PopoverContent>

@@ -1,13 +1,16 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { auth } from "@/auth";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { contactRequestService, tenantService } from "@/lib/domain";
+import { contactRequestService } from "@/lib/domain";
 import type { ContactRequest } from "@/lib/domain/types";
-import { ContactsActiveFilters } from "./_components/contacts-active-filters";
-import { ContactsFilterPopover } from "./_components/contacts-filter-popover";
+import { getWebsite } from "@/lib/route-helpers";
 import { ContactsTable } from "./_components/contacts-table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -19,10 +22,8 @@ export default async function ContactsPage({
   params: Promise<{ websiteId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const session = await auth();
-  if (!session?.user?.id) redirect("/login");
-
   const { websiteId } = await params;
+  const website = await getWebsite(websiteId);
   const sp = await searchParams;
 
   // Parse and validate search params
@@ -30,7 +31,7 @@ export default async function ContactsPage({
   const pageSizeRaw = parseInt(typeof sp.pageSize === "string" ? sp.pageSize : "20", 10);
   const pageSize = (PAGE_SIZE_OPTIONS as readonly number[]).includes(pageSizeRaw) ? pageSizeRaw : 20;
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
-  const country = typeof sp.country === "string" ? sp.country : "";
+  const company = typeof sp.company === "string" ? sp.company : "";
   const readStatusRaw = typeof sp.readStatus === "string" ? sp.readStatus : "all";
   const readStatus = (["all", "read", "unread"] as const).includes(readStatusRaw as "all" | "read" | "unread")
     ? (readStatusRaw as "all" | "read" | "unread")
@@ -43,51 +44,42 @@ export default async function ContactsPage({
     : "createdAt";
   const sortDir = sp.sortDir === "asc" ? ("asc" as const) : ("desc" as const);
 
-  // Get tenant and verify website access
-  const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
-
-  if (!tenant) redirect("/onboarding");
-
-  const resolvedId = tenant.websites.find((w) => w.id === websiteId)?.id;
-
   let contacts: ContactRequest[] = [];
   let total = 0;
-  let availableCountries: string[] = [];
+  let availableCompanies: string[] = [];
 
-  if (resolvedId) {
-    const [result, countries] = await Promise.all([
-      contactRequestService.listContactRequests({
-        websiteId: resolvedId,
-        q: q || undefined,
-        country: country || undefined,
-        readStatus,
-        sortField,
-        sortDir,
-        page,
-        pageSize,
-      }),
-      // Get unique countries from all contacts
-      contactRequestService
-        .listContactRequests({
-          websiteId: resolvedId,
-          pageSize: 1000,
-        })
-        .then(
-          (r) =>
-            [
-              ...new Set(
-                r.contactRequests
-                  .map((c) => c.country)
-                  .filter((country): country is string => country !== null),
-              ),
-            ] as string[],
-        ),
-    ]);
+  const [result, companies] = await Promise.all([
+    contactRequestService.listContactRequests({
+      websiteId: (await getWebsite(websiteId)).id,
+      q: q || undefined,
+      company: company || undefined,
+      readStatus,
+      sortField,
+      sortDir,
+      page,
+      pageSize,
+    }),
+    // Get unique companies from all contacts
+    contactRequestService
+      .listContactRequests({
+        websiteId: (await getWebsite(websiteId)).id,
+        pageSize: 1000,
+      })
+      .then(
+        (r) =>
+          [
+            ...new Set(
+              r.contactRequests
+                .map((c) => c.company)
+                .filter((company): company is string => company !== null),
+            ),
+          ] as string[],
+      ),
+  ]);
 
-    contacts = result.contactRequests;
-    total = result.total;
-    availableCountries = countries;
-  }
+  contacts = result.contactRequests;
+  total = result.total;
+  availableCompanies = companies;
 
   return (
     <>
@@ -96,6 +88,8 @@ export default async function ContactsPage({
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
+            <BreadcrumbItem>{website.name}</BreadcrumbItem>
+            <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbPage>Contacts</BreadcrumbPage>
             </BreadcrumbItem>
@@ -104,23 +98,18 @@ export default async function ContactsPage({
       </header>
 
       <main className="flex-1 p-4">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">Contacts</h1>
-          <ContactsFilterPopover availableCountries={availableCountries} onFilterChange={() => {}} />
-        </div>
-
-        <ContactsActiveFilters search={{ q, readStatus }} country={country} onRemoveFilter={() => {}} />
-
         <Suspense fallback={<div>Loading...</div>}>
           <ContactsTable
-            selectedWebsiteId={resolvedId ?? ""}
+            selectedWebsiteId={(await getWebsite(websiteId)).id}
             contacts={contacts}
             total={total}
             page={page}
             pageSize={pageSize}
+            search={{ q, readStatus }}
+            company={company}
             sortField={sortField}
             sortDir={sortDir}
-            availableCountries={availableCountries}
+            availableCompanies={availableCompanies}
           />
         </Suspense>
       </main>

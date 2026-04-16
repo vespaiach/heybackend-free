@@ -35,7 +35,7 @@ const data = (websiteId: string) => ({
   contacts: [
     {
       title: "Contacts",
-      url: "/dashboard/contacts",
+      url: `/dashboard/${websiteId}/contacts-list`,
       icon: <MessageSquareIcon />,
       isActive: false,
       items: [],

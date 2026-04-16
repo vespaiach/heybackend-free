@@ -46,4 +46,39 @@ describe("ContactsTable", () => {
     expect(screen.getByText("john@example.com")).toBeInTheDocument();
     expect(screen.getByText("US")).toBeInTheDocument();
   });
+
+  it('shows "Unread" badge for unread contacts', () => {
+    render(
+      <ContactsTable
+        selectedWebsiteId="site1"
+        contacts={mockContacts}
+        total={1}
+        page={1}
+        pageSize={20}
+        availableCountries={[]}
+      />,
+    );
+
+    expect(screen.getByText("Unread")).toBeInTheDocument();
+  });
+
+  it("shows read date for read contacts", () => {
+    const readContact = {
+      ...mockContacts[0],
+      readAt: new Date("2026-04-15"),
+    };
+
+    render(
+      <ContactsTable
+        selectedWebsiteId="site1"
+        contacts={[readContact]}
+        total={1}
+        page={1}
+        pageSize={20}
+        availableCountries={[]}
+      />,
+    );
+
+    expect(screen.getByText(/read on/i)).toBeInTheDocument();
+  });
 });

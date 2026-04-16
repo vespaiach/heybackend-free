@@ -131,6 +131,8 @@ src/
 - Prisma client singleton is in `src/lib/prisma.ts` — always import from there, never instantiate directly
 - Schema is in `prisma/schema.prisma` — run `npm run db:generate` after schema changes
 - Use `npm run db:migrate` for migrations in development; `npm run db:push` for quick schema sync without a migration file
+- When models change run `npx prisma generate` to create the type-safe API
+- Don't bypasses Prisma's type safety, reuse it as much as possible
 
 ### Authentication
 - Auth is handled by **NextAuth v5** — config is in `src/auth.ts`

@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import type {
   ContactRequest,
   ContactRequestEnrichment,
@@ -5,7 +6,6 @@ import type {
   ListContactRequestsFilter,
   ListContactRequestsResult,
 } from "@/lib/domain/types";
-import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { ContactRequestService } from "./contact-request-service.interface";
 
@@ -82,8 +82,7 @@ export class PrismaContactRequestService implements ContactRequestService {
       country: "country",
     } satisfies Record<string, keyof Prisma.ContactRequestOrderByWithRelationInput>;
 
-    const sortField =
-      sortableFields[filter.sortField ?? "createdAt"] ?? sortableFields.createdAt;
+    const sortField = sortableFields[filter.sortField ?? "createdAt"] ?? sortableFields.createdAt;
     const sortDir: Prisma.SortOrder = filter.sortDir === "asc" ? "asc" : "desc";
     const orderBy: Prisma.ContactRequestOrderByWithRelationInput = {
       [sortField]: sortDir,

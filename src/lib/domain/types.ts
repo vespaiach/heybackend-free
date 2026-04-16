@@ -192,7 +192,7 @@ export interface ListContactRequestsFilter {
   toDate?: string;
   readStatus?: "all" | "read" | "unread";
   country?: string;
-  sortField?: "name" | "createdAt";
+  sortField?: "name" | "email" | "country" | "createdAt";
   sortDir?: "asc" | "desc";
   page?: number;
   pageSize?: number;

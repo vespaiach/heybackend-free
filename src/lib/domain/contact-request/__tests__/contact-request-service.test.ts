@@ -7,6 +7,7 @@ vi.mock("@/lib/prisma", () => ({
     contactRequest: {
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
       findMany: vi.fn(),
       findUnique: vi.fn(),
       count: vi.fn(),
@@ -510,103 +511,31 @@ describe("ContactRequestService", () => {
 
   describe("markContactAsRead", () => {
     it("sets readAt to current timestamp", async () => {
-      const testDate = new Date();
-      vi.mocked(prisma.contactRequest.findUnique).mockResolvedValue({
-        id: "contact_123",
-        websiteId: testWebsiteId,
-        email: "test@example.com",
-        name: "John Doe",
-        message: "Hello",
-        company: null,
-        phone: null,
-        metadata: null,
-        country: null,
-        region: null,
-        city: null,
-        timezone: null,
-        os: null,
-        deviceType: null,
-        browser: null,
-        createdAt: new Date(),
-        readAt: null,
-        website: {
-          id: testWebsiteId,
-          tenant: {
-            id: testTenantId,
-          },
-        },
-      } as any);
-
-      vi.mocked(prisma.contactRequest.update).mockResolvedValue({
-        id: "contact_123",
-        websiteId: testWebsiteId,
-        email: "test@example.com",
-        name: "John Doe",
-        message: "Hello",
-        company: null,
-        phone: null,
-        metadata: null,
-        country: null,
-        region: null,
-        city: null,
-        timezone: null,
-        os: null,
-        deviceType: null,
-        browser: null,
-        createdAt: new Date(),
-        readAt: testDate,
-      } as any);
+      vi.mocked(prisma.contactRequest.updateMany).mockResolvedValue({ count: 1 });
 
       await contactRequestService.markContactAsRead("contact_123", testTenantId);
 
-      expect(prisma.contactRequest.update).toHaveBeenCalled();
-      const updateCall = vi.mocked(prisma.contactRequest.update).mock.calls[0]?.[0];
-      expect(updateCall?.where.id).toBe("contact_123");
-      expect(updateCall?.data.readAt).not.toBeNull();
+      expect(prisma.contactRequest.updateMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({ id: "contact_123" }),
+          data: expect.objectContaining({ readAt: expect.any(Date) }),
+        }),
+      );
     });
 
     it("throws if contact does not belong to tenant", async () => {
-      const otherTenantId = "tenant_other_123";
-
-      vi.mocked(prisma.contactRequest.findUnique).mockResolvedValue({
-        id: "contact_123",
-        websiteId: testWebsiteId,
-        email: "test@example.com",
-        name: "John",
-        message: "Hello",
-        company: null,
-        phone: null,
-        metadata: null,
-        country: null,
-        region: null,
-        city: null,
-        timezone: null,
-        os: null,
-        deviceType: null,
-        browser: null,
-        createdAt: new Date(),
-        readAt: null,
-        website: {
-          id: testWebsiteId,
-          tenant: {
-            id: otherTenantId,
-          },
-        },
-      } as any);
+      vi.mocked(prisma.contactRequest.updateMany).mockResolvedValue({ count: 0 });
 
       await expect(contactRequestService.markContactAsRead("contact_123", testTenantId)).rejects.toThrow(
         /Contact not found or access denied/,
       );
-
-      // Verify update was never called
-      expect(prisma.contactRequest.update).not.toHaveBeenCalled();
     });
 
     it("throws if contact not found", async () => {
-      vi.mocked(prisma.contactRequest.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.contactRequest.updateMany).mockResolvedValue({ count: 0 });
 
       await expect(contactRequestService.markContactAsRead("nonexistent-id", testTenantId)).rejects.toThrow(
-        /Contact not found/,
+        /Contact not found or access denied/,
       );
     });
   });
@@ -644,6 +573,12 @@ describe("ContactRequestService", () => {
 
       expect(result.contactRequests).toHaveLength(1);
       expect(result.contactRequests[0].email).toBe("unread@example.com");
+
+      const findManyCall = vi.mocked(prisma.contactRequest.findMany).mock.calls[0]?.[0];
+      expect(findManyCall?.where).toMatchObject({ readAt: null });
+
+      const countCall = vi.mocked(prisma.contactRequest.count).mock.calls[0]?.[0];
+      expect(countCall?.where).toMatchObject({ readAt: null });
     });
 
     it("returns only read contacts when readStatus=read", async () => {
@@ -678,6 +613,12 @@ describe("ContactRequestService", () => {
 
       expect(result.contactRequests).toHaveLength(1);
       expect(result.contactRequests[0].email).toBe("read@example.com");
+
+      const findManyCall = vi.mocked(prisma.contactRequest.findMany).mock.calls[0]?.[0];
+      expect(findManyCall?.where).toMatchObject({ readAt: { not: null } });
+
+      const countCall = vi.mocked(prisma.contactRequest.count).mock.calls[0]?.[0];
+      expect(countCall?.where).toMatchObject({ readAt: { not: null } });
     });
 
     it("returns all contacts when readStatus=all", async () => {
@@ -730,6 +671,12 @@ describe("ContactRequestService", () => {
       });
 
       expect(result.contactRequests).toHaveLength(2);
+
+      const findManyCall = vi.mocked(prisma.contactRequest.findMany).mock.calls[0]?.[0];
+      expect(findManyCall?.where).not.toHaveProperty("readAt");
+
+      const countCall = vi.mocked(prisma.contactRequest.count).mock.calls[0]?.[0];
+      expect(countCall?.where).not.toHaveProperty("readAt");
     });
   });
 });

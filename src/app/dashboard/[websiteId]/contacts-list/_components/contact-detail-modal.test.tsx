@@ -4,6 +4,12 @@ import { describe, expect, it, vi } from "vitest";
 import type { ContactRequest } from "@/lib/domain/types";
 import { ContactDetailModal } from "./contact-detail-modal";
 
+const { mockRefresh } = vi.hoisted(() => ({ mockRefresh: vi.fn() }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ refresh: mockRefresh }),
+}));
+
 vi.mock("../actions", () => ({
   markContactAsRead: vi.fn(),
 }));
@@ -65,6 +71,7 @@ describe("ContactDetailModal", () => {
     await userEvent.click(button);
 
     expect(mockMarkContactAsRead).toHaveBeenCalledWith(mockContact.id);
+    expect(mockRefresh).toHaveBeenCalled();
     expect(mockOpenChange).toHaveBeenCalledWith(false);
   });
 });

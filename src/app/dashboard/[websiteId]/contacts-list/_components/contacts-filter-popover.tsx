@@ -1,7 +1,7 @@
 "use client";
 
 import { FilterIcon } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,20 +15,24 @@ interface ContactsFilterPopoverProps {
 
 export function ContactsFilterPopover({ availableCountries, onFilterChange }: ContactsFilterPopoverProps) {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [country, setCountry] = useState("__all__");
-  const [readStatus, setReadStatus] = useState("all");
+  const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const [country, setCountry] = useState(searchParams.get("country") ?? "__all__");
+  const [readStatus, setReadStatus] = useState(searchParams.get("readStatus") ?? "all");
 
   const searchInputId = "search-input";
   const countrySelectId = "country-select";
   const readStatusSelectId = "read-status-select";
 
   const handleApply = () => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams(searchParams.toString());
     if (search) params.set("q", search);
+    else params.delete("q");
     if (country && country !== "__all__") params.set("country", country);
+    else params.delete("country");
     if (readStatus !== "all") params.set("readStatus", readStatus);
-    params.set("page", "1"); // Reset to page 1
+    else params.delete("readStatus");
+    params.set("page", "1");
 
     router.push(`?${params.toString()}`);
     onFilterChange();
@@ -38,7 +42,12 @@ export function ContactsFilterPopover({ availableCountries, onFilterChange }: Co
     setSearch("");
     setCountry("__all__");
     setReadStatus("all");
-    router.push("?page=1");
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("q");
+    params.delete("country");
+    params.delete("readStatus");
+    params.set("page", "1");
+    router.push(`?${params.toString()}`);
     onFilterChange();
   };
 

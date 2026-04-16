@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { ContactRequest } from "@/lib/domain/types";
@@ -12,6 +13,7 @@ interface ContactDetailModalProps {
 }
 
 export function ContactDetailModal({ contact, open, onOpenChange }: ContactDetailModalProps) {
+  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleMarkAsRead = async () => {
@@ -19,6 +21,7 @@ export function ContactDetailModal({ contact, open, onOpenChange }: ContactDetai
     try {
       const result = await markContactAsRead(contact.id);
       if (!result.error) {
+        router.refresh();
         onOpenChange(false);
       }
     } finally {

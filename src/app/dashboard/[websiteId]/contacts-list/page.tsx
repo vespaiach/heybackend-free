@@ -35,6 +35,13 @@ export default async function ContactsPage({
   const readStatus = (["all", "read", "unread"] as const).includes(readStatusRaw as "all" | "read" | "unread")
     ? (readStatusRaw as "all" | "read" | "unread")
     : "all";
+  const sortFieldRaw = typeof sp.sortField === "string" ? sp.sortField : "createdAt";
+  const sortField = (["name", "email", "country", "createdAt"] as const).includes(
+    sortFieldRaw as "name" | "email" | "country" | "createdAt",
+  )
+    ? (sortFieldRaw as "name" | "email" | "country" | "createdAt")
+    : "createdAt";
+  const sortDir = sp.sortDir === "asc" ? ("asc" as const) : ("desc" as const);
 
   // Get tenant and verify website access
   const tenant = await tenantService.getTenantWithWebsitesByUserId(session.user.id);
@@ -54,6 +61,8 @@ export default async function ContactsPage({
         q: q || undefined,
         country: country || undefined,
         readStatus,
+        sortField,
+        sortDir,
         page,
         pageSize,
       }),
@@ -109,6 +118,8 @@ export default async function ContactsPage({
             total={total}
             page={page}
             pageSize={pageSize}
+            sortField={sortField}
+            sortDir={sortDir}
             availableCountries={availableCountries}
           />
         </Suspense>

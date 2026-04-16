@@ -72,7 +72,9 @@ describe("ContactsTable", () => {
 
     render(<ContactsTable {...defaultProps} contacts={[readContact]} />);
 
-    expect(screen.getByText(/read on/i)).toBeInTheDocument();
+    // Check that the read icon is present (there will be a date shown)
+    const svg = screen.getByTitle("Read At");
+    expect(svg).toBeInTheDocument();
   });
 
   it("shows 'No results' when total is 0", () => {

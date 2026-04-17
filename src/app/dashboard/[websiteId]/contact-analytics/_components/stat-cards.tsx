@@ -30,8 +30,7 @@ export function StatCards({ total, read, unread }: StatCardsProps) {
             className={cn(
               "flex items-center gap-2 text-sm font-medium",
               unread > 0 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground",
-            )}
-          >
+            )}>
             <InboxIcon className="h-4 w-4" />
             Unread
           </CardTitle>

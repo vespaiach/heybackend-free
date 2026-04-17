@@ -724,9 +724,9 @@ describe("ContactRequestService", () => {
 
     it("builds dailyActivity correctly", async () => {
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
-        { createdAt: new Date("2024-04-01T10:00:00Z"), readAt: null },
-        { createdAt: new Date("2024-04-01T15:00:00Z"), readAt: null },
-        { createdAt: new Date("2024-04-03T08:00:00Z"), readAt: null },
+        { createdAt: new Date(2024, 3, 1, 10, 0, 0), readAt: null },
+        { createdAt: new Date(2024, 3, 1, 15, 0, 0), readAt: null },
+        { createdAt: new Date(2024, 3, 3, 8, 0, 0), readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
       vi.mocked(prisma.contactRequest.count)

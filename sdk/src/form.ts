@@ -22,8 +22,10 @@ function getFieldValue(form: HTMLFormElement, name: string): string | undefined 
 }
 
 function isValidEmail(email: string): boolean {
-  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-  return emailRegex.test(email);
+  const input = document.createElement("input");
+  input.type = "email";
+  input.value = email;
+  return input.checkValidity();
 }
 
 export function bindSubscriberForm(

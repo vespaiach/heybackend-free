@@ -1,4 +1,5 @@
 import type {
+  ContactAnalytics,
   ContactRequest,
   ContactRequestEnrichment,
   CreateContactRequestInput,
@@ -34,4 +35,10 @@ export interface ContactRequestService {
    * Verifies ownership via tenantId.
    */
   markContactAsRead(contactRequestId: string, tenantId: string): Promise<void>;
+
+  /**
+   * Returns all-time analytics for a website's contact requests:
+   * stat totals, daily activity heatmap, monthly trend + MoM change, company breakdown.
+   */
+  getContactAnalytics(websiteId: string): Promise<ContactAnalytics>;
 }

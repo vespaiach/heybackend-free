@@ -1,71 +1,106 @@
 "use client";
 
-import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
-type DayData = { date: string; count: number };
-type Props = { data: DayData[] };
-
-const DAYS_IN_YEAR = 365;
-
-function getDayColor(count: number): string {
-  if (count === 0) return "bg-muted";
-  if (count <= 2) return "bg-green-200 dark:bg-green-900";
-  if (count <= 5) return "bg-green-400 dark:bg-green-700";
-  if (count <= 10) return "bg-green-600 dark:bg-green-500";
-  return "bg-green-800 dark:bg-green-300";
+interface ActivityHeatmapProps {
+  dailyActivity: { date: string; count: number }[];
 }
 
-export function ActivityHeatmap({ data }: Props) {
-  const grid = useMemo(() => {
-    const map = new Map(data.map((d) => [d.date, d.count]));
-    const today = new Date();
-    const days: { date: string; count: number }[] = [];
-    for (let i = DAYS_IN_YEAR - 1; i >= 0; i--) {
-      const d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
-      const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-      days.push({ date, count: map.get(date) ?? 0 });
+function getIntensityClass(count: number): string {
+  if (count === 0) return "bg-muted opacity-40";
+  if (count <= 2) return "bg-primary opacity-30";
+  if (count <= 6) return "bg-primary opacity-60";
+  return "bg-primary opacity-100";
+}
+
+function buildGrid(): string[] {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(today);
+  start.setDate(today.getDate() - 370);
+  const cells: string[] = [];
+  for (let i = 0; i < 371; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    cells.push(`${y}-${m}-${day}`);
+  }
+  return cells;
+}
+
+function buildMonthLabels(cells: string[]): { label: string; colIndex: number }[] {
+  const labels: { label: string; colIndex: number }[] = [];
+  let lastMonth = "";
+  for (let i = 0; i < cells.length; i++) {
+    const month = cells[i].slice(0, 7);
+    if (month !== lastMonth) {
+      lastMonth = month;
+      const colIndex = Math.floor(i / 7);
+      const label = new Date(`${cells[i]}T00:00:00`).toLocaleDateString("en-US", { month: "short" });
+      labels.push({ label, colIndex });
     }
-    return days;
-  }, [data]);
+  }
+  return labels;
+}
+
+export function ActivityHeatmap({ dailyActivity }: ActivityHeatmapProps) {
+  const countMap = new Map(dailyActivity.map(({ date, count }) => [date, count]));
+  const cells = buildGrid();
+  const monthLabels = buildMonthLabels(cells);
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-sm font-medium">Submission Activity</CardTitle>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-base">Submission Activity</CardTitle>
       </CardHeader>
-      <CardContent>
-        <TooltipProvider>
-          <table aria-label="Submission activity heatmap" className="border-separate border-spacing-[3px]">
-            <tbody>
-              {Array.from({ length: 7 }, (_, row) => (
-                <tr key={row}>
-                  {Array.from({ length: Math.ceil(DAYS_IN_YEAR / 7) }, (_, col) => {
-                    const idx = col * 7 + row;
-                    if (idx >= grid.length) return <td key={col} className="h-3 w-3" />;
-                    const { date, count } = grid[idx];
-                    return (
-                      <Tooltip key={col}>
-                        <TooltipTrigger asChild>
-                          <td
-                            aria-label={`${date}: ${count} submission${count !== 1 ? "s" : ""}`}
-                            className={`h-3 w-3 rounded-sm ${getDayColor(count)}`}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            {date}: {count} submission{count !== 1 ? "s" : ""}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </TooltipProvider>
+      <CardContent className="overflow-x-auto">
+        <div
+          className="relative mb-1"
+          style={{ display: "grid", gridTemplateColumns: "repeat(53, 12px)", gap: "2px" }}>
+          {monthLabels.map(({ label, colIndex }) => (
+            <span
+              key={label + colIndex}
+              className="text-[10px] text-muted-foreground"
+              style={{ gridColumn: colIndex + 1 }}>
+              {label}
+            </span>
+          ))}
+        </div>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(53, 12px)",
+            gridTemplateRows: "repeat(7, 12px)",
+            gridAutoFlow: "column",
+            gap: "2px",
+          }}>
+          {cells.map((date) => {
+            const count = countMap.get(date) ?? 0;
+            return (
+              <div
+                key={date}
+                data-date={date}
+                title={`${date}: ${count} submission${count !== 1 ? "s" : ""}`}
+                className={cn("rounded-sm", getIntensityClass(count))}
+                style={{ width: 12, height: 12 }}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
+          <span>Less</span>
+          {[0, 1, 3, 7].map((level) => (
+            <div
+              key={level}
+              className={cn("rounded-sm", getIntensityClass(level))}
+              style={{ width: 12, height: 12 }}
+            />
+          ))}
+          <span>More</span>
+        </div>
       </CardContent>
     </Card>
   );

@@ -11,7 +11,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { type FormConfig, generateFormCode } from "./form-generator";
-import { FormPreview } from "./form-preview";
 
 interface AIAssistantProps {
   websiteId: string;
@@ -106,51 +105,44 @@ export function AIAssistant({ websiteId }: AIAssistantProps) {
 
   if (generatedCode) {
     return (
-      <div className="grid grid-cols-2 gap-6">
-        <Card className="p-6">
-          <div className="mb-6">
-            <h3 className="font-semibold">Form Ready!</h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              I've generated your subscriber form code. Copy the code and paste it into your website.
-            </p>
-          </div>
-
-          <div className="space-y-2 text-sm mb-6">
-            <p className="font-medium">Your setup:</p>
-            <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-              <li>
-                Fields: {answers.fields === "email-only" ? "Email only" : "Email, First Name, Last Name"}
-              </li>
-              <li>
-                Success:{" "}
-                {answers.successBehavior.type === "redirect"
-                  ? `Redirect to ${answers.successBehavior.url}`
-                  : "Show inline message"}
-              </li>
-            </ul>
-          </div>
-
-          <div className="flex gap-2">
-            <Button onClick={handleCopyCode} className="flex-1">
-              {copiedCode ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-              {copiedCode ? "Copied!" : "Copy Code"}
-            </Button>
-            <Button onClick={handleStartOver} variant="outline" className="flex-1">
-              Create Another
-            </Button>
-          </div>
-        </Card>
-
-        <div className="space-y-6">
-          <FormPreview html={generatedCode.split("<script")[0]} />
-          <Card className="p-6">
-            <p className="text-xs font-semibold text-muted-foreground mb-2">Code to Copy</p>
-            <pre className="bg-slate-900 text-slate-100 p-4 rounded-md overflow-x-auto text-xs">
-              <code>{generatedCode}</code>
-            </pre>
-          </Card>
+      <Card className="p-6">
+        <div className="mb-6">
+          <h3 className="font-semibold">You're all set! 🎉</h3>
+          <p className="text-sm text-muted-foreground mt-2">
+            Copy the code below and paste it into your website. The form will start collecting subscribers.
+          </p>
         </div>
-      </div>
+
+        <div className="space-y-2 text-sm mb-6">
+          <p className="font-medium">Your setup:</p>
+          <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+            <li>Fields: {answers.fields === "email-only" ? "Email only" : "Email, First Name, Last Name"}</li>
+            <li>
+              Success:{" "}
+              {answers.successBehavior.type === "redirect"
+                ? `Redirect to ${answers.successBehavior.url}`
+                : "Show inline message"}
+            </li>
+          </ul>
+        </div>
+
+        <div className="mb-6">
+          <p className="text-xs font-semibold text-muted-foreground mb-2">Code</p>
+          <pre className="bg-slate-900 text-slate-100 p-4 rounded-md overflow-x-auto text-xs">
+            <code>{generatedCode}</code>
+          </pre>
+        </div>
+
+        <div className="flex gap-2">
+          <Button onClick={handleCopyCode} className="flex-1">
+            {copiedCode ? <Check className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
+            {copiedCode ? "Copied!" : "Copy Code"}
+          </Button>
+          <Button onClick={handleStartOver} variant="outline" className="flex-1">
+            Create Another
+          </Button>
+        </div>
+      </Card>
     );
   }
 

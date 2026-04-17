@@ -35,11 +35,11 @@ describe("GET /api/[websiteId]/sdk.js", () => {
     expect(res.headers.get("content-type")).toBe("application/javascript");
   });
 
-  it("replaces __HB_WEBSITE_ID__ placeholder with the real websiteId", async () => {
+  it("returns SDK template as-is (websiteId is derived from URL at runtime)", async () => {
     const res = await GET(new Request("http://localhost"), params());
     const text = await res.text();
-    expect(text).toContain(JSON.stringify(WEBSITE_ID));
-    expect(text).not.toContain("__HB_WEBSITE_ID__");
+    // The SDK template contains the placeholder which is resolved at runtime by deriveWebsiteId()
+    expect(text).toContain('var c={websiteId:"__HB_WEBSITE_ID__"}');
   });
 
   it("does NOT inject any secret key into the script", async () => {

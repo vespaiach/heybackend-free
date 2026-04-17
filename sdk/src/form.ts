@@ -21,20 +21,21 @@ function getFieldValue(form: HTMLFormElement, name: string): string | undefined 
   return undefined;
 }
 
-/**
- * Attaches a submit handler to a form (by any CSS selector or element ref).
- * Reads email/firstName/lastName by field name attribute.
- * Disables the submit button while the request is in flight.
- * Returns an unbind function to remove the listener.
- */
-export function bindForm(
+function isValidEmail(email: string): boolean {
+  const input = document.createElement("input");
+  input.type = "email";
+  input.value = email;
+  return input.checkValidity();
+}
+
+export function bindSubscriberForm(
   selector: string | HTMLFormElement,
   config: HbConfig,
   callbacks: BindFormCallbacks,
 ): () => void {
   const form = resolveForm(selector);
   if (!form) {
-    console.warn("__HB.bindForm: form not found for selector", selector);
+    callbacks.onError?.(new Error(`__HB.bindSubscriberForm: form not found for selector ${selector}`));
     return () => {};
   }
 
@@ -45,7 +46,10 @@ export function bindForm(
     e.preventDefault();
 
     const email = getFieldValue(resolvedForm, "email");
-    if (!email) return;
+    if (!email) {
+      callbacks.onError?.(new Error("Email is required"));
+      return;
+    }
 
     const data: SubscribeData = {
       email,
@@ -68,13 +72,6 @@ export function bindForm(
   return () => resolvedForm.removeEventListener("submit", handleSubmit);
 }
 
-/**
- * Attaches a submit handler to a contact form (by any CSS selector or element ref).
- * Reads name/email/message (required) and company/phone (optional) by field name attribute.
- * Performs client-side validation before server submission.
- * Disables the submit button while the request is in flight.
- * Returns an unbind function to remove the listener.
- */
 export function bindContactForm(
   selector: string | HTMLFormElement,
   config: HbConfig,
@@ -82,19 +79,12 @@ export function bindContactForm(
 ): () => void {
   const form = resolveForm(selector);
   if (!form) {
-    console.warn("__HB.bindContactForm: form not found for selector", selector);
+    callbacks.onError?.(new Error(`__HB.bindContactForm: form not found for selector ${selector}`));
     return () => {};
   }
 
   const resolvedForm: HTMLFormElement = form;
   const submitButton = resolvedForm.querySelector<HTMLButtonElement | HTMLInputElement>('[type="submit"]');
-
-  // Client-side validation helpers
-  function isValidEmail(email: string): boolean {
-    // Basic email regex
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
 
   function validateContactForm(): { valid: boolean; error?: string } {
     const name = getFieldValue(resolvedForm, "name");

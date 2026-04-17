@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { bindContactForm, bindForm } from "../form";
+import { bindContactForm, bindSubscriberForm } from "../form";
 import { HbError } from "../subscribe";
 
 vi.mock("../subscribe", async (importOriginal) => {
@@ -41,7 +41,7 @@ async function submitForm(form: HTMLFormElement) {
   await new Promise((r) => setTimeout(r, 0));
 }
 
-describe("bindForm()", () => {
+describe("bindSubscriberForm()", () => {
   it("calls coreSubscribe with email from the form", async () => {
     const form = makeForm(`
       <form>
@@ -49,7 +49,7 @@ describe("bindForm()", () => {
         <button type="submit">Go</button>
       </form>
     `);
-    bindForm(form, CONFIG, {});
+    bindSubscriberForm(form, CONFIG, {});
     await submitForm(form);
     expect(coreSubscribe).toHaveBeenCalledWith(
       CONFIG,
@@ -66,7 +66,7 @@ describe("bindForm()", () => {
         <button type="submit">Go</button>
       </form>
     `);
-    bindForm(form, CONFIG, {});
+    bindSubscriberForm(form, CONFIG, {});
     await submitForm(form);
     expect(coreSubscribe).toHaveBeenCalledWith(
       CONFIG,
@@ -78,7 +78,7 @@ describe("bindForm()", () => {
     const form = makeForm(`
       <form><input name="email" value="a@b.com" /><button type="submit">Go</button></form>
     `);
-    bindForm(form, CONFIG, {});
+    bindSubscriberForm(form, CONFIG, {});
     await submitForm(form);
     const data = vi.mocked(coreSubscribe).mock.calls[0][1];
     expect(data.firstName).toBeUndefined();
@@ -89,7 +89,7 @@ describe("bindForm()", () => {
     const form = makeForm(`
       <form><input name="email" value="" /><button type="submit">Go</button></form>
     `);
-    bindForm(form, CONFIG, {});
+    bindSubscriberForm(form, CONFIG, {});
     await submitForm(form);
     expect(coreSubscribe).not.toHaveBeenCalled();
   });
@@ -108,7 +108,7 @@ describe("bindForm()", () => {
     const btn = form.querySelector<HTMLButtonElement>('[type="submit"]');
     if (!btn) throw new Error("Button not found");
 
-    bindForm(form, CONFIG, {});
+    bindSubscriberForm(form, CONFIG, {});
     form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
     await new Promise((r) => setTimeout(r, 0));
 
@@ -123,7 +123,7 @@ describe("bindForm()", () => {
     const form = makeForm(`
       <form><input name="email" value="a@b.com" /><button type="submit">Go</button></form>
     `);
-    bindForm(form, CONFIG, { onSuccess });
+    bindSubscriberForm(form, CONFIG, { onSuccess });
     await submitForm(form);
     expect(onSuccess).toHaveBeenCalledWith({ status: 201 });
   });
@@ -135,7 +135,7 @@ describe("bindForm()", () => {
     const form = makeForm(`
       <form><input name="email" value="a@b.com" /><button type="submit">Go</button></form>
     `);
-    bindForm(form, CONFIG, { onError });
+    bindSubscriberForm(form, CONFIG, { onError });
     await submitForm(form);
     expect(onError).toHaveBeenCalledWith(err);
   });
@@ -144,7 +144,7 @@ describe("bindForm()", () => {
     const form = makeForm(`
       <form id="my-form"><input name="email" value="a@b.com" /><button type="submit">Go</button></form>
     `);
-    bindForm("#my-form", CONFIG, {});
+    bindSubscriberForm("#my-form", CONFIG, {});
     await submitForm(form);
     expect(coreSubscribe).toHaveBeenCalledTimes(1);
   });
@@ -153,7 +153,7 @@ describe("bindForm()", () => {
     const form = makeForm(`
       <form class="newsletter"><input name="email" value="a@b.com" /><button type="submit">Go</button></form>
     `);
-    bindForm("form.newsletter", CONFIG, {});
+    bindSubscriberForm("form.newsletter", CONFIG, {});
     await submitForm(form);
     expect(coreSubscribe).toHaveBeenCalledTimes(1);
   });
@@ -162,16 +162,16 @@ describe("bindForm()", () => {
     const form = makeForm(`
       <form><input name="email" value="a@b.com" /><button type="submit">Go</button></form>
     `);
-    const unbind = bindForm(form, CONFIG, {});
+    const unbind = bindSubscriberForm(form, CONFIG, {});
     unbind();
     await submitForm(form);
     expect(coreSubscribe).not.toHaveBeenCalled();
   });
 
-  it("warns and returns a no-op unbind when selector matches nothing", () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const unbind = bindForm("#nonexistent", CONFIG, {});
-    expect(warnSpy).toHaveBeenCalled();
+  it("calls onError and returns a no-op unbind when selector matches nothing", () => {
+    const onError = vi.fn();
+    const unbind = bindSubscriberForm("#nonexistent", CONFIG, { onError });
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
     expect(unbind).toBeTypeOf("function");
     expect(() => unbind()).not.toThrow();
   });
@@ -388,10 +388,10 @@ describe("bindContactForm()", () => {
     expect(coreContactSubmit).not.toHaveBeenCalled();
   });
 
-  it("warns and returns a no-op unbind when selector matches nothing", () => {
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const unbind = bindContactForm("#nonexistent", CONFIG, {});
-    expect(warnSpy).toHaveBeenCalled();
+  it("calls onError and returns a no-op unbind when selector matches nothing", () => {
+    const onError = vi.fn();
+    const unbind = bindContactForm("#nonexistent", CONFIG, { onError });
+    expect(onError).toHaveBeenCalledWith(expect.any(Error));
     expect(unbind).toBeTypeOf("function");
     expect(() => unbind()).not.toThrow();
   });

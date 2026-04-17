@@ -9,6 +9,24 @@ export interface FormConfig {
   errorMessage: string;
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function serializeForInlineScript(value: string): string {
+  return JSON.stringify(value)
+    .replaceAll("<", "\\u003C")
+    .replaceAll(">", "\\u003E")
+    .replaceAll("&", "\\u0026")
+    .replaceAll("\u2028", "\\u2028")
+    .replaceAll("\u2029", "\\u2029");
+}
+
 export function generateFormPreview(fields: FieldType): string {
   const emailField = `<input type="email" name="email" placeholder="your@email.com" required />`;
 
@@ -37,9 +55,9 @@ export function generateFormCode(config: FormConfig): string {
   let successMessage = "";
 
   if (config.successBehavior.type === "redirect") {
-    successCallback = `window.location.href = '${config.successBehavior.url}';`;
+    successCallback = `window.location.href = ${serializeForInlineScript(config.successBehavior.url)};`;
   } else {
-    successMessage = `<div id="success-message" style="display:none;">${config.successBehavior.message}</div>`;
+    successMessage = `<div id="success-message" style="display:none;">${escapeHtml(config.successBehavior.message)}</div>`;
     successCallback = `
     document.getElementById('${formId}').style.display = 'none';
     document.getElementById('success-message').style.display = 'block';`;
@@ -55,7 +73,7 @@ ${successMessage}
       ${successCallback}
     },
     onError: (err) => {
-      alert('${config.errorMessage}');
+      alert(${serializeForInlineScript(config.errorMessage)});
     }
   });
 </script>`;

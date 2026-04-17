@@ -699,7 +699,8 @@ describe("ContactRequestService", () => {
       expect(result.read).toBe(0);
       expect(result.unread).toBe(0);
       expect(result.momChange).toBeNull();
-      expect(result.monthlyTrend).toEqual([]);
+      expect(result.monthlyTrend).toHaveLength(12);
+      expect(result.monthlyTrend.every((m) => m.count === 0)).toBe(true);
       expect(result.dailyActivity).toEqual([]);
       expect(result.companyBreakdown).toEqual([]);
     });
@@ -736,20 +737,24 @@ describe("ContactRequestService", () => {
       expect(day3?.count).toBe(1);
     });
 
-    it("builds monthlyTrend sorted ascending", async () => {
+    it("builds monthlyTrend with 12 entries, recent months have correct counts", async () => {
+      const now = new Date();
+      const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 10);
+      const currMonthDate = new Date(now.getFullYear(), now.getMonth(), 5);
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
-        { createdAt: new Date("2024-03-10"), readAt: null },
-        { createdAt: new Date("2024-04-05"), readAt: null },
-        { createdAt: new Date("2024-04-20"), readAt: null },
+        { createdAt: prevMonthDate, readAt: null },
+        { createdAt: currMonthDate, readAt: null },
+        { createdAt: currMonthDate, readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
-      expect(result.monthlyTrend).toEqual([
-        { month: "2024-03", count: 1 },
-        { month: "2024-04", count: 2 },
-      ]);
+      expect(result.monthlyTrend).toHaveLength(12);
+      const prevKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, "0")}`;
+      const currKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      expect(result.monthlyTrend.find((m) => m.month === prevKey)?.count).toBe(1);
+      expect(result.monthlyTrend.find((m) => m.month === currKey)?.count).toBe(2);
     });
 
     it("calculates momChange as percentage", async () => {
@@ -768,7 +773,7 @@ describe("ContactRequestService", () => {
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
-      expect(result.momChange).toBeCloseTo(50, 0);
+      expect(result.momChange).toBe(50);
     });
 
     it("returns null momChange when previous month has 0 contacts", async () => {
@@ -817,6 +822,56 @@ describe("ContactRequestService", () => {
 
       const unknown = result.companyBreakdown.find((c) => c.company === "Unknown");
       expect(unknown?.count).toBe(5);
+    });
+
+    it("monthlyTrend always has exactly 12 entries", async () => {
+      prisma.contactRequest.findMany.mockResolvedValue([]);
+      prisma.contactRequest.groupBy.mockResolvedValue([]);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      expect(result.monthlyTrend).toHaveLength(12);
+    });
+
+    it("keeps Unknown separate from Others in company breakdown", async () => {
+      prisma.contactRequest.findMany.mockResolvedValue([]);
+      // 9 named + 1 null → top 8 named + Others (1 named) + Unknown (null)
+      prisma.contactRequest.groupBy.mockResolvedValue([
+        { company: "Alpha", _count: { id: 10 } },
+        { company: "Beta", _count: { id: 9 } },
+        { company: "Gamma", _count: { id: 8 } },
+        { company: "Delta", _count: { id: 7 } },
+        { company: "Epsilon", _count: { id: 6 } },
+        { company: "Zeta", _count: { id: 5 } },
+        { company: "Eta", _count: { id: 4 } },
+        { company: "Theta", _count: { id: 3 } },
+        { company: "Iota", _count: { id: 2 } }, // 9th named → Others
+        { company: null, _count: { id: 7 } }, // null → Unknown (separate)
+      ] as any);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      const others = result.companyBreakdown.find((c) => c.company === "Others");
+      const unknown = result.companyBreakdown.find((c) => c.company === "Unknown");
+      expect(others?.count).toBe(2); // Iota only
+      expect(unknown?.count).toBe(7); // null entry
+      expect(result.companyBreakdown.filter((c) => c.company !== "Others" && c.company !== "Unknown")).toHaveLength(8);
+    });
+
+    it("omits Unknown and Others when their counts are 0", async () => {
+      prisma.contactRequest.findMany.mockResolvedValue([]);
+      // Exactly 3 named, no null
+      prisma.contactRequest.groupBy.mockResolvedValue([
+        { company: "Alpha", _count: { id: 5 } },
+        { company: "Beta", _count: { id: 3 } },
+        { company: "Gamma", _count: { id: 1 } },
+      ] as any);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      expect(result.companyBreakdown.find((c) => c.company === "Others")).toBeUndefined();
+      expect(result.companyBreakdown.find((c) => c.company === "Unknown")).toBeUndefined();
+      expect(result.companyBreakdown).toHaveLength(3);
     });
   });
 });

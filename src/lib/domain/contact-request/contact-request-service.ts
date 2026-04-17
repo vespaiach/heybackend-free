@@ -158,9 +158,12 @@ export class PrismaContactRequestService implements ContactRequestService {
   }
 
   async getContactAnalytics(websiteId: string): Promise<ContactAnalytics> {
+    const now = new Date();
+    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+
     const [rows, companyRows] = await Promise.all([
       prisma.contactRequest.findMany({
-        where: { websiteId },
+        where: { websiteId, createdAt: { gte: oneYearAgo } },
         select: { createdAt: true, readAt: true },
       }),
       prisma.contactRequest.groupBy({
@@ -192,32 +195,45 @@ export class PrismaContactRequestService implements ContactRequestService {
       const key = createdAt.toISOString().slice(0, 7);
       monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + 1);
     }
-    const monthlyTrend = Array.from(monthlyMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([month, count]) => ({ month, count }));
+    const monthlyTrend: { month: string; count: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      monthlyTrend.push({ month, count: monthlyMap.get(month) ?? 0 });
+    }
 
     // MoM change
-    const now = new Date();
     const currentMonth = now.toISOString().slice(0, 7);
     const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const prevMonth = prevDate.toISOString().slice(0, 7);
     const currentCount = monthlyMap.get(currentMonth) ?? 0;
     const prevCount = monthlyMap.get(prevMonth) ?? 0;
-    const momChange = prevCount === 0 ? null : ((currentCount - prevCount) / prevCount) * 100;
+    const momChange = prevCount === 0 ? null : Math.round(((currentCount - prevCount) / prevCount) * 1000) / 10;
 
-    // Company breakdown: top 8 + Others
+    // Company breakdown: top 8 + Others (named only); Unknown (null/empty) kept separate
     const TOP_N = 8;
-    const mapped = companyRows.map((r) => ({
-      company: r.company ?? "Unknown",
-      count: r._count.id,
-    }));
-    let companyBreakdown: { company: string; count: number }[];
-    if (mapped.length > TOP_N) {
-      const top = mapped.slice(0, TOP_N);
-      const othersCount = mapped.slice(TOP_N).reduce((sum, c) => sum + c.count, 0);
-      companyBreakdown = [...top, { company: "Others", count: othersCount }];
+    let unknownCount = 0;
+    const namedMap = new Map<string, number>();
+    for (const r of companyRows) {
+      const name = r.company?.trim() || null;
+      if (!name) {
+        unknownCount += r._count.id;
+      } else {
+        namedMap.set(name, (namedMap.get(name) ?? 0) + r._count.id);
+      }
+    }
+    const namedEntries = Array.from(namedMap.entries()).sort(([, a], [, b]) => b - a);
+
+    const companyBreakdown: { company: string; count: number }[] = [];
+    if (namedEntries.length > TOP_N) {
+      companyBreakdown.push(...namedEntries.slice(0, TOP_N).map(([company, count]) => ({ company, count })));
+      const othersCount = namedEntries.slice(TOP_N).reduce((sum, [, c]) => sum + c, 0);
+      companyBreakdown.push({ company: "Others", count: othersCount });
     } else {
-      companyBreakdown = mapped;
+      companyBreakdown.push(...namedEntries.map(([company, count]) => ({ company, count })));
+    }
+    if (unknownCount > 0) {
+      companyBreakdown.push({ company: "Unknown", count: unknownCount });
     }
 
     return { total, read, unread, momChange, monthlyTrend, dailyActivity, companyBreakdown };

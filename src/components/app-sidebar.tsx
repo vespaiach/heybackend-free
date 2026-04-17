@@ -40,6 +40,13 @@ const data = (websiteId: string) => ({
       isActive: false,
       items: [],
     },
+    {
+      title: "Analytics",
+      url: `/dashboard/${websiteId}/contact-analytics`,
+      icon: <BarChart3 />,
+      isActive: false,
+      items: [],
+    },
   ],
 });
 

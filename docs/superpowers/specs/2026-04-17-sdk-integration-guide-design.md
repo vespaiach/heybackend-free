@@ -19,8 +19,7 @@ src/app/dashboard/[websiteId]/integration/
 ├── _components/
 │   ├── integration-tabs.tsx # Tab switcher (AI vs Code Snippets)
 │   ├── ai-assistant.tsx     # AI chat flow component
-│   ├── code-snippets.tsx    # Developer templates component
-│   └── form-preview.tsx     # Raw HTML form preview
+│   └── code-snippets.tsx    # Developer templates component
 └── __tests__/
     └── integration.test.tsx
 ```

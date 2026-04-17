@@ -236,3 +236,13 @@ export interface SubscriberAnalytics {
     evergreens: number; // active subscribers, createdAt more than 180 days ago
   };
 }
+
+export type ContactAnalytics = {
+  total: number;
+  unread: number;
+  read: number;
+  momChange: number | null;
+  monthlyTrend: { month: string; count: number }[];
+  dailyActivity: { date: string; count: number }[];
+  companyBreakdown: { company: string; count: number }[];
+};

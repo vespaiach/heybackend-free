@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type {
+  ContactAnalytics,
   ContactRequest,
   ContactRequestEnrichment,
   CreateContactRequestInput,
@@ -154,6 +155,90 @@ export class PrismaContactRequestService implements ContactRequestService {
     if (result.count === 0) {
       throw new Error("Contact not found or access denied");
     }
+  }
+
+  async getContactAnalytics(websiteId: string): Promise<ContactAnalytics> {
+    const now = new Date();
+    const oneYearAgo = new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), now.getUTCDate()));
+
+    const [rows, companyRows, total, readCount] = await Promise.all([
+      prisma.contactRequest.findMany({
+        where: { websiteId, createdAt: { gte: oneYearAgo } },
+        select: { createdAt: true },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.contactRequest.groupBy({
+        by: ["company"],
+        where: { websiteId },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+      }),
+      prisma.contactRequest.count({ where: { websiteId } }),
+      prisma.contactRequest.count({ where: { websiteId, readAt: { not: null } } }),
+    ]);
+
+    // Stat totals (all-time)
+    const unread = total - readCount;
+
+    // Daily activity: "YYYY-MM-DD" → count
+    const dailyMap = new Map<string, number>();
+    for (const { createdAt } of rows) {
+      const key = createdAt.toISOString().slice(0, 10);
+      dailyMap.set(key, (dailyMap.get(key) ?? 0) + 1);
+    }
+    const dailyActivity = Array.from(dailyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, count]) => ({ date, count }));
+
+    // Monthly trend: "YYYY-MM" → count
+    const monthlyMap = new Map<string, number>();
+    for (const { createdAt } of rows) {
+      const key = createdAt.toISOString().slice(0, 7);
+      monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + 1);
+    }
+    const monthlyTrend: { month: string; count: number }[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      const month = d.toISOString().slice(0, 7);
+      monthlyTrend.push({ month, count: monthlyMap.get(month) ?? 0 });
+    }
+
+    // MoM change
+    const currentMonth = now.toISOString().slice(0, 7);
+    const prevDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const prevMonth = prevDate.toISOString().slice(0, 7);
+    const currentCount = monthlyMap.get(currentMonth) ?? 0;
+    const prevCount = monthlyMap.get(prevMonth) ?? 0;
+    const momChange =
+      prevCount === 0 ? null : Math.round(((currentCount - prevCount) / prevCount) * 1000) / 10;
+
+    // Company breakdown: top 8 + Others (named only); Unknown (null/empty) kept separate
+    const TOP_N = 8;
+    let unknownCount = 0;
+    const namedMap = new Map<string, number>();
+    for (const r of companyRows) {
+      const name = r.company?.trim() || null;
+      if (!name) {
+        unknownCount += r._count.id;
+      } else {
+        namedMap.set(name, (namedMap.get(name) ?? 0) + r._count.id);
+      }
+    }
+    const namedEntries = Array.from(namedMap.entries()).sort(([, a], [, b]) => b - a);
+
+    const companyBreakdown: { company: string; count: number }[] = [];
+    if (namedEntries.length > TOP_N) {
+      companyBreakdown.push(...namedEntries.slice(0, TOP_N).map(([company, count]) => ({ company, count })));
+      const othersCount = namedEntries.slice(TOP_N).reduce((sum, [, c]) => sum + c, 0);
+      companyBreakdown.push({ company: "Others", count: othersCount });
+    } else {
+      companyBreakdown.push(...namedEntries.map(([company, count]) => ({ company, count })));
+    }
+    if (unknownCount > 0) {
+      companyBreakdown.push({ company: "Unknown", count: unknownCount });
+    }
+
+    return { total, read: readCount, unread, momChange, monthlyTrend, dailyActivity, companyBreakdown };
   }
 
   private mapToContactRequest(

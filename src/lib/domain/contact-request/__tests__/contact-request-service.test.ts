@@ -623,7 +623,6 @@ describe("ContactRequestService", () => {
     });
 
     it("returns all contacts when readStatus=all", async () => {
-
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
         {
           id: "unread_1",
@@ -692,9 +691,7 @@ describe("ContactRequestService", () => {
     it("returns zero stats when there are no contacts", async () => {
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -712,7 +709,7 @@ describe("ContactRequestService", () => {
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
       vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(3)  // total
+        .mockResolvedValueOnce(3) // total
         .mockResolvedValueOnce(1); // readCount
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
@@ -729,9 +726,7 @@ describe("ContactRequestService", () => {
         { createdAt: new Date(2024, 3, 3, 8, 0, 0), readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -751,9 +746,7 @@ describe("ContactRequestService", () => {
         { createdAt: currMonthDate, readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -777,9 +770,7 @@ describe("ContactRequestService", () => {
         { createdAt: now, readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -788,13 +779,9 @@ describe("ContactRequestService", () => {
 
     it("returns null momChange when previous month has 0 contacts", async () => {
       const now = new Date();
-      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
-        { createdAt: now, readAt: null },
-      ] as any);
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([{ createdAt: now, readAt: null }] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -815,9 +802,7 @@ describe("ContactRequestService", () => {
         { company: "Theta", _count: { id: 2 } },
         { company: "Iota", _count: { id: 1 } }, // 9th → Others
       ] as any);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -827,15 +812,13 @@ describe("ContactRequestService", () => {
       expect(result.companyBreakdown[0]).toEqual({ company: "Alpha", count: 10 });
     });
 
-    it("maps null company to \"Unknown\"", async () => {
+    it('maps null company to "Unknown"', async () => {
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([
         { company: null, _count: { id: 5 } },
         { company: "Acme", _count: { id: 3 } },
       ] as any);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -846,9 +829,7 @@ describe("ContactRequestService", () => {
     it("monthlyTrend always has exactly 12 entries", async () => {
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -870,9 +851,7 @@ describe("ContactRequestService", () => {
         { company: "Iota", _count: { id: 2 } }, // 9th named → Others
         { company: null, _count: { id: 7 } }, // null → Unknown (separate)
       ] as any);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -880,7 +859,9 @@ describe("ContactRequestService", () => {
       const unknown = result.companyBreakdown.find((c) => c.company === "Unknown");
       expect(others?.count).toBe(2); // Iota only
       expect(unknown?.count).toBe(7); // null entry
-      expect(result.companyBreakdown.filter((c) => c.company !== "Others" && c.company !== "Unknown")).toHaveLength(8);
+      expect(
+        result.companyBreakdown.filter((c) => c.company !== "Others" && c.company !== "Unknown"),
+      ).toHaveLength(8);
     });
 
     it("omits Unknown and Others when their counts are 0", async () => {
@@ -891,9 +872,7 @@ describe("ContactRequestService", () => {
         { company: "Beta", _count: { id: 3 } },
         { company: "Gamma", _count: { id: 1 } },
       ] as any);
-      vi.mocked(prisma.contactRequest.count)
-        .mockResolvedValueOnce(0)
-        .mockResolvedValueOnce(0);
+      vi.mocked(prisma.contactRequest.count).mockResolvedValueOnce(0).mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 

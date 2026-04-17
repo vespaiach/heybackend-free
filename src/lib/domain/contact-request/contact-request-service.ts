@@ -166,7 +166,7 @@ export class PrismaContactRequestService implements ContactRequestService {
       prisma.contactRequest.findMany({
         where: { websiteId, createdAt: { gte: oneYearAgo } },
         select: { createdAt: true },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: "asc" },
       }),
       prisma.contactRequest.groupBy({
         by: ["company"],
@@ -210,7 +210,8 @@ export class PrismaContactRequestService implements ContactRequestService {
     const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
     const currentCount = monthlyMap.get(currentMonth) ?? 0;
     const prevCount = monthlyMap.get(prevMonth) ?? 0;
-    const momChange = prevCount === 0 ? null : Math.round(((currentCount - prevCount) / prevCount) * 1000) / 10;
+    const momChange =
+      prevCount === 0 ? null : Math.round(((currentCount - prevCount) / prevCount) * 1000) / 10;
 
     // Company breakdown: top 8 + Others (named only); Unknown (null/empty) kept separate
     const TOP_N = 8;

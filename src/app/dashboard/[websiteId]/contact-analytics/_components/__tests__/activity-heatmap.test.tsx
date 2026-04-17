@@ -32,9 +32,7 @@ describe("ActivityHeatmap", () => {
 
   it("applies higher intensity class for a date with many contacts", () => {
     const busyDate = isoDate(5);
-    const { container } = render(
-      <ActivityHeatmap dailyActivity={[{ date: busyDate, count: 10 }]} />,
-    );
+    const { container } = render(<ActivityHeatmap dailyActivity={[{ date: busyDate, count: 10 }]} />);
     const cell = container.querySelector(`[data-date="${busyDate}"]`);
     expect(cell?.className).toContain("bg-primary");
   });

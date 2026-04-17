@@ -160,11 +160,12 @@ export class PrismaContactRequestService implements ContactRequestService {
   async getContactAnalytics(websiteId: string): Promise<ContactAnalytics> {
     const now = new Date();
     const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+    oneYearAgo.setHours(0, 0, 0, 0);
 
-    const [rows, companyRows] = await Promise.all([
+    const [rows, companyRows, total, readCount] = await Promise.all([
       prisma.contactRequest.findMany({
         where: { websiteId, createdAt: { gte: oneYearAgo } },
-        select: { createdAt: true, readAt: true },
+        select: { createdAt: true },
       }),
       prisma.contactRequest.groupBy({
         by: ["company"],
@@ -172,12 +173,13 @@ export class PrismaContactRequestService implements ContactRequestService {
         _count: { id: true },
         orderBy: { _count: { id: "desc" } },
       }),
+      prisma.contactRequest.count({ where: { websiteId } }),
+      prisma.contactRequest.count({ where: { websiteId, readAt: { not: null } } }),
     ]);
 
-    // Stat totals
-    const total = rows.length;
-    const read = rows.filter((r) => r.readAt !== null).length;
-    const unread = total - read;
+    // Stat totals (all-time)
+    const read = readCount;
+    const unread = total - readCount;
 
     // Daily activity: "YYYY-MM-DD" → count
     const dailyMap = new Map<string, number>();

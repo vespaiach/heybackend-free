@@ -692,6 +692,9 @@ describe("ContactRequestService", () => {
     it("returns zero stats when there are no contacts", async () => {
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -706,13 +709,11 @@ describe("ContactRequestService", () => {
     });
 
     it("counts read/unread correctly", async () => {
-      const now = new Date("2024-04-15");
-      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
-        { createdAt: now, readAt: new Date("2024-04-16") },
-        { createdAt: now, readAt: null },
-        { createdAt: now, readAt: null },
-      ] as any);
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(3)  // total
+        .mockResolvedValueOnce(1); // readCount
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -728,6 +729,9 @@ describe("ContactRequestService", () => {
         { createdAt: new Date("2024-04-03T08:00:00Z"), readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -747,6 +751,9 @@ describe("ContactRequestService", () => {
         { createdAt: currMonthDate, readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -770,6 +777,9 @@ describe("ContactRequestService", () => {
         { createdAt: now, readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -782,6 +792,9 @@ describe("ContactRequestService", () => {
         { createdAt: now, readAt: null },
       ] as any);
       vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -802,6 +815,9 @@ describe("ContactRequestService", () => {
         { company: "Theta", _count: { id: 2 } },
         { company: "Iota", _count: { id: 1 } }, // 9th → Others
       ] as any);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -817,6 +833,9 @@ describe("ContactRequestService", () => {
         { company: null, _count: { id: 5 } },
         { company: "Acme", _count: { id: 3 } },
       ] as any);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -825,8 +844,11 @@ describe("ContactRequestService", () => {
     });
 
     it("monthlyTrend always has exactly 12 entries", async () => {
-      prisma.contactRequest.findMany.mockResolvedValue([]);
-      prisma.contactRequest.groupBy.mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -834,9 +856,9 @@ describe("ContactRequestService", () => {
     });
 
     it("keeps Unknown separate from Others in company breakdown", async () => {
-      prisma.contactRequest.findMany.mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
       // 9 named + 1 null → top 8 named + Others (1 named) + Unknown (null)
-      prisma.contactRequest.groupBy.mockResolvedValue([
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([
         { company: "Alpha", _count: { id: 10 } },
         { company: "Beta", _count: { id: 9 } },
         { company: "Gamma", _count: { id: 8 } },
@@ -848,6 +870,9 @@ describe("ContactRequestService", () => {
         { company: "Iota", _count: { id: 2 } }, // 9th named → Others
         { company: null, _count: { id: 7 } }, // null → Unknown (separate)
       ] as any);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
@@ -859,13 +884,16 @@ describe("ContactRequestService", () => {
     });
 
     it("omits Unknown and Others when their counts are 0", async () => {
-      prisma.contactRequest.findMany.mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
       // Exactly 3 named, no null
-      prisma.contactRequest.groupBy.mockResolvedValue([
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([
         { company: "Alpha", _count: { id: 5 } },
         { company: "Beta", _count: { id: 3 } },
         { company: "Gamma", _count: { id: 1 } },
       ] as any);
+      vi.mocked(prisma.contactRequest.count)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await contactRequestService.getContactAnalytics(websiteId);
 

@@ -43,7 +43,7 @@ describe("coreContactSubmit", () => {
     const result = await coreContactSubmit(mockConfig, testData);
     expect(result.status).toBe(201);
     expect(global.fetch).toHaveBeenCalledWith(
-      "https://heybackend.com/api/test_site_123/contact",
+      "https://app.heybackend.com/api/test_site_123/contact",
       expect.objectContaining({
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type {
+  ContactAnalytics,
   ContactRequest,
   ContactRequestEnrichment,
   CreateContactRequestInput,
@@ -154,6 +155,72 @@ export class PrismaContactRequestService implements ContactRequestService {
     if (result.count === 0) {
       throw new Error("Contact not found or access denied");
     }
+  }
+
+  async getContactAnalytics(websiteId: string): Promise<ContactAnalytics> {
+    const [rows, companyRows] = await Promise.all([
+      prisma.contactRequest.findMany({
+        where: { websiteId },
+        select: { createdAt: true, readAt: true },
+      }),
+      prisma.contactRequest.groupBy({
+        by: ["company"],
+        where: { websiteId },
+        _count: { id: true },
+        orderBy: { _count: { id: "desc" } },
+      }),
+    ]);
+
+    // Stat totals
+    const total = rows.length;
+    const read = rows.filter((r) => r.readAt !== null).length;
+    const unread = total - read;
+
+    // Daily activity: "YYYY-MM-DD" → count
+    const dailyMap = new Map<string, number>();
+    for (const { createdAt } of rows) {
+      const key = createdAt.toISOString().slice(0, 10);
+      dailyMap.set(key, (dailyMap.get(key) ?? 0) + 1);
+    }
+    const dailyActivity = Array.from(dailyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, count]) => ({ date, count }));
+
+    // Monthly trend: "YYYY-MM" → count
+    const monthlyMap = new Map<string, number>();
+    for (const { createdAt } of rows) {
+      const key = createdAt.toISOString().slice(0, 7);
+      monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + 1);
+    }
+    const monthlyTrend = Array.from(monthlyMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, count]) => ({ month, count }));
+
+    // MoM change
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7);
+    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonth = prevDate.toISOString().slice(0, 7);
+    const currentCount = monthlyMap.get(currentMonth) ?? 0;
+    const prevCount = monthlyMap.get(prevMonth) ?? 0;
+    const momChange = prevCount === 0 ? null : ((currentCount - prevCount) / prevCount) * 100;
+
+    // Company breakdown: top 8 + Others
+    const TOP_N = 8;
+    const mapped = companyRows.map((r) => ({
+      company: r.company ?? "Unknown",
+      count: r._count.id,
+    }));
+    let companyBreakdown: { company: string; count: number }[];
+    if (mapped.length > TOP_N) {
+      const top = mapped.slice(0, TOP_N);
+      const othersCount = mapped.slice(TOP_N).reduce((sum, c) => sum + c.count, 0);
+      companyBreakdown = [...top, { company: "Others", count: othersCount }];
+    } else {
+      companyBreakdown = mapped;
+    }
+
+    return { total, read, unread, momChange, monthlyTrend, dailyActivity, companyBreakdown };
   }
 
   private mapToContactRequest(

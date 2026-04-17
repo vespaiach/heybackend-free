@@ -11,6 +11,7 @@ vi.mock("@/lib/prisma", () => ({
       findMany: vi.fn(),
       findUnique: vi.fn(),
       count: vi.fn(),
+      groupBy: vi.fn(),
     },
     website: {
       findUnique: vi.fn(),
@@ -622,6 +623,7 @@ describe("ContactRequestService", () => {
     });
 
     it("returns all contacts when readStatus=all", async () => {
+
       vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
         {
           id: "unread_1",
@@ -677,6 +679,144 @@ describe("ContactRequestService", () => {
 
       const countCall = vi.mocked(prisma.contactRequest.count).mock.calls[0]?.[0];
       expect(countCall?.where).not.toHaveProperty("readAt");
+    });
+  });
+
+  describe("getContactAnalytics", () => {
+    const websiteId = "site_1";
+
+    beforeEach(() => {
+      vi.resetAllMocks();
+    });
+
+    it("returns zero stats when there are no contacts", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      expect(result.total).toBe(0);
+      expect(result.read).toBe(0);
+      expect(result.unread).toBe(0);
+      expect(result.momChange).toBeNull();
+      expect(result.monthlyTrend).toEqual([]);
+      expect(result.dailyActivity).toEqual([]);
+      expect(result.companyBreakdown).toEqual([]);
+    });
+
+    it("counts read/unread correctly", async () => {
+      const now = new Date("2024-04-15");
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        { createdAt: now, readAt: new Date("2024-04-16") },
+        { createdAt: now, readAt: null },
+        { createdAt: now, readAt: null },
+      ] as any);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      expect(result.total).toBe(3);
+      expect(result.read).toBe(1);
+      expect(result.unread).toBe(2);
+    });
+
+    it("builds dailyActivity correctly", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        { createdAt: new Date("2024-04-01T10:00:00Z"), readAt: null },
+        { createdAt: new Date("2024-04-01T15:00:00Z"), readAt: null },
+        { createdAt: new Date("2024-04-03T08:00:00Z"), readAt: null },
+      ] as any);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      const day1 = result.dailyActivity.find((d) => d.date === "2024-04-01");
+      const day3 = result.dailyActivity.find((d) => d.date === "2024-04-03");
+      expect(day1?.count).toBe(2);
+      expect(day3?.count).toBe(1);
+    });
+
+    it("builds monthlyTrend sorted ascending", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        { createdAt: new Date("2024-03-10"), readAt: null },
+        { createdAt: new Date("2024-04-05"), readAt: null },
+        { createdAt: new Date("2024-04-20"), readAt: null },
+      ] as any);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      expect(result.monthlyTrend).toEqual([
+        { month: "2024-03", count: 1 },
+        { month: "2024-04", count: 2 },
+      ]);
+    });
+
+    it("calculates momChange as percentage", async () => {
+      // 2 in previous month, 3 in current month → +50%
+      const now = new Date();
+      const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 15);
+
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        { createdAt: prevDate, readAt: null },
+        { createdAt: prevDate, readAt: null },
+        { createdAt: now, readAt: null },
+        { createdAt: now, readAt: null },
+        { createdAt: now, readAt: null },
+      ] as any);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      expect(result.momChange).toBeCloseTo(50, 0);
+    });
+
+    it("returns null momChange when previous month has 0 contacts", async () => {
+      const now = new Date();
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([
+        { createdAt: now, readAt: null },
+      ] as any);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([]);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      expect(result.momChange).toBeNull();
+    });
+
+    it("builds companyBreakdown from groupBy result (top 8 + Others)", async () => {
+      // 9 companies → top 8 + Others
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([
+        { company: "Alpha", _count: { id: 10 } },
+        { company: "Beta", _count: { id: 8 } },
+        { company: "Gamma", _count: { id: 7 } },
+        { company: "Delta", _count: { id: 6 } },
+        { company: "Epsilon", _count: { id: 5 } },
+        { company: "Zeta", _count: { id: 4 } },
+        { company: "Eta", _count: { id: 3 } },
+        { company: "Theta", _count: { id: 2 } },
+        { company: "Iota", _count: { id: 1 } }, // 9th → Others
+      ] as any);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      expect(result.companyBreakdown).toHaveLength(9); // 8 named + Others
+      const others = result.companyBreakdown.find((c) => c.company === "Others");
+      expect(others?.count).toBe(1);
+      expect(result.companyBreakdown[0]).toEqual({ company: "Alpha", count: 10 });
+    });
+
+    it("maps null company to \"Unknown\"", async () => {
+      vi.mocked(prisma.contactRequest.findMany).mockResolvedValue([]);
+      vi.mocked(prisma.contactRequest.groupBy).mockResolvedValue([
+        { company: null, _count: { id: 5 } },
+        { company: "Acme", _count: { id: 3 } },
+      ] as any);
+
+      const result = await contactRequestService.getContactAnalytics(websiteId);
+
+      const unknown = result.companyBreakdown.find((c) => c.company === "Unknown");
+      expect(unknown?.count).toBe(5);
     });
   });
 });

@@ -51,8 +51,8 @@ sdk/
 ├── src/
 │   ├── signing.ts           # fetchToken() — fetches server-minted HMAC token from /api/[websiteId]/token
 │   ├── subscribe.ts         # coreSubscribe() + HbError class; 1 retry on network failure
-│   ├── form.ts              # bindForm(selector | HTMLFormElement, config, callbacks)
-│   ├── index.ts             # Config placeholders; window.__HB global; subscribe() + bindForm() wrappers
+│   ├── form.ts              # bindSubscriberForm(selector | HTMLFormElement, config, callbacks)
+│   ├── index.ts             # Config placeholders; window.__HB global; subscribe() + bindSubscriberForm() wrappers
 │   └── __tests__/           # signing, subscribe (node), form (jsdom) tests
 ├── dist/
 │   └── hb.min.js            # Built IIFE — contains "__HB_WEBSITE_ID__" placeholder only (no key)
@@ -162,13 +162,13 @@ src/
   ```html
   <script src="https://app.heybackend.com/api/site_abc123/sdk.js"></script>
   <script>
-    __HB.bindForm('#signup-form', {
+    __HB.bindSubscriberForm('#signup-form', {
       onSuccess: () => alert('Subscribed!'),
       onError: (err) => console.error(err.message),
     })
   </script>
   ```
-- `bindForm` accepts any CSS selector string or a direct `HTMLFormElement` reference; reads `name="email"`, `name="firstName"`, `name="lastName"` fields from the form
+- `bindSubscriberForm` accepts any CSS selector string or a direct `HTMLFormElement` reference; reads `name="email"`, `name="firstName"`, `name="lastName"` fields from the form
 
 ### TypeScript
 - `strict: true` is required — do not disable

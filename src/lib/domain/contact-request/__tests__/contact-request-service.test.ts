@@ -685,7 +685,7 @@ describe("ContactRequestService", () => {
     const websiteId = "site_1";
 
     beforeEach(() => {
-      vi.resetAllMocks();
+      vi.clearAllMocks();
     });
 
     it("returns zero stats when there are no contacts", async () => {

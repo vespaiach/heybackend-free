@@ -166,6 +166,7 @@ export class PrismaContactRequestService implements ContactRequestService {
       prisma.contactRequest.findMany({
         where: { websiteId, createdAt: { gte: oneYearAgo } },
         select: { createdAt: true },
+        orderBy: { createdAt: 'asc' },
       }),
       prisma.contactRequest.groupBy({
         by: ["company"],
@@ -178,13 +179,12 @@ export class PrismaContactRequestService implements ContactRequestService {
     ]);
 
     // Stat totals (all-time)
-    const read = readCount;
     const unread = total - readCount;
 
     // Daily activity: "YYYY-MM-DD" → count
     const dailyMap = new Map<string, number>();
     for (const { createdAt } of rows) {
-      const key = createdAt.toISOString().slice(0, 10);
+      const key = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}-${String(createdAt.getDate()).padStart(2, "0")}`;
       dailyMap.set(key, (dailyMap.get(key) ?? 0) + 1);
     }
     const dailyActivity = Array.from(dailyMap.entries())
@@ -194,7 +194,7 @@ export class PrismaContactRequestService implements ContactRequestService {
     // Monthly trend: "YYYY-MM" → count
     const monthlyMap = new Map<string, number>();
     for (const { createdAt } of rows) {
-      const key = createdAt.toISOString().slice(0, 7);
+      const key = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}`;
       monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + 1);
     }
     const monthlyTrend: { month: string; count: number }[] = [];
@@ -205,9 +205,9 @@ export class PrismaContactRequestService implements ContactRequestService {
     }
 
     // MoM change
-    const currentMonth = now.toISOString().slice(0, 7);
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
     const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevMonth = prevDate.toISOString().slice(0, 7);
+    const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
     const currentCount = monthlyMap.get(currentMonth) ?? 0;
     const prevCount = monthlyMap.get(prevMonth) ?? 0;
     const momChange = prevCount === 0 ? null : Math.round(((currentCount - prevCount) / prevCount) * 1000) / 10;
@@ -238,7 +238,7 @@ export class PrismaContactRequestService implements ContactRequestService {
       companyBreakdown.push({ company: "Unknown", count: unknownCount });
     }
 
-    return { total, read, unread, momChange, monthlyTrend, dailyActivity, companyBreakdown };
+    return { total, read: readCount, unread, momChange, monthlyTrend, dailyActivity, companyBreakdown };
   }
 
   private mapToContactRequest(

@@ -52,10 +52,10 @@ sdk/
 │   ├── signing.ts           # fetchToken() — fetches server-minted HMAC token from /api/[websiteId]/token
 │   ├── subscribe.ts         # coreSubscribe() + HbError class; 1 retry on network failure
 │   ├── form.ts              # bindSubscriberForm(selector | HTMLFormElement, config, callbacks)
-│   ├── index.ts             # Config placeholders; window.__HB global; subscribe() + bindSubscriberForm() wrappers
+│   ├── index.ts             # Derives websiteId/baseUrl from document.currentScript.src at runtime; window.__HB global; subscribe() + bindSubscriberForm() wrappers
 │   └── __tests__/           # signing, subscribe (node), form (jsdom) tests
 ├── dist/
-│   └── hb.min.js            # Built IIFE — contains "__HB_WEBSITE_ID__" placeholder only (no key)
+│   └── hb.min.js            # Built browser SDK IIFE emitted from sdk/src/index.ts
 └── build.mjs                # esbuild: sdk/src/index.ts → sdk/dist/hb.min.js (IIFE, globalName __HB)
 src/
 ├── app/

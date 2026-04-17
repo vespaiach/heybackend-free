@@ -44,7 +44,7 @@ Create `sdk/USAGE.md` with comprehensive SDK usage guide:
 Load the SDK in your HTML:
 
 \`\`\`html
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 \`\`\`
 
 The SDK exposes a global `__HB` object with the following APIs:
@@ -101,7 +101,7 @@ Automatically handle form submission for a subscriber form.
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: (result) => {
@@ -138,7 +138,7 @@ Handle contact form submissions (separate from subscriber forms).
   <button type="submit">Send</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindContactForm('#contact-form', {
     onSuccess: () => console.log('Message sent'),
@@ -194,7 +194,7 @@ __HB.bindSubscriberForm('#form', {
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#signup', {
     onSuccess: () => {
@@ -218,7 +218,7 @@ __HB.bindSubscriberForm('#form', {
   Thanks for subscribing!
 </div>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#signup', {
     onSuccess: () => {
@@ -394,7 +394,7 @@ export function generateFormPreview(fields: FieldType): string {
 export function generateFormCode(config: FormConfig): string {
   const formPreview = generateFormPreview(config.fields);
   const formId = "subscriber-form";
-  const scriptUrl = \`https://app.heybackend.com/api/\${config.websiteId}/sdk.js\`;
+  const scriptUrl = \`https://heybackend.com/api/\${config.websiteId}/sdk.js\`;
   
   let successCallback = "";
   if (config.successBehavior.type === "redirect") {
@@ -519,7 +519,7 @@ const templates: CodeTemplate[] = [
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => {
@@ -547,7 +547,7 @@ const templates: CodeTemplate[] = [
   Thanks for subscribing!
 </div>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => {
@@ -577,7 +577,7 @@ const templates: CodeTemplate[] = [
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => {
@@ -609,7 +609,7 @@ const templates: CodeTemplate[] = [
   Welcome aboard!
 </div>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => {

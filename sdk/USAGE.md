@@ -5,7 +5,7 @@
 Load the SDK in your HTML:
 
 ```html
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 ```
 
 The SDK exposes a global `__HB` object with the following APIs:
@@ -62,7 +62,7 @@ Automatically handle form submission for a subscriber form.
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: (result) => {
@@ -99,7 +99,7 @@ Handle contact form submissions (separate from subscriber forms).
   <button type="submit">Send</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindContactForm('#contact-form', {
     onSuccess: () => console.log('Message sent'),
@@ -155,7 +155,7 @@ __HB.bindSubscriberForm('#form', {
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#signup', {
     onSuccess: () => {
@@ -179,7 +179,7 @@ __HB.bindSubscriberForm('#form', {
   Thanks for subscribing!
 </div>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#signup', {
     onSuccess: () => {

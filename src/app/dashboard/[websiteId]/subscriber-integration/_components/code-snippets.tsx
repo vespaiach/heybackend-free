@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useHighlightedCode } from "./use-highlighted-code";
 
 interface CodeTemplate {
   id: string;
@@ -22,7 +23,7 @@ const templates: CodeTemplate[] = [
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => {
@@ -46,7 +47,7 @@ const templates: CodeTemplate[] = [
   Thanks for subscribing!
 </div>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => {
@@ -70,7 +71,7 @@ const templates: CodeTemplate[] = [
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => {
@@ -96,7 +97,7 @@ const templates: CodeTemplate[] = [
   Welcome aboard!
 </div>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => {
@@ -115,6 +116,25 @@ interface CodeSnippetsProps {
   websiteId: string;
 }
 
+function HighlightedCodeBlock({ code }: { code: string }) {
+  const highlightedHtml = useHighlightedCode(code);
+
+  if (highlightedHtml) {
+    return (
+      <div
+        className="text-xs [&_pre]:rounded-md [&_pre]:p-4 overflow-x-auto"
+        dangerouslySetInnerHTML={{ __html: highlightedHtml }}
+      />
+    );
+  }
+
+  return (
+    <pre className="bg-slate-900 text-slate-100 p-4 rounded-md overflow-x-auto text-xs">
+      <code>{code}</code>
+    </pre>
+  );
+}
+
 export function CodeSnippets({ websiteId }: CodeSnippetsProps) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -127,35 +147,36 @@ export function CodeSnippets({ websiteId }: CodeSnippetsProps) {
 
   return (
     <div className="space-y-6">
-      {templates.map((template) => (
-        <Card key={template.id} className="p-6">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold">{template.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
-          </div>
+      {templates.map((template) => {
+        const resolvedCode = template.code.replace(/{websiteId}/g, websiteId);
+        return (
+          <Card key={template.id} className="p-6">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold">{template.title}</h3>
+              <p className="text-sm text-muted-foreground mt-1">{template.description}</p>
+            </div>
 
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-muted-foreground mb-2">Code</p>
-            <pre className="bg-slate-900 text-slate-100 p-4 rounded-md overflow-x-auto text-xs">
-              <code>{template.code.replace(/{websiteId}/g, websiteId)}</code>
-            </pre>
-          </div>
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-muted-foreground mb-2">Code</p>
+              <HighlightedCodeBlock code={resolvedCode} />
+            </div>
 
-          <Button
-            onClick={() => handleCopyCode(template.code, template.id)}
-            className="w-full"
-            variant={copiedId === template.id ? "secondary" : "default"}>
-            {copiedId === template.id ? (
-              <>
-                <Check className="w-4 h-4 mr-2" />
-                Copied!
-              </>
-            ) : (
-              "Copy Code"
-            )}
-          </Button>
-        </Card>
-      ))}
+            <Button
+              onClick={() => handleCopyCode(template.code, template.id)}
+              className="w-full"
+              variant={copiedId === template.id ? "secondary" : "default"}>
+              {copiedId === template.id ? (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Copied!
+                </>
+              ) : (
+                "Copy Code"
+              )}
+            </Button>
+          </Card>
+        );
+      })}
     </div>
   );
 }

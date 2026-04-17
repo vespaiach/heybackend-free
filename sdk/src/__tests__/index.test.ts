@@ -9,7 +9,7 @@ beforeEach(() => {
 describe("deriveWebsiteId()", () => {
   it("extracts websiteId from /api/{websiteId}/sdk.js pattern", () => {
     const script = document.createElement("script");
-    script.src = "https://app.heybackend.com/api/site_abc123/sdk.js";
+    script.src = "https://heybackend.com/api/site_abc123/sdk.js";
 
     Object.defineProperty(document, "currentScript", {
       value: script,
@@ -93,7 +93,7 @@ describe("deriveWebsiteId()", () => {
 
   it("works with complex paths including query parameters", () => {
     const script = document.createElement("script");
-    script.src = "https://app.heybackend.com/api/site_xyz/sdk.js?cache=false";
+    script.src = "https://heybackend.com/api/site_xyz/sdk.js?cache=false";
 
     Object.defineProperty(document, "currentScript", {
       value: script,

@@ -30,7 +30,7 @@ export function generateFormPreview(fields: FieldType): string {
 export function generateFormCode(config: FormConfig): string {
   const formPreview = generateFormPreview(config.fields);
   const formId = "subscriber-form";
-  const scriptUrl = `https://app.heybackend.com/api/${config.websiteId}/sdk.js`;
+  const scriptUrl = `https://heybackend.com/api/${config.websiteId}/sdk.js`;
 
   const formWithId = formPreview.replace("<form>", `<form id="${formId}"`);
   let successCallback = "";

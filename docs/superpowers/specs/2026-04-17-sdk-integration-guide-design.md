@@ -67,7 +67,7 @@ Once all answers collected:
   - **Form Preview:** Raw HTML form rendering (no styling applied) in a shadcn/ui Card
   - **Code Block:** Complete copy-paste ready code in a shadcn/ui Card with syntax highlighting:
     - HTML form with collected field configuration
-    - Script tag loading the SDK: `<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>`
+    - Script tag loading the SDK: `<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>`
     - `bindSubscriberForm()` call with dynamic callbacks based on answers
 - Enable "Copy code" button (shadcn/ui Button)
 
@@ -123,7 +123,7 @@ All generated snippets include complete, production-ready code:
   <button type="submit">Subscribe</button>
 </form>
 
-<script src="https://app.heybackend.com/api/{websiteId}/sdk.js"></script>
+<script src="https://heybackend.com/api/{websiteId}/sdk.js"></script>
 <script>
   __HB.bindSubscriberForm('#subscriber-form', {
     onSuccess: () => { /* dynamic callback */ },

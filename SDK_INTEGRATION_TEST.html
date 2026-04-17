@@ -133,7 +133,7 @@
 
     <script>
       // This script simulates loading the SDK
-      // In real usage, you would load from: https://app.heybackend.com/api/[websiteId]/sdk.js
+      // In real usage, you would load from: https://heybackend.com/api/[websiteId]/sdk.js
 
       // Mock the SDK loading
       function mockSDK() {
@@ -182,7 +182,7 @@
         console.log("Testing SDK availability...");
 
         // Note: In a real integration, the SDK script would be loaded via:
-        // <script src="https://app.heybackend.com/api/[websiteId]/sdk.js"></script>
+        // <script src="https://heybackend.com/api/[websiteId]/sdk.js"></script>
 
         // For this test, we'll just verify the structure is correct
         if (typeof window.__HB === "object") {
@@ -209,7 +209,7 @@
 
     <!-- 
     In production, you would load the actual SDK like this:
-    <script src="https://app.heybackend.com/api/YOUR_WEBSITE_ID/sdk.js"></script>
+    <script src="https://heybackend.com/api/YOUR_WEBSITE_ID/sdk.js"></script>
     <script>
       __HB.bindContactForm('#contact-form', {
         onSuccess: () => alert('Message sent!'),

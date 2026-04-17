@@ -26,7 +26,7 @@ const data = (websiteId: string) => ({
     },
     {
       title: "Integration",
-      url: `/dashboard/${websiteId}/integration`,
+      url: `/dashboard/${websiteId}/subscriber-integration`,
       icon: <Code2 />,
       isActive: false,
       items: [],

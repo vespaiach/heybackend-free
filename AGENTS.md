@@ -161,7 +161,7 @@ src/
 - `sdk/dist/` is excluded from Biome linting (configured in `biome.json`)
 - Usage on customer sites:
   ```html
-  <script src="https://app.heybackend.com/api/site_abc123/sdk.js"></script>
+  <script src="https://heybackend.com/api/site_abc123/sdk.js"></script>
   <script>
     __HB.bindSubscriberForm('#signup-form', {
       onSuccess: () => alert('Subscribed!'),

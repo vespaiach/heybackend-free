@@ -63,7 +63,7 @@ export default async function SubscriberAnalyticsPage({
       <main className="flex-1 p-4">
         <div className="flex flex-col md:flex-row items-start md:items-end md:justify-between gap-2 mb-5">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">Analytics</h2>
+            <h2 className="text-2xl font-bold tracking-tight">Subscriber Analytics</h2>
             <p className="text-muted-foreground">Monitor your audience growth and engagement trends.</p>
           </div>
           <RangeSelector />

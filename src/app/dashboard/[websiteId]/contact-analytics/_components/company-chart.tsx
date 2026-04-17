@@ -1,58 +1,75 @@
 "use client";
 
-import { Cell, Legend, Pie, PieChart } from "recharts";
+import { Legend, Pie, PieChart } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartLegendContent,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 
 interface CompanyChartProps {
   companyBreakdown: { company: string; count: number }[];
 }
 
 const CHART_COLORS = [
-  "hsl(var(--chart-1))",
-  "hsl(var(--chart-2))",
-  "hsl(var(--chart-3))",
-  "hsl(var(--chart-4))",
-  "hsl(var(--chart-5))",
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "oklch(0.72 0.15 160)",
+  "oklch(0.65 0.18 30)",
+  "oklch(0.60 0.14 220)",
+  "oklch(0.75 0.12 80)",
+  "oklch(0.55 0.16 320)",
 ];
 
-function getColor(index: number): string {
-  return CHART_COLORS[index % CHART_COLORS.length];
-}
-
 export function CompanyChart({ companyBreakdown }: CompanyChartProps) {
-  const chartConfig = Object.fromEntries(
-    companyBreakdown.map((item, i) => [item.company, { label: item.company, color: getColor(i) }]),
-  );
+  const chartData = companyBreakdown.map((item, i) => ({
+    ...item,
+    fill: `var(--color-c${i})`,
+  }));
+
+  const chartConfig: ChartConfig = {
+    count: { label: "Contacts" },
+    ...Object.fromEntries(
+      companyBreakdown.map((item, i) => [
+        `c${i}`,
+        { label: item.company, color: CHART_COLORS[i % CHART_COLORS.length] },
+      ]),
+    ),
+  };
 
   return (
     <Card className="flex flex-col">
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Company Concentration</CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-1 flex-col">
+      <CardContent className="flex-1 flex-col">
         {companyBreakdown.length === 0 ? (
           <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
             No company data
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[260px] w-full">
+          <ChartContainer
+            config={chartConfig}
+            className="mx-auto aspect-square max-h-[300px] pb-0 [&_.recharts-pie-label-text]:fill-foreground">
             <PieChart>
-              <Pie
-                data={companyBreakdown}
-                dataKey="count"
-                nameKey="company"
-                cx="50%"
-                cy="45%"
-                outerRadius={80}
-                strokeWidth={2}>
-                {companyBreakdown.map((entry, index) => (
-                  <Cell key={entry.company} fill={getColor(index)} />
-                ))}
-              </Pie>
               <ChartTooltip
                 content={<ChartTooltipContent formatter={(value, name) => [`${value} contacts`, name]} />}
               />
+              <Pie
+                data={chartData}
+                dataKey="count"
+                nameKey="company"
+                label={({ value }: { value: number }) => value}
+                outerRadius={80}
+                strokeWidth={2}
+              />
+              <ChartLegendContent />
               <Legend
                 iconType="circle"
                 iconSize={8}

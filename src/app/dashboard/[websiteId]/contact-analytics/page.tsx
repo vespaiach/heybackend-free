@@ -11,8 +11,8 @@ import { contactRequestService } from "@/lib/domain";
 import { getWebsite } from "@/lib/route-helpers";
 import { ActivityHeatmap } from "./_components/activity-heatmap";
 import { CompanyChart } from "./_components/company-chart";
-import { GrowthCard } from "./_components/growth-card";
 import { StatCards } from "./_components/stat-cards";
+import { TrendChart } from "./_components/trend-chart";
 
 export default async function ContactAnalyticsPage({ params }: { params: Promise<{ websiteId: string }> }) {
   const { websiteId } = await params;
@@ -29,8 +29,6 @@ export default async function ContactAnalyticsPage({ params }: { params: Promise
             <BreadcrumbList>
               <BreadcrumbItem>{website.name}</BreadcrumbItem>
               <BreadcrumbSeparator />
-              <BreadcrumbItem>Contacts</BreadcrumbItem>
-              <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage>Analytics</BreadcrumbPage>
               </BreadcrumbItem>
@@ -46,14 +44,18 @@ export default async function ContactAnalyticsPage({ params }: { params: Promise
         </div>
 
         <div className="flex flex-col gap-4">
-          <StatCards total={analytics.total} read={analytics.read} unread={analytics.unread} />
+          <StatCards
+            total={analytics.total}
+            read={analytics.read}
+            unread={analytics.unread}
+            momChange={analytics.momChange}
+          />
 
           <ActivityHeatmap dailyActivity={analytics.dailyActivity} />
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <GrowthCard momChange={analytics.momChange} monthlyTrend={analytics.monthlyTrend} />
-            <CompanyChart companyBreakdown={analytics.companyBreakdown} />
-          </div>
+          <TrendChart dailyActivity={analytics.dailyActivity} monthlyTrend={analytics.monthlyTrend} />
+
+          <CompanyChart companyBreakdown={analytics.companyBreakdown} />
         </div>
       </main>
     </>

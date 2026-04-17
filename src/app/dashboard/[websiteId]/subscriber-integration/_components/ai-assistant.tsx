@@ -88,11 +88,17 @@ export function AIAssistant({ websiteId }: AIAssistantProps) {
     }
   };
 
-  const handleCopyCode = () => {
-    if (generatedCode) {
-      navigator.clipboard.writeText(generatedCode);
+  const handleCopyCode = async () => {
+    if (!generatedCode) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(generatedCode);
       setCopiedCode(true);
       setTimeout(() => setCopiedCode(false), 2000);
+    } catch {
+      // Silently ignore clipboard failures to avoid unhandled promise rejections.
     }
   };
 

@@ -15,18 +15,15 @@ function getIntensityClass(count: number): string {
 }
 
 function buildGrid(): string[] {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const start = new Date(today);
-  start.setDate(today.getDate() - 370);
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const todayUTC = new Date(`${todayISO}T00:00:00Z`);
+  const startUTC = new Date(todayUTC);
+  startUTC.setUTCDate(todayUTC.getUTCDate() - 370);
   const cells: string[] = [];
   for (let i = 0; i < 371; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    cells.push(`${y}-${m}-${day}`);
+    const d = new Date(startUTC);
+    d.setUTCDate(startUTC.getUTCDate() + i);
+    cells.push(d.toISOString().slice(0, 10));
   }
   return cells;
 }

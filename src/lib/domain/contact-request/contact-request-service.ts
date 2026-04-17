@@ -159,8 +159,7 @@ export class PrismaContactRequestService implements ContactRequestService {
 
   async getContactAnalytics(websiteId: string): Promise<ContactAnalytics> {
     const now = new Date();
-    const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-    oneYearAgo.setHours(0, 0, 0, 0);
+    const oneYearAgo = new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), now.getUTCDate()));
 
     const [rows, companyRows, total, readCount] = await Promise.all([
       prisma.contactRequest.findMany({
@@ -184,7 +183,7 @@ export class PrismaContactRequestService implements ContactRequestService {
     // Daily activity: "YYYY-MM-DD" → count
     const dailyMap = new Map<string, number>();
     for (const { createdAt } of rows) {
-      const key = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}-${String(createdAt.getDate()).padStart(2, "0")}`;
+      const key = createdAt.toISOString().slice(0, 10);
       dailyMap.set(key, (dailyMap.get(key) ?? 0) + 1);
     }
     const dailyActivity = Array.from(dailyMap.entries())
@@ -194,20 +193,20 @@ export class PrismaContactRequestService implements ContactRequestService {
     // Monthly trend: "YYYY-MM" → count
     const monthlyMap = new Map<string, number>();
     for (const { createdAt } of rows) {
-      const key = `${createdAt.getFullYear()}-${String(createdAt.getMonth() + 1).padStart(2, "0")}`;
+      const key = createdAt.toISOString().slice(0, 7);
       monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + 1);
     }
     const monthlyTrend: { month: string; count: number }[] = [];
     for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+      const month = d.toISOString().slice(0, 7);
       monthlyTrend.push({ month, count: monthlyMap.get(month) ?? 0 });
     }
 
     // MoM change
-    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    const prevDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const prevMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, "0")}`;
+    const currentMonth = now.toISOString().slice(0, 7);
+    const prevDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+    const prevMonth = prevDate.toISOString().slice(0, 7);
     const currentCount = monthlyMap.get(currentMonth) ?? 0;
     const prevCount = monthlyMap.get(prevMonth) ?? 0;
     const momChange =

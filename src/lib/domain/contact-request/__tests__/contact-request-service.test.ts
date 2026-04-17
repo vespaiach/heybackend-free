@@ -751,8 +751,8 @@ describe("ContactRequestService", () => {
       const result = await contactRequestService.getContactAnalytics(websiteId);
 
       expect(result.monthlyTrend).toHaveLength(12);
-      const prevKey = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, "0")}`;
-      const currKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+      const prevKey = prevMonthDate.toISOString().slice(0, 7);
+      const currKey = now.toISOString().slice(0, 7);
       expect(result.monthlyTrend.find((m) => m.month === prevKey)?.count).toBe(1);
       expect(result.monthlyTrend.find((m) => m.month === currKey)?.count).toBe(2);
     });

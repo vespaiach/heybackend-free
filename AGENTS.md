@@ -152,11 +152,12 @@ src/
 - API route helpers (`src/lib/api/route-helpers.ts`) provide typed response factories (`ok()`, `created()`, `validationError()`, etc.) and origin guards — use them in all API routes
 
 ### Browser SDK (`sdk/`)
-- The SDK is a vanilla TypeScript IIFE bundle served as a **server-rendered script** — each website's ID is injected at request time, not shipped in source
-- `sdk/dist/hb.min.js` is the build artifact; it contains one literal placeholder string: `"__HB_WEBSITE_ID__"`. The Next.js route `GET /api/[websiteId]/sdk.js` replaces it with `JSON.stringify(website.id)` on every request
+- The SDK is a vanilla TypeScript IIFE bundle that derives the website ID and base URL from `document.currentScript.src` at runtime
+- `sdk/dist/hb.min.js` is a static build artifact — no placeholder injection or server-side processing needed
+- The SDK extracts the website ID from the script URL pattern `/api/{websiteId}/sdk.js` via `deriveWebsiteId()`
+- The SDK derives its `baseUrl` from `document.currentScript.src` so that fetch() targets the heybackend origin even when embedded on a third-party site
 - The website key is **never injected into the SDK** — auth uses server-minted tokens via `GET /api/[websiteId]/token`
-- The SDK derives its `baseUrl` from `document.currentScript.src` at init time so that fetch() targets the heybackend origin even when embedded on a third-party site
-- Run `npm run sdk:build` after any change to `sdk/src/` to rebuild the template bundle
+- Run `npm run sdk:build` after any change to `sdk/src/` to rebuild the bundle
 - `sdk/dist/` is excluded from Biome linting (configured in `biome.json`)
 - Usage on customer sites:
   ```html

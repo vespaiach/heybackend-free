@@ -21,7 +21,5 @@ export async function GET(
     return new Response(JS_STUB, { status: 200, headers: JS_HEADERS });
   }
 
-  const js = SDK_TEMPLATE.replace('"__HB_WEBSITE_ID__"', JSON.stringify(website.id));
-
-  return new Response(js, { status: 200, headers: JS_HEADERS });
+  return new Response(SDK_TEMPLATE, { status: 200, headers: JS_HEADERS });
 }

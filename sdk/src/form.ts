@@ -46,7 +46,7 @@ export function bindSubscriberForm(
     const email = getFieldValue(resolvedForm, "email");
     if (!email) {
       callbacks.onError?.(new Error("Email is required"));
-      return () => {};
+      return;
     }
 
     const data: SubscribeData = {

@@ -4,7 +4,8 @@ import { ActivityHeatmap } from "../activity-heatmap";
 describe("ActivityHeatmap", () => {
   it("renders 365 grid cells", () => {
     render(<ActivityHeatmap data={[]} />);
-    expect(screen.getAllByRole("gridcell")).toHaveLength(365);
+    const cells = screen.getAllByRole("cell").filter((el) => el.hasAttribute("aria-label"));
+    expect(cells).toHaveLength(365);
   });
 
   it("applies green color to days with activity", () => {

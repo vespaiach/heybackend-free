@@ -37,24 +37,34 @@ export function ActivityHeatmap({ data }: Props) {
       </CardHeader>
       <CardContent>
         <TooltipProvider>
-          <div className="flex flex-wrap gap-[3px]" role="grid" aria-label="Submission activity heatmap">
-            {grid.map(({ date, count }) => (
-              <Tooltip key={date}>
-                <TooltipTrigger asChild>
-                  <div
-                    role="gridcell"
-                    aria-label={`${date}: ${count} submission${count !== 1 ? "s" : ""}`}
-                    className={`h-3 w-3 rounded-sm ${getDayColor(count)}`}
-                  />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>
-                    {date}: {count} submission{count !== 1 ? "s" : ""}
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
+          <table aria-label="Submission activity heatmap" className="border-separate border-spacing-[3px]">
+            <tbody>
+              {Array.from({ length: 7 }, (_, row) => (
+                <tr key={row}>
+                  {Array.from({ length: Math.ceil(DAYS_IN_YEAR / 7) }, (_, col) => {
+                    const idx = col * 7 + row;
+                    if (idx >= grid.length) return <td key={col} className="h-3 w-3" />;
+                    const { date, count } = grid[idx];
+                    return (
+                      <Tooltip key={col}>
+                        <TooltipTrigger asChild>
+                          <td
+                            aria-label={`${date}: ${count} submission${count !== 1 ? "s" : ""}`}
+                            className={`h-3 w-3 rounded-sm ${getDayColor(count)}`}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {date}: {count} submission{count !== 1 ? "s" : ""}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </TooltipProvider>
       </CardContent>
     </Card>

@@ -42,18 +42,18 @@ describe("NavUser", () => {
   });
 
   it("renders the user name and email", () => {
-    render(<NavUser user={testUser} />, { wrapper: Wrapper });
+    render(<NavUser user={testUser} onOpenWebsites={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getAllByText("Jane Smith").length).toBeGreaterThan(0);
     expect(screen.getAllByText("jane@example.com").length).toBeGreaterThan(0);
   });
 
   it("shows initials in avatar fallback", () => {
-    render(<NavUser user={testUser} />, { wrapper: Wrapper });
+    render(<NavUser user={testUser} onOpenWebsites={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getAllByText("JA").length).toBeGreaterThan(0);
   });
 
   it("calls signOut with /login callbackUrl when Log out is clicked", async () => {
-    render(<NavUser user={testUser} />, { wrapper: Wrapper });
+    render(<NavUser user={testUser} onOpenWebsites={vi.fn()} />, { wrapper: Wrapper });
 
     // Open the dropdown
     const trigger = screen.getByRole("button");
@@ -63,5 +63,15 @@ describe("NavUser", () => {
     await userEvent.click(logoutItem);
 
     expect(mockSignOut).toHaveBeenCalledWith({ callbackUrl: "/login" });
+  });
+
+  it("calls onOpenWebsites when Websites is clicked", async () => {
+    const onOpenWebsites = vi.fn();
+    render(<NavUser user={testUser} onOpenWebsites={onOpenWebsites} />, { wrapper: Wrapper });
+
+    await userEvent.click(screen.getByRole("button"));
+    await userEvent.click(await screen.findByRole("menuitem", { name: /websites/i }));
+
+    expect(onOpenWebsites).toHaveBeenCalled();
   });
 });

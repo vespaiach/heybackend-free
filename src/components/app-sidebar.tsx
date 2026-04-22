@@ -1,11 +1,13 @@
 "use client";
 
 import { BarChart3, Code2, Mails, MessageSquareIcon } from "lucide-react";
-import { useMemo } from "react";
+import type * as React from "react";
+import { useMemo, useState } from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar";
 import { WebsiteSwitcher } from "@/components/website-switcher";
+import { WebsitesModal } from "@/components/websites-modal";
 
 const data = (websiteId: string) => ({
   newsletter: [
@@ -63,20 +65,26 @@ export function AppSidebar({
   websiteId: string;
 }) {
   const menu = useMemo(() => data(websiteId), [websiteId]);
+  const [websitesOpen, setWebsitesOpen] = useState(false);
 
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <WebsiteSwitcher websites={websites} websiteId={websiteId} />
+        <WebsiteSwitcher
+          websites={websites}
+          websiteId={websiteId}
+          onAddWebsite={() => setWebsitesOpen(true)}
+        />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={menu.newsletter} category="Newsletter" />
         <NavMain items={menu.contacts} category="Contacts" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser user={user} onOpenWebsites={() => setWebsitesOpen(true)} />
       </SidebarFooter>
       <SidebarRail />
+      <WebsitesModal open={websitesOpen} onOpenChange={setWebsitesOpen} websites={websites} />
     </Sidebar>
   );
 }

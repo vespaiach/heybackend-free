@@ -18,7 +18,7 @@ type Website = {
   url: string;
   key: string;
   isActive: boolean;
-  createdAt: Date;
+  createdAt?: Date;
 };
 
 interface WebsiteFormModalProps {
@@ -26,9 +26,16 @@ interface WebsiteFormModalProps {
   onOpenChange: (open: boolean) => void;
   website?: Website | null;
   isRequired?: boolean;
+  nameOnly?: boolean;
 }
 
-export function WebsiteFormModal({ open, onOpenChange, website, isRequired }: WebsiteFormModalProps) {
+export function WebsiteFormModal({
+  open,
+  onOpenChange,
+  website,
+  isRequired,
+  nameOnly,
+}: WebsiteFormModalProps) {
   const router = useRouter();
   const [error, setError] = React.useState<string | null>(null);
   const [regenerateKey, setRegenerateKey] = React.useState(false);
@@ -83,7 +90,7 @@ export function WebsiteFormModal({ open, onOpenChange, website, isRequired }: We
           onInteractOutside: (e) => e.preventDefault(),
         })}>
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit Website" : "Add Website"}</DialogTitle>
+          <DialogTitle>{nameOnly ? "Rename Website" : isEdit ? "Edit Website" : "Add Website"}</DialogTitle>
         </DialogHeader>
         <Form of={form} onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
@@ -96,22 +103,24 @@ export function WebsiteFormModal({ open, onOpenChange, website, isRequired }: We
                 </div>
               )}
             </Field>
-            <Field of={form} path={["url"]}>
-              {(field) => (
-                <div className="grid gap-2">
-                  <Label htmlFor="url">URL</Label>
-                  <Input
-                    id="url"
-                    {...field.props}
-                    value={field.input}
-                    type="url"
-                    placeholder="https://example.com"
-                  />
-                  {field.errors && <p className="text-sm text-destructive">{field.errors[0]}</p>}
-                </div>
-              )}
-            </Field>
-            {isEdit && (
+            {!nameOnly && (
+              <Field of={form} path={["url"]}>
+                {(field) => (
+                  <div className="grid gap-2">
+                    <Label htmlFor="url">URL</Label>
+                    <Input
+                      id="url"
+                      {...field.props}
+                      value={field.input}
+                      type="url"
+                      placeholder="https://example.com"
+                    />
+                    {field.errors && <p className="text-sm text-destructive">{field.errors[0]}</p>}
+                  </div>
+                )}
+              </Field>
+            )}
+            {isEdit && !nameOnly && (
               <div className="grid gap-2">
                 <Label>API Key</Label>
                 <div className="flex gap-2">

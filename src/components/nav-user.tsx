@@ -24,12 +24,14 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/c
 
 export function NavUser({
   user,
+  onOpenWebsites,
 }: {
   user: {
     name?: string | null;
     email?: string | null;
     image?: string | null;
   };
+  onOpenWebsites: () => void;
 }) {
   const { isMobile } = useSidebar();
 
@@ -90,11 +92,9 @@ export function NavUser({
                 <CreditCardIcon />
                 Billing
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a href="/dashboard/websites">
-                  <Globe />
-                  Websites
-                </a>
+              <DropdownMenuItem onClick={onOpenWebsites}>
+                <Globe />
+                Websites
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <BellIcon />

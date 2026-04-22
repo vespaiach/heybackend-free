@@ -14,7 +14,15 @@ import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/c
 
 type Website = { id: string; name: string; url: string; key: string; isActive: boolean };
 
-export function WebsiteSwitcher({ websites, websiteId }: { websites: Website[]; websiteId: string }) {
+export function WebsiteSwitcher({
+  websites,
+  websiteId,
+  onAddWebsite,
+}: {
+  websites: Website[];
+  websiteId: string;
+  onAddWebsite: () => void;
+}) {
   const { isMobile } = useSidebar();
   const router = useRouter();
   const activeWebsite = websites.find((w) => w.id === websiteId) ?? null;
@@ -101,7 +109,7 @@ export function WebsiteSwitcher({ websites, websiteId }: { websites: Website[]; 
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 p-2" onClick={() => router.push("/dashboard/websites?add=1")}>
+            <DropdownMenuItem className="gap-2 p-2" onClick={onAddWebsite}>
               <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                 <PlusIcon className="size-4" />
               </div>

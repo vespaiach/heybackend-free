@@ -1,14 +1,22 @@
 "use client";
 
-import { Copy, PlusIcon, PowerOff, SquarePen } from "lucide-react";
+import { Copy, PlusIcon, PowerOff, SquareArrowUpLeft, SquarePen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 import { deactivateWebsite } from "@/app/dashboard/websites/actions";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WebsiteFormModal } from "@/components/website-form-modal";
+import { ConfirmationModal } from "./ui/confirmation-modal";
 
 type Website = { id: string; name: string; url: string; key: string; isActive: boolean };
 
@@ -21,6 +29,7 @@ interface WebsitesModalProps {
 export function WebsitesModal({ open, onOpenChange, websites }: WebsitesModalProps) {
   const router = useRouter();
   const [addOpen, setAddOpen] = React.useState(false);
+  const [websideIdToDeactivate, setWebsideIdToDeactivate] = React.useState<string | null>(null);
   const [renameTarget, setRenameTarget] = React.useState<Website | null>(null);
 
   async function handleDeactivate(id: string) {
@@ -41,12 +50,9 @@ export function WebsitesModal({ open, onOpenChange, websites }: WebsitesModalPro
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-2xl">
-          <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogHeader>
             <DialogTitle>Websites</DialogTitle>
-            <Button size="sm" onClick={() => setAddOpen(true)}>
-              <PlusIcon className="h-4 w-4" />
-              Add Website
-            </Button>
+            <DialogDescription>Manage your websites.</DialogDescription>
           </DialogHeader>
           <div className="rounded-md border">
             <Table>
@@ -111,9 +117,21 @@ export function WebsitesModal({ open, onOpenChange, websites }: WebsitesModalPro
                             size="icon"
                             className="h-8 w-8 text-destructive hover:text-destructive"
                             disabled={!website.isActive}
-                            onClick={() => handleDeactivate(website.id)}>
+                            onClick={() => {
+                              setWebsideIdToDeactivate(website.id);
+                            }}>
                             <PowerOff className="h-4 w-4" />
                             <span className="sr-only">Deactivate website</span>
+                          </Button>
+                          <Button
+                            asChild
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive">
+                            <a href={`/dashboard/${website.id}/home`}>
+                              <SquareArrowUpLeft className="h-4 w-4" />
+                              <span className="sr-only">Open website dashboard</span>
+                            </a>
                           </Button>
                         </div>
                       </TableCell>
@@ -123,6 +141,12 @@ export function WebsitesModal({ open, onOpenChange, websites }: WebsitesModalPro
               </TableBody>
             </Table>
           </div>
+          <DialogFooter>
+            <Button size="sm" onClick={() => setAddOpen(true)}>
+              <PlusIcon className="h-4 w-4" />
+              Add Website
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -135,6 +159,20 @@ export function WebsitesModal({ open, onOpenChange, websites }: WebsitesModalPro
         website={renameTarget}
         nameOnly
       />
+      <ConfirmationModal
+        open={!!websideIdToDeactivate}
+        onOpenChange={() => setWebsideIdToDeactivate(null)}
+        onConfirm={() => {
+          setWebsideIdToDeactivate(null);
+          if (websideIdToDeactivate) handleDeactivate(websideIdToDeactivate);
+        }}>
+        <DialogHeader className="flex flex-col gap-1">
+          <DialogTitle>Deactivate Website</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to deactivate this website? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+      </ConfirmationModal>
     </>
   );
 }

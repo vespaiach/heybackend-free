@@ -107,8 +107,7 @@ src/
 ## Development Rules
 
 ### Imports
-- Use `@/*` alias for all internal imports (maps to `./src/*`)
-- e.g. `import { cn } from "@/lib/utils"`
+- Use `@/*` alias for all internal imports (maps to `./src/*`). Example: `import { cn } from "@/lib/utils"`
 
 ### Styling
 - Tailwind CSS v4 — import with `@import "tailwindcss"` in CSS, not `@tailwind` directives
@@ -118,6 +117,7 @@ src/
 
 ### Components
 - shadcn/ui components go in `src/components/ui/`
+- Reuse components in `src/components/ui/` across project.
 - Use `npx shadcn@latest add <component>` to add new shadcn components (see `components.json`)
 - shadcn style: `radix-vega`, RSC enabled, icon library: lucide
 

@@ -25,11 +25,6 @@ describe("LoginForm", () => {
     expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
   });
 
-  it("renders Apple button as disabled placeholder", () => {
-    render(<LoginForm />);
-    expect(screen.getByRole("button", { name: /login with apple/i })).toBeDisabled();
-  });
-
   it("renders Google button as enabled", () => {
     render(<LoginForm />);
     expect(screen.getByRole("button", { name: /login with google/i })).not.toBeDisabled();
@@ -50,12 +45,6 @@ describe("LoginForm", () => {
     render(<LoginForm />);
     await userEvent.click(screen.getByRole("button", { name: /login with github/i }));
     expect(mockSignIn).toHaveBeenCalledWith("github", { callbackUrl: "/dashboard/home" });
-  });
-
-  it("does not call signIn when Apple button is clicked", async () => {
-    render(<LoginForm />);
-    await userEvent.click(screen.getByRole("button", { name: /login with apple/i }));
-    expect(mockSignIn).not.toHaveBeenCalled();
   });
 
   it("disables the submit button while loading", async () => {

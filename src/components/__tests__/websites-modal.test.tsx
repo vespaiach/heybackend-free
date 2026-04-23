@@ -106,6 +106,7 @@ describe("WebsitesModal", () => {
   it("calls deactivateWebsite and router.refresh when deactivate is clicked", async () => {
     render(<WebsitesModal open={true} onOpenChange={vi.fn()} websites={[activeWebsite]} />);
     await userEvent.click(screen.getByRole("button", { name: /deactivate website/i }));
+    await userEvent.click(await screen.findByRole("button", { name: /confirm/i }));
 
     await waitFor(() => {
       expect(mockDeactivate).toHaveBeenCalledWith("site-abc123");

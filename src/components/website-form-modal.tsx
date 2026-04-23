@@ -1,6 +1,6 @@
 "use client";
 
-import { Field, Form, type SubmitHandler, useForm } from "@formisch/react";
+import { Field, Form, reset, type SubmitHandler, useForm } from "@formisch/react";
 import { RefreshCwIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -41,15 +41,15 @@ export function WebsiteFormModal({
   const [regenerateKey, setRegenerateKey] = React.useState(false);
   const isEdit = !!website;
 
-  const form = useForm({
-    schema: WebsiteSchema,
-    initialInput: {
-      name: website?.name ?? "",
-      url: website?.url ?? "",
-    },
-    validate: "submit",
-    revalidate: "input",
-  });
+  const form = useForm({ schema: WebsiteSchema, validate: "submit", revalidate: "input" });
+
+  React.useEffect(() => {
+    if (open) {
+      reset(form, { initialInput: { name: website?.name ?? "", url: website?.url ?? "" } });
+    } else {
+      reset(form);
+    }
+  }, [website, open, form]);
 
   React.useEffect(() => {
     if (open) {

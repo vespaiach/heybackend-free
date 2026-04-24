@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltips";
 import { formatDate } from "@/lib/utils";
 
 function getRelativeTime(date: Date, now: number): string {

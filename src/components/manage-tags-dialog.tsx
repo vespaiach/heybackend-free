@@ -3,7 +3,7 @@
 import { PlusIcon, TagIcon, XIcon } from "lucide-react";
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialogs";
 import { Input } from "@/components/ui/input";
 
 type Tag = { id: string; name: string; color: string | null; description: string | null };

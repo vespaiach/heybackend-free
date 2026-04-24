@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { type ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/charts";
 import { cn } from "@/lib/utils";
 
 interface TrendChartProps {

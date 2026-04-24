@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { addWebsite, updateWebsite } from "@/app/dashboard/websites/actions";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialogs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";

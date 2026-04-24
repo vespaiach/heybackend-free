@@ -4,7 +4,7 @@ import { CheckIcon, Columns2Icon, DownloadIcon } from "lucide-react";
 import type * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popovers";
 import { Separator } from "@/components/ui/separator";
 
 interface TablePageHeaderProps {

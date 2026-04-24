@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltips";
 import { WebsiteSelectDialog } from "@/components/website-select-dialog";
 import { tenantService } from "@/lib/domain";
 

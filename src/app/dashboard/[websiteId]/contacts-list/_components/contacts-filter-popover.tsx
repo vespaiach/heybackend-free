@@ -7,9 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popovers";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-groups";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/selects";
 
 export type ContactReadStatus = "all" | "read" | "unread";
 

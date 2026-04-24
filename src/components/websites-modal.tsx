@@ -13,8 +13,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+} from "@/components/ui/dialogs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/tables";
 import { WebsiteFormModal } from "@/components/website-form-modal";
 import { ConfirmationModal } from "./ui/confirmation-modal";
 

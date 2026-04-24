@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "./button";
-import { Dialog, DialogClose, DialogContent, DialogFooter } from "./dialog";
+import { Dialog, DialogClose, DialogContent, DialogFooter } from "./dialogs";
 
 interface ConfirmationModalProps {
   open: boolean;

@@ -2,14 +2,12 @@
 
 import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import DropdownMenu from "@/components/ui/dropdown-menus/dropdown-menu";
+import DropdownMenuContent from "@/components/ui/dropdown-menus/dropdown-menu-content";
+import DropdownMenuItem from "@/components/ui/dropdown-menus/dropdown-menu-item";
+import DropdownMenuLabel from "@/components/ui/dropdown-menus/dropdown-menu-label";
+import DropdownMenuSeparator from "@/components/ui/dropdown-menus/dropdown-menu-separator";
+import DropdownMenuTrigger from "@/components/ui/dropdown-menus/dropdown-menu-trigger";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import WebsiteIcon from "./ui/website-icon";
 

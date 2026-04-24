@@ -1,15 +1,7 @@
 import { Suspense } from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
 import { subscriberService } from "@/lib/domain";
-import { getWebsite } from "@/lib/route-helpers";
+import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
 import { SubscribersTable } from "./_components/subscribers-table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -21,7 +13,7 @@ export default async function SubscribersPage({
   params: Promise<{ websiteId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const website = await getWebsite((await params).websiteId);
+  const [website, websites] = await checkSessionAndGetWebsiteData((await params).websiteId);
 
   const sp = await searchParams;
   const page = Math.max(1, parseInt(typeof sp.page === "string" ? sp.page : "1", 10) || 1);
@@ -71,20 +63,8 @@ export default async function SubscribersPage({
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>{website.name}</BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Subscribers</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </header>
-      <main className="flex-1 p-4">
+      <TopPageBreadcrumb website={website} websites={websites} category="Subscribers" pageTitle="List" />
+      <div className="flex-1 p-4">
         <Suspense>
           <SubscribersTable
             selectedWebsiteId={website.id}
@@ -99,7 +79,7 @@ export default async function SubscribersPage({
             selectedTagIds={selectedTagIds}
           />
         </Suspense>
-      </main>
+      </div>
     </>
   );
 }

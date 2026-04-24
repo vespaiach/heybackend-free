@@ -1,25 +1,46 @@
-import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Suspense } from "react";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
+import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
+import ActivityFeed from "./_components/activity-feed";
+import { ChartSkeleton } from "./_components/chart-skeleton";
+import { FeedSkeleton } from "./_components/feed-skeleton";
+import GrowthSection from "./_components/growth-section";
+import KpiCards from "./_components/kpi-cards";
+import { KpiSkeleton } from "./_components/kpi-skeleton";
+import { QuickActions } from "./_components/quick-actions";
 
-export default async function HomePage() {
+export default async function HomePage({ params }: { params: Promise<{ websiteId: string }> }) {
+  const [website, websites] = await checkSessionAndGetWebsiteData((await params).websiteId);
+
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbPage>Home</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
+      <TopPageBreadcrumb website={website} websites={websites} category="Subscribers" pageTitle="Home" />
 
-      <div>this is home page</div>
+      <main className="flex-1 p-4">
+        <div className="mb-5">
+          <h2 className="text-2xl font-bold tracking-tight">Mission Control</h2>
+          <p className="text-muted-foreground">Your application's health and activity at a glance.</p>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <Suspense fallback={<KpiSkeleton />}>
+            <KpiCards websiteId={website.id} />
+          </Suspense>
+
+          <Suspense fallback={<ChartSkeleton />}>
+            <GrowthSection websiteId={website.id} />
+          </Suspense>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <Suspense fallback={<FeedSkeleton />}>
+                <ActivityFeed websiteId={website.id} />
+              </Suspense>
+            </div>
+            <QuickActions websiteId={website.id} />
+          </div>
+        </div>
+      </main>
     </>
   );
 }

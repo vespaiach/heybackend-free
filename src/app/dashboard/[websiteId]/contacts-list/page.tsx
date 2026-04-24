@@ -1,16 +1,8 @@
 import { Suspense } from "react";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
 import { contactRequestService } from "@/lib/domain";
 import type { ContactRequest } from "@/lib/domain/types";
-import { getWebsite } from "@/lib/route-helpers";
+import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
 import { ContactsTable } from "./_components/contacts-table";
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
@@ -22,8 +14,7 @@ export default async function ContactsPage({
   params: Promise<{ websiteId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { websiteId } = await params;
-  const website = await getWebsite(websiteId);
+  const [website, websites] = await checkSessionAndGetWebsiteData((await params).websiteId);
   const sp = await searchParams;
 
   // Parse and validate search params
@@ -50,7 +41,7 @@ export default async function ContactsPage({
 
   const [result, companies] = await Promise.all([
     contactRequestService.listContactRequests({
-      websiteId: (await getWebsite(websiteId)).id,
+      websiteId: website.id,
       q: q || undefined,
       company: company || undefined,
       readStatus,
@@ -62,7 +53,7 @@ export default async function ContactsPage({
     // Get unique companies from all contacts
     contactRequestService
       .listContactRequests({
-        websiteId: (await getWebsite(websiteId)).id,
+        websiteId: website.id,
         pageSize: 1000,
       })
       .then(
@@ -83,24 +74,12 @@ export default async function ContactsPage({
 
   return (
     <>
-      <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-        <SidebarTrigger className="-ml-1" />
-        <Separator orientation="vertical" className="mr-2 h-4" />
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>{website.name}</BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Contacts</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </header>
+      <TopPageBreadcrumb website={website} websites={websites} category="Contacts" pageTitle="List" />
 
       <main className="flex-1 p-4">
         <Suspense fallback={<div>Loading...</div>}>
           <ContactsTable
-            selectedWebsiteId={(await getWebsite(websiteId)).id}
+            selectedWebsiteId={website.id}
             contacts={contacts}
             total={total}
             page={page}

@@ -120,6 +120,7 @@ src/
 - Reuse components in `src/components/ui/` across project.
 - Use `npx shadcn@latest add <component>` to add new shadcn components (see `components.json`)
 - shadcn style: `radix-vega`, RSC enabled, icon library: lucide
+- **Strictly one React component per file.** - If a component requires a sub-component (e.g., a specific `List` item), extract it to its own file within the same directory.
 
 ### Forms & Validation
 - Use **Formisch** (`@formisch/react`) for form state management
@@ -150,6 +151,33 @@ src/
 - Business logic lives in `src/lib/domain/` — keep HTTP, UI, and DB concerns out of the domain layer
 - Each domain module exports a service interface and a Prisma-backed implementation
 - API route helpers (`src/lib/api/route-helpers.ts`) provide typed response factories (`ok()`, `created()`, `validationError()`, etc.) and origin guards — use them in all API routes
+
+### Dashboard Pages (`src/app/dashboard/[websiteId]/*/page.tsx`)
+- For every new page under `src/app/dashboard/[websiteId]/`, use `checkSessionAndGetWebsiteData((await params).websiteId)` from `src/lib/route-helpers.ts` as the single source of session + website validation.
+- Use `website.id` from the helper result for service calls and child component props.
+- Reuse `TopPageBreadcrumb` from `src/components/ui/top-breadcrumb.tsx` for the page header instead of building custom breadcrumb markup.
+- Standard page shape:
+  ```tsx
+  import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
+  import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
+
+  export default async function SomePage({ params }: { params: Promise<{ websiteId: string }> }) {
+    const [website, websites] = await checkSessionAndGetWebsiteData((await params).websiteId);
+
+    return (
+      <>
+        <TopPageBreadcrumb
+          website={website}
+          websites={websites}
+          category="Subscribers" // There are two categories: Subscribers and Contacts
+          pageTitle="Some Page"
+        />
+        <div className="flex-1 p-4">{/* page content */}</div>
+      </>
+    );
+  }
+  ```
+- If the page needs a category not currently supported by `TopPageBreadcrumb` (`"Subscribers" | "Contacts"`), update the component prop type first, then use it consistently.
 
 ### Browser SDK (`sdk/`)
 - The SDK is a vanilla TypeScript IIFE bundle that derives the website ID and base URL from `document.currentScript.src` at runtime

@@ -34,13 +34,20 @@
       "recommended": true,
       "suspicious": {
         "noUnknownAtRules": "off",
-        "noArrayIndexKey": "warn"
+        "noArrayIndexKey": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "warn"
       },
       "style": {
-        "noNonNullAssertion": "warn"
+        "noNonNullAssertion": "warn",
+        "useFilenamingConvention": {
+          "level": "error",
+          "options": {
+            "requireAscii": true,
+            "filenameCases": ["export", "kebab-case"]
+          }
+        }
       }
     },
     "domains": {

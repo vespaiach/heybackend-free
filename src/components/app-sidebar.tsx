@@ -5,7 +5,6 @@ import type * as React from "react";
 import { useMemo, useState } from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
-import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -16,7 +15,6 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { WebsiteSwitcher } from "@/components/website-switcher";
 import { WebsitesModal } from "@/components/websites-modal";
 import Logo from "./logo";
 
@@ -81,24 +79,20 @@ export function AppSidebar({
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
-              <a href="/dashboard" className="flex items-center space-x-2">
-                <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <Logo className="size-6" />
-                </div>
-                <span className="text-base font-semibold">Hey Backend!</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-        <Separator className="my-2 border-muted" />
-        <WebsiteSwitcher
-          websites={websites}
-          websiteId={websiteId}
-          onAddWebsite={() => setWebsitesOpen(true)}
-        />
+        <SidebarContent>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:p-1.5!">
+                <a href="/dashboard" className="flex items-center mt-2">
+                  <div className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                    <Logo className="size-6" width="100%" height="100%" />
+                  </div>
+                  <span className="text-base font-semibold">Hey Backend!</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarContent>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={menu.newsletter} category="Newsletter" />

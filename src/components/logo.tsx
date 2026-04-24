@@ -4,8 +4,8 @@ export default function Logo({
   height = 16,
 }: {
   className?: string;
-  width?: number;
-  height?: number;
+  width?: number | string;
+  height?: number | string;
 }) {
   return (
     <svg

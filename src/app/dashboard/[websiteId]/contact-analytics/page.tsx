@@ -1,41 +1,18 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
 import { contactRequestService } from "@/lib/domain";
-import { getWebsite } from "@/lib/route-helpers";
+import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
 import { ActivityHeatmap } from "./_components/activity-heatmap";
 import { CompanyChart } from "./_components/company-chart";
 import { StatCards } from "./_components/stat-cards";
 import { TrendChart } from "./_components/trend-chart";
 
 export default async function ContactAnalyticsPage({ params }: { params: Promise<{ websiteId: string }> }) {
-  const { websiteId } = await params;
-  const website = await getWebsite(websiteId);
-  const analytics = await contactRequestService.getContactAnalytics(websiteId);
+  const [website, websites] = await checkSessionAndGetWebsiteData((await params).websiteId);
+  const analytics = await contactRequestService.getContactAnalytics(website.id);
 
   return (
     <>
-      <header className="border-b flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>{website.name}</BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Analytics</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
+      <TopPageBreadcrumb website={website} websites={websites} category="Contacts" pageTitle="Analytics" />
 
       <main className="flex-1 p-4">
         <div className="mb-5">

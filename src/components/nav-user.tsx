@@ -11,15 +11,13 @@ import {
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import DropdownMenu from "@/components/ui/dropdown-menu";
+import DropdownMenuContent from "@/components/ui/dropdown-menu-content";
+import DropdownMenuGroup from "@/components/ui/dropdown-menu-group";
+import DropdownMenuItem from "@/components/ui/dropdown-menu-item";
+import DropdownMenuLabel from "@/components/ui/dropdown-menu-label";
+import DropdownMenuSeparator from "@/components/ui/dropdown-menu-separator";
+import DropdownMenuTrigger from "@/components/ui/dropdown-menu-trigger";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 
 export function NavUser({

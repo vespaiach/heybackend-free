@@ -1,15 +1,7 @@
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
 import { subscriberService } from "@/lib/domain";
 import type { AnalyticsRange } from "@/lib/domain/types";
-import { getWebsite } from "@/lib/route-helpers";
+import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
 import { CountriesCard } from "./_components/countries-card";
 import { DevicesPlatformsCard } from "./_components/devices-platforms-card";
 import { GrowthChart } from "./_components/growth-chart";
@@ -32,33 +24,18 @@ export default async function SubscriberAnalyticsPage({
   params: Promise<{ websiteId: string }>;
   searchParams: Promise<{ range?: string }>;
 }) {
-  const { websiteId } = await params;
-  const website = await getWebsite(websiteId);
+  const [website, websites] = await checkSessionAndGetWebsiteData((await params).websiteId);
 
   const { range: rawRange } = await searchParams;
   const range: AnalyticsRange = VALID_RANGES.includes(rawRange as AnalyticsRange)
     ? (rawRange as AnalyticsRange)
     : "30d";
 
-  const analytics = await subscriberService.getAnalytics(websiteId, range);
+  const analytics = await subscriberService.getAnalytics(website.id, range);
 
   return (
     <>
-      <header className="border-b flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>{website.name}</BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Analytics</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-      </header>
+      <TopPageBreadcrumb website={website} websites={websites} category="Subscribers" pageTitle="Analytics" />
 
       <main className="flex-1 p-4">
         <div className="flex flex-col md:flex-row items-start md:items-end md:justify-between gap-2 mb-5">

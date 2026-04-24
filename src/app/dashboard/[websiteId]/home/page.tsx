@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
 import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
 import ActivityFeed from "./_components/activity-feed";
 import { ChartSkeleton } from "./_components/chart-skeleton";

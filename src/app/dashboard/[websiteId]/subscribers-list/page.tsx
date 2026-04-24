@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
 import { subscriberService } from "@/lib/domain";
 import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
 import { SubscribersTable } from "./_components/subscribers-table";

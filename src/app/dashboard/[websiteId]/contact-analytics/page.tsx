@@ -1,4 +1,4 @@
-import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
 import { contactRequestService } from "@/lib/domain";
 import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
 import { ActivityHeatmap } from "./_components/activity-heatmap";

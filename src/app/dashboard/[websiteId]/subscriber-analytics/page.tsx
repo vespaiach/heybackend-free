@@ -1,4 +1,4 @@
-import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
 import { subscriberService } from "@/lib/domain";
 import type { AnalyticsRange } from "@/lib/domain/types";
 import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";

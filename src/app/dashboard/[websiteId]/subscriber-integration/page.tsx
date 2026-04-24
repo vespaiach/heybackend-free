@@ -1,4 +1,4 @@
-import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
 import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";
 import { IntegrationTabs } from "./_components/integration-tabs";
 

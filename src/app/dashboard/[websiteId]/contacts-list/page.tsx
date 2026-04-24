@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import TopPageBreadcrumb from "@/components/ui/top-breadcrumb";
+import TopPageBreadcrumb from "@/components/ui/breadcrumbs/top-breadcrumb";
 import { contactRequestService } from "@/lib/domain";
 import type { ContactRequest } from "@/lib/domain/types";
 import { checkSessionAndGetWebsiteData } from "@/lib/route-helpers";

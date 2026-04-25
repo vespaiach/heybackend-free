@@ -1,7 +1,6 @@
 "use client";
 
-import type * as React from "react";
-
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -12,7 +11,7 @@ function SidebarMenuSkeleton({
 }: React.ComponentProps<"div"> & {
   showIcon?: boolean;
 }) {
-  const [width] = React.useState(() => {
+  const [width] = useState(() => {
     return `${Math.floor(Math.random() * 40) + 50}%`;
   });
 

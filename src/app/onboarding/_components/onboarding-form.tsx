@@ -6,7 +6,7 @@ import { PlusIcon, Trash2Icon } from "lucide-react";
 import { createTenant } from "@/app/onboarding/actions";
 import { OnboardingSchema } from "@/app/onboarding/schema";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/fields";
-import { Input } from "@/components/ui/input";
+import Input from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
 
 export function OnboardingForm() {

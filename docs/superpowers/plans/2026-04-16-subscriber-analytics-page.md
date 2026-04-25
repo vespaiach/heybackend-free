@@ -853,7 +853,7 @@ Expected: `Cannot find module '../devices-platforms-card'`
 import type { ReactNode } from "react";
 import { MonitorIcon, SmartphoneIcon, TabletIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import Separator from "@/components/ui/separator";
 
 interface DeviceBreakdown {
   mobile: number;
@@ -1097,7 +1097,7 @@ import {
   Breadcrumb, BreadcrumbItem, BreadcrumbList,
   BreadcrumbPage, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
+import Separator from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { subscriberService, tenantService } from "@/lib/domain";
 import type { AnalyticsRange } from "@/lib/domain/types";

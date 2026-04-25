@@ -2,7 +2,7 @@
 
 import type { ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 
 type SubmitButtonProps = Omit<ComponentProps<typeof Button>, "type"> & {
   pending?: boolean;

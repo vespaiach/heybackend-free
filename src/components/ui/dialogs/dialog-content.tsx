@@ -3,7 +3,7 @@
 import { XIcon } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import type * as React from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import { cn } from "@/lib/utils";
 import DialogOverlay from "./dialog-overlay";
 import DialogPortal from "./dialog-portal";

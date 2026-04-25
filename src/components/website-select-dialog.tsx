@@ -2,7 +2,7 @@
 
 import { GlobeIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialogs";
 
 type Website = { id: string; name: string; url: string };

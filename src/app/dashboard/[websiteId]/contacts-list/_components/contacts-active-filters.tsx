@@ -1,8 +1,8 @@
 "use client";
 
 import { X } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badges";
+import { Button } from "@/components/ui/buttons";
 
 type RemoveFilterType = "query" | "readStatus" | "company";
 

@@ -1655,7 +1655,7 @@ Create `src/app/dashboard/[websiteId]/contacts-list/_components/contacts-filter-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import Input from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -1928,7 +1928,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList, BreadcrumbPage } from "@/components/ui/breadcrumb";
-import { Separator } from "@/components/ui/separator";
+import Separator from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { contactRequestService, tenantService } from "@/lib/domain";
 import { ContactsTable } from "./_components/contacts-table";

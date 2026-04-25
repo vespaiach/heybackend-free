@@ -2,10 +2,10 @@
 
 import { SearchIcon, SlidersHorizontalIcon } from "lucide-react";
 import * as React from "react";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/buttons";
+import Checkbox from "@/components/ui/checkbox";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popovers";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-groups";
 import type { Tag } from "./subscriber-detail-dialog";

@@ -1,8 +1,8 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badges";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialogs";
-import { Separator } from "@/components/ui/separator";
+import Separator from "@/components/ui/separator";
 import type { Subscriber } from "@/lib/domain/types";
 
 export type Tag = { id: string; name: string; color: string | null; description: string | null };

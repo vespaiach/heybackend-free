@@ -1,6 +1,6 @@
 "use client";
 
-import { Button } from "./button";
+import { Button } from "./buttons";
 import { Dialog, DialogClose, DialogContent, DialogFooter } from "./dialogs";
 
 interface ConfirmationModalProps {

@@ -4,7 +4,7 @@ import { Code2Icon, DownloadIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { exportSubscribers } from "@/app/dashboard/[websiteId]/subscribers-list/actions";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { WebsiteFormModal } from "@/components/website-form-modal";
 import { downloadCsv } from "@/lib/export-csv";

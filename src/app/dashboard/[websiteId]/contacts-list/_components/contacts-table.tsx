@@ -6,7 +6,7 @@ import * as React from "react";
 import { type PageSizeOption, PaginationBar } from "@/components/pagination-bar";
 import { RelativeDate } from "@/components/relative-date";
 import { TablePageHeader } from "@/components/table-page-header";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/tables";
 import { getCountryFlag } from "@/lib/country-flags";
 import type { ContactRequest } from "@/lib/domain/types";

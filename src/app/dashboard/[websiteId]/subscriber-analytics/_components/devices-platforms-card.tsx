@@ -2,7 +2,7 @@ import { MonitorIcon, SmartphoneIcon, TabletIcon } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import Separator from "@/components/ui/separator";
 
 interface DeviceBreakdown {
   mobile: number;

@@ -5,10 +5,10 @@ import { RefreshCwIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { addWebsite, updateWebsite } from "@/app/dashboard/websites/actions";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialogs";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { type WebsiteOutput, WebsiteSchema } from "@/lib/schemas";
 

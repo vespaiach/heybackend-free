@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 import { deactivateWebsite } from "@/app/dashboard/websites/actions";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import {
   Dialog,
   DialogContent,

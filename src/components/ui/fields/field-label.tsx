@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { Label } from "@/components/ui/label";
+import Label from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>) {

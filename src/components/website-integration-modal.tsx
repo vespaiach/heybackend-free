@@ -3,8 +3,8 @@
 import { Check, Copy } from "lucide-react";
 import * as React from "react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/buttons";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialogs";
 
 interface WebsiteIntegrationModalProps {
   open: boolean;

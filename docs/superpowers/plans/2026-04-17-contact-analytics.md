@@ -1064,7 +1064,7 @@
     BreadcrumbPage,
     BreadcrumbSeparator,
   } from "@/components/ui/breadcrumb";
-  import { Separator } from "@/components/ui/separator";
+  import Separator from "@/components/ui/separator";
   import { SidebarTrigger } from "@/components/ui/sidebar";
   import { contactRequestService } from "@/lib/domain";
   import { getWebsite } from "@/lib/route-helpers";

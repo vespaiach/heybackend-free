@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
 import { deactivateWebsite } from "@/app/dashboard/websites/actions";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import {
   Dialog,
   DialogContent,
@@ -13,8 +13,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+} from "@/components/ui/dialogs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/tables";
 import { WebsiteFormModal } from "@/components/website-form-modal";
 import { ConfirmationModal } from "./ui/confirmation-modal";
 

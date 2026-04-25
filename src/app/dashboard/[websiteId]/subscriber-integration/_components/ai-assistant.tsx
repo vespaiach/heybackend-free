@@ -2,14 +2,14 @@
 
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badges";
+import { Button } from "@/components/ui/buttons";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import Input from "@/components/ui/input";
+import Label from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-groups";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
+import Textarea from "@/components/ui/textarea";
 import { type FormConfig, generateFormCode } from "./form-generator";
 import { useHighlightedCode } from "./use-highlighted-code";
 

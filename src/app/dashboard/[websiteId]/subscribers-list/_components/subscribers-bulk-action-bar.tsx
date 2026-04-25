@@ -1,8 +1,8 @@
 "use client";
 
 import { TagIcon, XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/buttons";
+import Separator from "@/components/ui/separator";
 
 interface SubscribersBulkActionBarProps {
   selectedCount: number;

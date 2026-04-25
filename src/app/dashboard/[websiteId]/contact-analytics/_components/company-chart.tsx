@@ -8,7 +8,7 @@ import {
   ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
+} from "@/components/ui/charts";
 
 interface CompanyChartProps {
   companyBreakdown: { company: string; count: number }[];

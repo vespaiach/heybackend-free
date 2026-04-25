@@ -2,7 +2,7 @@
 
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/charts";
 import type { GrowthDataPoint } from "@/lib/domain/types";
 
 interface GrowthChartProps {

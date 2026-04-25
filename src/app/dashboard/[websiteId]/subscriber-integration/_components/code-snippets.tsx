@@ -2,7 +2,7 @@
 
 import { Check } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import { Card } from "@/components/ui/card";
 import { useHighlightedCode } from "./use-highlighted-code";
 

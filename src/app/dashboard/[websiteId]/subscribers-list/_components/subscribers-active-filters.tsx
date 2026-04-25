@@ -1,7 +1,7 @@
 "use client";
 
 import { TagIcon, XIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badges";
 import type { Tag } from "./subscriber-detail-dialog";
 import type { StatusFilter } from "./subscribers-filter-popover";
 

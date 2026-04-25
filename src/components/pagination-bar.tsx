@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeftIcon, ChevronRightIcon, Loader2Icon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 
 export const PAGE_SIZE_OPTIONS = [10, 20, 50, 100] as const;
 export type PageSizeOption = (typeof PAGE_SIZE_OPTIONS)[number];

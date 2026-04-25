@@ -2,10 +2,10 @@
 
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/buttons";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Field, FieldDescription, FieldGroup, FieldLabel, FieldSeparator } from "@/components/ui/fields";
+import Input from "@/components/ui/input";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 

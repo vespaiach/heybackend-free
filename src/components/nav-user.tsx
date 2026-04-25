@@ -10,7 +10,7 @@ import {
   SparklesIcon,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatars";
 import DropdownMenu from "@/components/ui/dropdown-menus/dropdown-menu";
 import DropdownMenuContent from "@/components/ui/dropdown-menus/dropdown-menu-content";
 import DropdownMenuGroup from "@/components/ui/dropdown-menus/dropdown-menu-group";
